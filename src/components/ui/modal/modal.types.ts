@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 
-export interface ModlProps {
+export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
