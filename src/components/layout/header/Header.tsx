@@ -2,7 +2,7 @@ import React from 'react';
 import { headerStyles } from './header.styles';
 import { HeaderProps } from './header.types';
 
-export const Header = ({ title }: HeaderProps) => {
+const Header = ({ title }: HeaderProps) => {
   return (
     <div style={headerStyles.container}>
       <h1 style={headerStyles.title}>{title}</h1>
@@ -14,3 +14,5 @@ export const Header = ({ title }: HeaderProps) => {
     </div>
   );
 };
+
+export default Header
