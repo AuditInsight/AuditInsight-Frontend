@@ -3,7 +3,7 @@ import { theme } from "@/styles/theme"
 export const headerStyles = {
   container: {
     height: "72px",
-    background: "linear-gradient(90deg,#1E3A8A,#2563EB)",
+    background: "linear-gradient(90deg,#0A4178,#0A4174)",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
