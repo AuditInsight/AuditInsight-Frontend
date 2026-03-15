@@ -1,4 +1,5 @@
 import Header from "@/components/layout/header/Header";
+import { theme } from "@/styles/theme";
 
 export default function PageLayout({
   children,
@@ -6,10 +7,23 @@ export default function PageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ minHeight: "100vh" }}>
-      <Header title="Audit Insight" />
+    <div
+      style={{
+        minHeight: "100vh",
+        background: theme.colors.appBackground,
+      }}
+    >
+      {/* ⭐ GLOBAL HEADER */}
+      <Header title="AuditInsight" />
 
-      <main style={{ padding: "24px" }}>
+      {/* ⭐ PAGE CONTENT AREA */}
+      <main
+        style={{
+          padding: theme.spacing.xl,
+          maxWidth: 1500,
+          margin: "0 auto",
+        }}
+      >
         {children}
       </main>
     </div>
