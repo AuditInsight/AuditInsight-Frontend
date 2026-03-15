@@ -1,65 +1,26 @@
-import { CreditCard, CheckCircle, AlertTriangle, AlertCircle, LucideIcon } from "lucide-react"
-import { Card } from "@/components/ui/card/card" // Make sure Card is imported
-import { StatsGrid } from "@/components/ui/StatsGrid" // Make sure StatsGrid is imported
+import { statsStyles } from "@/components/dashboard/DashboardStats.styles"
 
-interface DashboardStats {
-  title: string
-  value: number
-  change: string
-  status: "success" | "warning" | "danger"
-  icon: LucideIcon
-}
-
-const stats: DashboardStats[] = [
-  {
-    title: "Total Transactions",
-    value: 1265,
-    change: "+12%",
-    status: "success",
-    icon: CreditCard
-  },
-  {
-    title: "Audit Ready",
-    value: 82,
-    change: "+2%",
-    status: "success",
-    icon: CheckCircle
-  },
-  {
-    title: "Missing Evidence",
-    value: 58,
-    change: "+7%",
-    status: "warning",
-    icon: AlertTriangle
-  },
-  {
-    title: "High-Risk Transactions",
-    value: 14,
-    change: "+5%",
-    status: "danger",
-    icon: AlertCircle
-  }
+const stats = [
+  { label: "Transactions", value: "12,540", trend: "+8%" },
+  { label: "High Risk", value: "342", trend: "-2%" },
+  { label: "Evidence Uploaded", value: "1,245", trend: "+18%" },
+  { label: "Alerts", value: "27", trend: "+4%" },
 ]
 
 export default function DashboardStats() {
   return (
-    <StatsGrid>
-      {stats.map((stat) => {
-        const Icon = stat.icon
+    <div style={statsStyles.container}>
+      {stats.map((s) => (
+        <div key={s.label} style={statsStyles.card}>
+          <div>
+            <div style={statsStyles.label}>{s.label}</div>
+            <div style={statsStyles.value}>{s.value}</div>
+            <div style={statsStyles.trend}>{s.trend} vs last period</div>
+          </div>
 
-        return (
-          <Card key={stat.title}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <Icon size={20} />
-              <div>
-                <h4>{stat.title}</h4>
-                <h2>{stat.value}</h2>
-                <span>{stat.change}</span>
-              </div>
-            </div>
-          </Card>
-        )
-      })}
-    </StatsGrid>
+          <div style={statsStyles.icon} />
+        </div>
+      ))}
+    </div>
   )
 }
