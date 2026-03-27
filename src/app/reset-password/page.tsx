@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input/input";
-import { Colors } from "@/styles/colors" // 👈 import your colors
+import { Colors } from "@/styles/colors";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
+export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   return (
     <div
       style={{
         height: "100vh",
-        background: Colors.appBackground, // ✅ from your system
+        background: Colors.appBackground,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -26,13 +26,13 @@ export default function LoginPage() {
           overflow: "hidden",
           background: Colors.Surface,
           boxShadow: "0 25px 70px rgba(0,0,0,0.12)",
-          border: `1px solid ${Colors.border}`, // ✅ subtle polish
+          border: `1px solid ${Colors.border}`,
         }}
       >
         {/* HEADER */}
         <div
           style={{
-            background: Colors.gradientHeader, // ✅ your gradient
+            background: Colors.gradientHeader,
             padding: "22px",
             textAlign: "center",
           }}
@@ -54,55 +54,54 @@ export default function LoginPage() {
           <h3
             style={{
               textAlign: "center",
-              marginBottom: "24px",
+              marginBottom: "12px",
               fontSize: "24px",
               fontWeight: 600,
               color: Colors.textPrimary,
             }}
           >
-            Login
+            Reset Password
           </h3>
+
+          {/* SUBTEXT */}
+          <p
+            style={{
+              textAlign: "center",
+              marginBottom: "24px",
+              fontSize: "14px",
+              color: Colors.textSecondary,
+            }}
+          >
+            Enter your new password below
+          </p>
 
           {/* FORM BOX */}
           <div
             style={{
-              background: Colors.appBackground, // softer than pure white
+              background: Colors.appBackground,
               padding: "24px",
               borderRadius: "12px",
               border: `1px solid ${Colors.divider}`,
             }}
           >
-            {/* EMAIL */}
+            {/* NEW PASSWORD */}
             <Input
-              label="Email Address"
-              placeholder="Enter your email"
-              value={email}
-              onChange={setEmail}
-              type="email"
+              label="New Password"
+              placeholder="Enter new password"
+              value={password}
+              onChange={setPassword}
+              type="password"
             />
 
-            {/* PASSWORD */}
+            {/* CONFIRM PASSWORD */}
             <div style={{ marginTop: "18px" }}>
               <Input
-                label="Password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={setPassword}
+                label="Confirm Password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
                 type="password"
               />
-            </div>
-
-            {/* FORGOT */}
-            <div
-              style={{
-                textAlign: "right",
-                marginTop: "12px",
-                fontSize: "13px",
-                color: Colors.primary,
-                cursor: "pointer",
-              }}
-            >
-              Forgot password?
             </div>
 
             {/* BUTTON */}
@@ -113,7 +112,7 @@ export default function LoginPage() {
                   padding: "13px",
                   borderRadius: "8px",
                   border: "none",
-                  background: Colors.primaryDark, // ✅ consistent branding
+                  background: Colors.primaryDark,
                   color: "#fff",
                   fontWeight: 600,
                   fontSize: "15px",
@@ -128,31 +127,31 @@ export default function LoginPage() {
                     Colors.primaryDark)
                 }
               >
-                Login
+                Reset Password
               </button>
             </div>
-          </div>
 
-          {/* SIGN UP */}
-          <p
-            style={{
-              textAlign: "center",
-              marginTop: "22px",
-              fontSize: "14px",
-              color: Colors.textSecondary,
-            }}
-          >
-            Don’t have an account?{" "}
-            <span
+            {/* BACK TO LOGIN */}
+            <p
               style={{
-                color: Colors.primary,
-                cursor: "pointer",
-                fontWeight: 500,
+                textAlign: "center",
+                marginTop: "16px",
+                fontSize: "13px",
+                color: Colors.textSecondary,
               }}
             >
-              Sign Up
-            </span>
-          </p>
+              Back to{" "}
+              <span
+                style={{
+                  color: Colors.primary,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                Login
+              </span>
+            </p>
+          </div>
         </div>
       </div>
     </div>
