@@ -17,6 +17,12 @@ export const Colors = {
     primary: '#2563EB',
     primaryHover: '#1D4ED8',
 
+    // for header + auth screens
+    primaryDark: '#0A4178',
+    primaryDarker: '#0A4174',
+    gradientHeader: 'linear-gradient(90deg,#0A4178,#0A4174)',
+
+
     // Status colors
     success: '#2E7D32',
     successBg: '#EAF5EE',
