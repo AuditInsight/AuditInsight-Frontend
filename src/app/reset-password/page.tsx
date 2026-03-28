@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
+import Link from "next/dist/client/link";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -119,12 +120,10 @@ export default function ResetPasswordPage() {
                   cursor: "pointer",
                 }}
                 onMouseOver={(e) =>
-                  (e.currentTarget.style.background =
-                    Colors.primaryDarker)
+                  (e.currentTarget.style.background = Colors.primaryDarker)
                 }
                 onMouseOut={(e) =>
-                  (e.currentTarget.style.background =
-                    Colors.primaryDark)
+                  (e.currentTarget.style.background = Colors.primaryDark)
                 }
               >
                 Reset Password
@@ -141,15 +140,17 @@ export default function ResetPasswordPage() {
               }}
             >
               Back to{" "}
-              <span
-                style={{
-                  color: Colors.primary,
-                  cursor: "pointer",
-                  fontWeight: 500,
-                }}
-              >
-                Login
-              </span>
+              <Link href="/log-in" style={{ textDecoration: "none" }}>
+                <span
+                  style={{
+                    color: Colors.primary,
+                    cursor: "pointer",
+                    fontWeight: 500,
+                  }}
+                >
+                  Login
+                </span>
+              </Link>
             </p>
           </div>
         </div>

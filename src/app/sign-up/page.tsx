@@ -3,8 +3,12 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+  const router = useRouter();
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -118,6 +122,7 @@ export default function SignupPage() {
             {/* BUTTON */}
             <div style={{ marginTop: "22px" }}>
               <button
+                onClick={() => router.push("/verify-otp")}
                 style={{
                   width: "100%",
                   padding: "13px",
@@ -151,15 +156,17 @@ export default function SignupPage() {
             }}
           >
             Already have an account?{" "}
-            <span
-              style={{
-                color: Colors.primary,
-                cursor: "pointer",
-                fontWeight: 500,
-              }}
-            >
-              Login
-            </span>
+            <Link href="/log-in" style={{ textDecoration: "none" }}>
+              <span
+                style={{
+                  color: Colors.primary,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                Login
+              </span>
+            </Link>
           </p>
         </div>
       </div>

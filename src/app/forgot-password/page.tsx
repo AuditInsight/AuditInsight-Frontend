@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
 
   return (
@@ -95,6 +98,7 @@ export default function ForgotPasswordPage() {
             {/* BUTTON */}
             <div style={{ marginTop: "22px" }}>
               <button
+                onClick={() => router.push("/reset-password")}
                 style={{
                   width: "100%",
                   padding: "13px",
@@ -107,12 +111,10 @@ export default function ForgotPasswordPage() {
                   cursor: "pointer",
                 }}
                 onMouseOver={(e) =>
-                  (e.currentTarget.style.background =
-                    Colors.primaryDarker)
+                  (e.currentTarget.style.background = Colors.primaryDarker)
                 }
                 onMouseOut={(e) =>
-                  (e.currentTarget.style.background =
-                    Colors.primaryDark)
+                  (e.currentTarget.style.background = Colors.primaryDark)
                 }
               >
                 Send Reset Link
@@ -129,15 +131,17 @@ export default function ForgotPasswordPage() {
               }}
             >
               Remember your password?{" "}
-              <span
-                style={{
-                  color: Colors.primary,
-                  cursor: "pointer",
-                  fontWeight: 500,
-                }}
-              >
-                Login
-              </span>
+              <Link href="/log-in" style={{ textDecoration: "none" }}>
+                <span
+                  style={{
+                    color: Colors.primary,
+                    cursor: "pointer",
+                    fontWeight: 500,
+                  }}
+                >
+                  Login
+                </span>
+              </Link>
             </p>
           </div>
         </div>

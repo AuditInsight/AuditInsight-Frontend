@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
+import { useRouter } from "next/navigation";
 
 export default function VerifyOtpPage() {
+  const router = useRouter();
   const [otp, setOtp] = useState("");
 
   return (
@@ -94,6 +96,7 @@ export default function VerifyOtpPage() {
             {/* VERIFY BUTTON */}
             <div style={{ marginTop: "22px" }}>
               <button
+                onClick={() => router.push("/login")}
                 style={{
                   width: "100%",
                   padding: "13px",
@@ -106,12 +109,10 @@ export default function VerifyOtpPage() {
                   cursor: "pointer",
                 }}
                 onMouseOver={(e) =>
-                  (e.currentTarget.style.background =
-                    Colors.primaryDarker)
+                  (e.currentTarget.style.background = Colors.primaryDarker)
                 }
                 onMouseOut={(e) =>
-                  (e.currentTarget.style.background =
-                    Colors.primaryDark)
+                  (e.currentTarget.style.background = Colors.primaryDark)
                 }
               >
                 Verify Code
@@ -129,6 +130,7 @@ export default function VerifyOtpPage() {
             >
               Didn’t receive the code?{" "}
               <span
+                onClick={() => alert("OTP resent")}
                 style={{
                   color: Colors.primary,
                   cursor: "pointer",
