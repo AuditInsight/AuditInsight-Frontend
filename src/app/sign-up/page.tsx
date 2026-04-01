@@ -14,6 +14,44 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // ✅ Handle signup API call
+  const handleSignup = async () => {
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, email, password }),
+      });
+
+      console.log("Response status:", res.status);
+
+      let data;
+      try {
+        data = await res.json(); // ✅ safe parsing
+      } catch {
+        data = { message: "No response body" }; // ✅ fallback
+      }
+
+      console.log("Response data:", data);
+
+      if (!res.ok) {
+        alert(data.message || "Signup failed");
+        return;
+      }
+
+      alert(data.message);
+      router.push("/verify-otp");
+    } catch (error) {
+      console.error("Fetch error:", error);
+      alert("Something went wrong");
+    }
+  };
+
   return (
     <div
       style={{
@@ -122,7 +160,7 @@ export default function SignupPage() {
             {/* BUTTON */}
             <div style={{ marginTop: "22px" }}>
               <button
-                onClick={() => router.push("/verify-otp")}
+                onClick={handleSignup} // ✅ Call API here
                 style={{
                   width: "100%",
                   padding: "13px",
