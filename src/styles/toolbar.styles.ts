@@ -1,4 +1,6 @@
-import { theme } from "@/styles/theme"
+// src/styles/toolbar.styles.ts
+
+import { theme } from "@/styles/theme";
 
 export const toolbarStyles = {
   container: {
@@ -59,4 +61,4 @@ export const toolbarStyles = {
       color: theme.colors.danger,
     },
   },
-}
+};
