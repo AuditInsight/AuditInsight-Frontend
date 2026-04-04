@@ -1,7 +1,7 @@
 export interface Evidance {
     id: string;              // EVD12345
     name: string;            // "Invoice from ABC Corp"
-    category: string;        // "Invoice", "Contract", "Email"
+    category: "Invoice" | "Contract" | "Receipt" | "Approval" | "Other";      // "Invoice", "Contract", "Email"
     type: "Document" | "Image" | "Email" ;
     url:  string;             // link to view/download
     amount: number;          // 1234.56 (if applicable)
@@ -12,4 +12,5 @@ export interface Evidance {
 
     transactionId: string; // links to transactions
     status: "Verified" | "Pending" | "Missing";
+    versionStatus?: "active" | "superseded"; // for versioning
 }
