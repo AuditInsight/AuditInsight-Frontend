@@ -1,24 +1,18 @@
 "use client";
 
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
-import TransactionsStats from "@/components/transactions/stats/TransactionsStats";
-import TransactionsFilters from "@/components/transactions/filters/TransactionsFilters";
-import TransactionsAlerts from "@/components/transactions/alerts/TransactionsAlerts";
-import TransactionsTable from "@/components/transactions/table/TransactionsTable";
+import { TransactionsTable } from "@/components/transactions/table/TransactiosTable";
 
 export default function TransactionsPage() {
   return (
     <div>
       <PageToolbar
         title="Transactions"
-        filters={["Date", "Amount", "Type", "Risk Score", "Evidence"]}
+        filters={["Status", "Risk", "Date"]}
         showSearch
         primaryActionLabel="Add Transaction"
       />
 
-      <TransactionsStats />
-      <TransactionsFilters />
-      <TransactionsAlerts />
       <TransactionsTable />
     </div>
   );
