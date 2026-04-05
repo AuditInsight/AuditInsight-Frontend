@@ -3,22 +3,13 @@ import { Transaction } from "@/types/transaction.types";
 export const transactionsData: Transaction[] = [
   {
     id: "TXN10651",
-    date: "03/20/2026",
-    amount: 8520,
-    counterparty: "AFI Distributors",
-    source: "Bank",
-    riskScore: 90,
-    status: "Flagged",
-    evidence: 1,
-  },
-  {
-    id: "TXN10542",
-    date: "03/15/2026",
-    amount: 12850,
+    date: "2026-04-01",
+    amount: 2500,
     counterparty: "ABC Corp",
     source: "Bank",
-    riskScore: 90,
-    status: "Overdue",
-    evidence: 0,
+    evidenceCoverage: 75,
+    riskScore: 60,
+    status: "Reviewed",
+    evidenceIds: ["EVD1", "EVD2"],
   },
 ];
