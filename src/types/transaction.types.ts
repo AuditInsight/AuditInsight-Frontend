@@ -10,6 +10,7 @@ export interface Transaction {
   amount: number;
   counterparty: string;
   source: "Bank" | "Excel";
+  type: string;
 
   // 🔥 CORE AUDIT FIELDS
   evidenceCoverage: number;  // 0–100%
