@@ -1,5 +1,7 @@
 "use client";
 
+import { theme } from "@/styles/theme";
+
 interface TransactionsPaginationProps {
   page: number;
   setPage: (page: number) => void;
@@ -38,8 +40,17 @@ export const TransactionsPagination = ({
               onClick={() => setPage(current)}
               style={{
                 ...button,
-                background: page === current ? "#0A4178" : "#fff",
-                color: page === current ? "#fff" : "#000",
+
+                /* ✅ THEME-BASED ACTIVE STATE */
+                background:
+                  page === current
+                    ? theme.colors.primary
+                    : "#fff",
+
+                color:
+                  page === current
+                    ? "#fff"
+                    : theme.colors.textPrimary,
               }}
             >
               {current}
@@ -57,6 +68,7 @@ export const TransactionsPagination = ({
 };
 
 /* 🎨 STYLES */
+
 const container: React.CSSProperties = {
   marginTop: 16,
   display: "flex",
@@ -64,11 +76,12 @@ const container: React.CSSProperties = {
   gap: 10,
 };
 
+/* ✅ UPDATED BUTTON (THEME-BASED) */
 const button: React.CSSProperties = {
   padding: "6px 10px",
-  borderRadius: 6,
-  border: "1px solid #e5e7eb",
+  borderRadius: theme.radius.md,
+  border: `1px solid ${theme.colors.border}`,
   cursor: "pointer",
   background: "#fff",
-  fontSize: 13,
+  fontSize: theme.typography.sm,
 };

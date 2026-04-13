@@ -2,8 +2,8 @@
 
 import { Transaction } from "@/types/transaction.types";
 import { evidenceData } from "@/data/evidence.data";
+import { theme } from "@/styles/theme";
 
-/* ✅ FIXED PROPS */
 interface Props {
   data: Transaction[];
   onRowClick?: (transaction: Transaction) => void;
@@ -11,115 +11,92 @@ interface Props {
 
 export const TransactionsTable = ({ data, onRowClick }: Props) => {
   return (
-    <div style={{ marginTop: 20 }}>
+    <div style={wrapper}>
       <table style={table}>
+        
+        {/* HEADER */}
         <thead style={thead}>
           <tr>
-            <th>ID</th>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>Counterparty</th>
-            <th>Source</th>
-            <th>Evidence</th>
-            <th>Risk Score</th>
-            <th>Status</th>
+            <th style={th}></th>
+            <th style={th}>ID</th>
+            <th style={th}>Date</th>
+            <th style={th}>Amount</th>
+            <th style={th}>Counterparty</th>
+            <th style={th}>Source</th>
+            <th style={th}>Evidence ↓</th>
+            <th style={th}>Risk Score ↓</th>
+            <th style={th}>Status</th>
           </tr>
         </thead>
 
         <tbody>
           {data.map((t) => {
-            // 🔥 LINK EVIDENCE → TRANSACTION
             const evidences = evidenceData.filter(
               (e) => e.transactionId === t.id
             );
 
-            // 🔥 CALCULATE SCORE
             const evidenceScore =
               evidences.length === 0
                 ? 0
                 : Math.round(
-                    (evidences.filter(
-                      (e) => e.status === "Verified"
-                    ).length /
-                      evidences.length) *
-                      100
+                    (evidences.filter(e => e.status === "Verified").length /
+                      evidences.length) * 100
                   );
-
-            // 🔥 FLAGS (INJECTED — no UI change yet)
-            const flags: string[] = [];
-
-            if (evidences.length === 0) {
-              flags.push("No evidence attached");
-            }
-
-            if (t.riskScore > 70) {
-              flags.push("High risk transaction");
-            }
-
-            if (evidenceScore < 50 && evidences.length > 0) {
-              flags.push("Weak evidence support");
-            }
 
             return (
               <tr
                 key={t.id}
-                style={{
-                  ...row,
-                  cursor: "pointer",
-                  background:
-                    evidenceScore === 0
-                      ? "#fff1f2"
-                      : t.riskScore > 70
-                      ? "#fff7ed"
-                      : "#f0fdf4",
-                }}
+                style={row}
                 onClick={() => onRowClick?.(t)}
+                
+                /* ✅ FIXED HOVER */
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = theme.colors.appBackground)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
-                <td>{t.id}</td>
-                <td>{t.date}</td>
-                <td>${t.amount}</td>
-                <td>{t.counterparty}</td>
-                <td>{t.source}</td>
+                <td><input type="checkbox" /></td>
 
-                {/* 🔥 SMART EVIDENCE BAR */}
-                <td>
-                  <div style={bar}>
-                    <div
-                      style={{
-                        width: `${evidenceScore}%`,
-                        background:
-                          evidenceScore === 0
-                            ? "#ef4444"
-                            : evidenceScore < 50
-                            ? "#f59e0b"
-                            : "#22c55e",
-                        height: "100%",
-                        borderRadius: 4,
-                      }}
-                    />
-                  </div>
+                {/* ID */}
+                <td style={cell}>
+                  🔍 #TXN{t.id}
                 </td>
 
-                {/* 🔥 SMART RISK BAR */}
-                <td>
-                  <div style={bar}>
-                    <div
-                      style={{
-                        width: `${t.riskScore}%`,
-                        background:
-                          t.riskScore > 70
-                            ? "#ef4444"
-                            : t.riskScore > 40
-                            ? "#f59e0b"
-                            : "#22c55e",
-                        height: "100%",
-                        borderRadius: 4,
-                      }}
-                    />
-                  </div>
+                <td style={cell}>{t.date}</td>
+
+                {/* Amount */}
+                <td style={{ ...cell, color: theme.colors.success, fontWeight: 600 }}>
+                  ${t.amount.toLocaleString()}
                 </td>
 
-                <td>{t.status}</td>
+                {/* Counterparty */}
+                <td style={cell}>👤 {t.counterparty}</td>
+
+                {/* Source */}
+                <td>
+                  <span style={sourceBadge}>
+                    {t.source === "Bank" ? "🏦" : "📊"} {t.source}
+                  </span>
+                </td>
+
+                {/* Evidence */}
+                <td>
+                  <Bar value={evidenceScore} />
+                </td>
+
+                {/* Risk */}
+                <td>
+                  <Bar value={t.riskScore} risk />
+                </td>
+
+                {/* Status */}
+                <td>
+                  <span style={getStatusStyle(t.status)}>
+                    {getStatusIcon(t.status)} {t.status}
+                  </span>
+                </td>
               </tr>
             );
           })}
@@ -129,24 +106,118 @@ export const TransactionsTable = ({ data, onRowClick }: Props) => {
   );
 };
 
-/* 🎨 styles */
+
+
+/* 🔥 REUSABLE BAR COMPONENT */
+const Bar = ({ value }: { value: number; risk?: boolean }) => {
+  const color =
+    value === 0
+      ? theme.colors.danger
+      : value < 50
+      ? theme.colors.warning
+      : theme.colors.success;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={bar}>
+        <div
+          style={{
+            width: `${value}%`,
+            background: color,
+            height: "100%",
+            borderRadius: 4,
+          }}
+        />
+      </div>
+      <span style={{ fontSize: theme.typography.xs }}>{value}%</span>
+    </div>
+  );
+};
+
+
+
+/* 🔥 STATUS */
+const getStatusStyle = (status: string): React.CSSProperties => ({
+  padding: "4px 10px",
+  borderRadius: theme.radius.sm,
+  fontSize: theme.typography.xs,
+  fontWeight: 500,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+
+  /* ✅ OPTIONAL (still ok to keep hardcoded OR themeify later) */
+  background:
+    status === "Flagged"
+      ? theme.colors.dangerBg
+      : status === "Overdue"
+      ? theme.colors.warningBg
+      : theme.colors.appBackground,
+
+  color:
+    status === "Flagged"
+      ? theme.colors.danger
+      : status === "Overdue"
+      ? theme.colors.warning
+      : theme.colors.primary,
+});
+
+const getStatusIcon = (status: string) => {
+  if (status === "Flagged") return "⚠️";
+  if (status === "Overdue") return "⏳";
+  return "ℹ️";
+};
+
+
+
+/* 🎨 STYLES */
+
+const wrapper: React.CSSProperties = {
+  background: theme.colors.Surface,
+  borderRadius: theme.radius.lg,
+  border: `1px solid ${theme.colors.border}`,
+  overflow: "hidden",
+};
+
 const table: React.CSSProperties = {
   width: "100%",
   borderCollapse: "collapse",
 };
 
+/* ✅ FIXED */
 const thead: React.CSSProperties = {
+  background: theme.colors.appBackground,
+};
+
+const th: React.CSSProperties = {
+  fontSize: theme.typography.sm,
+  color: theme.colors.textSecondary,
+  padding: "12px",
   textAlign: "left",
-  borderBottom: "2px solid #e5e7eb",
 };
 
 const row: React.CSSProperties = {
-  borderBottom: "1px solid #f1f5f9",
+  borderBottom: `1px solid ${theme.colors.divider}`,
+  cursor: "pointer",
+};
+
+const cell: React.CSSProperties = {
+  padding: "12px",
+  fontSize: theme.typography.sm,
+  color: theme.colors.textPrimary,
 };
 
 const bar: React.CSSProperties = {
   width: 80,
   height: 6,
-  background: "#e5e7eb",
+  background: theme.colors.divider,
   borderRadius: 4,
+};
+
+/* ✅ FIXED */
+const sourceBadge: React.CSSProperties = {
+  padding: "4px 8px",
+  borderRadius: theme.radius.sm,
+  background: theme.colors.appBackground,
+  fontSize: theme.typography.xs,
 };

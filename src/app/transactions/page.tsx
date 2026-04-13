@@ -14,7 +14,11 @@ import { evidenceData } from "@/data/evidence.data";
 import { Transaction } from "@/types/transaction.types";
 
 export default function TransactionsPage() {
+  /* ✅ NEW STATE */
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const [page, setPage] = useState(1);
 
   const [selectedTransaction, setSelectedTransaction] =
@@ -23,20 +27,24 @@ export default function TransactionsPage() {
 
   const pageSize = 25;
 
-  // ✅ FILTER (UNCHANGED)
+  /* ✅ UPGRADED FILTER LOGIC */
   const filteredData = useMemo(() => {
     return transactionsData.filter((t) => {
+      // 🔍 SEARCH
       if (
         search &&
         !t.counterparty.toLowerCase().includes(search.toLowerCase())
-      ) {
-        return false;
-      }
+      ) return false;
+
+      // 📅 DATE FILTER
+      if (startDate && new Date(t.date) < new Date(startDate)) return false;
+      if (endDate && new Date(t.date) > new Date(endDate)) return false;
+
       return true;
     });
-  }, [search]);
+  }, [search, startDate, endDate]);
 
-  // ✅ PAGINATION (UNCHANGED)
+  /* ✅ PAGINATION */
   const totalPages = Math.ceil(filteredData.length / pageSize);
 
   const paginatedData = filteredData.slice(
@@ -44,7 +52,37 @@ export default function TransactionsPage() {
     page * pageSize
   );
 
-  // ✅ MODAL HANDLER (UNCHANGED)
+  /* ✅ ACTIONS */
+  const handleReset = () => {
+    setSearch("");
+    setStartDate("");
+    setEndDate("");
+    setPage(1);
+  };
+
+  const handleExport = () => {
+    const csv = filteredData.map(
+      (t) =>
+        `${t.id},${t.date},${t.amount},${t.counterparty},${t.status}`
+    );
+
+    const blob = new Blob([csv.join("\n")], {
+      type: "text/csv",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "transactions.csv";
+    a.click();
+  };
+
+  const handleAdd = () => {
+    alert("Open Add Transaction Modal"); // 🔥 replace later
+  };
+
+  /* ✅ MODAL HANDLER */
   const handleOpen = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setIsOpen(true);
@@ -56,6 +94,12 @@ export default function TransactionsPage() {
         display: "flex",
         flexDirection: "column",
         gap: theme.spacing.lg,
+
+        /* ✅ GLOBAL APP STYLING */
+        background: theme.colors.appBackground,
+        padding: theme.spacing.lg,
+        minHeight: "100vh",
+        fontFamily: theme.typography.fontFamily,
       }}
     >
       {/* 🔥 STATS */}
@@ -64,12 +108,23 @@ export default function TransactionsPage() {
         evidences={evidenceData}
       />
 
-      {/* 🔥 TOOLBAR (REPLACES FILTERS) */}
+      {/* 🔥 TOOLBAR (NOW FULLY FUNCTIONAL) */}
       <PageToolbar
         title="Transactions"
-        filters={["03/01/2026 → 03/30/2026"]}
         showSearch
         primaryActionLabel="Add Transaction"
+
+        search={search}
+        setSearch={setSearch}
+
+        startDate={startDate}
+        endDate={endDate}
+        setStartDate={setStartDate}
+        setEndDate={setEndDate}
+
+        onReset={handleReset}
+        onExport={handleExport}
+        onAdd={handleAdd}
       />
 
       {/* 🔥 TABLE */}
