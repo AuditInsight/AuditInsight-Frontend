@@ -4,7 +4,7 @@ import { useState } from "react";
 import { theme } from "@/styles/theme";
 
 interface Props {
-  onSelectItem: (category: string) => void; // ✅ NEW
+  onSelectItem: (category: string) => void;
 }
 
 const sections = [
@@ -20,30 +20,12 @@ const sections = [
     title: "Sales Evidence",
     items: ["Sales invoices", "Receipts", "Credit notes"],
   },
-  {
-    title: "Payroll & HR",
-    items: [],
-  },
-  {
-    title: "Tax & Compliance",
-    items: [],
-  },
-  {
-    title: "Inventory & Assets",
-    items: [],
-  },
-  {
-    title: "Legal & Governance",
-    items: [],
-  },
-  {
-    title: "IT & Systems",
-    items: [],
-  },
-  {
-    title: "Policies & Procedures",
-    items: [],
-  },
+  { title: "Payroll & HR", items: [] },
+  { title: "Tax & Compliance", items: [] },
+  { title: "Inventory & Assets", items: [] },
+  { title: "Legal & Governance", items: [] },
+  { title: "IT & Systems", items: [] },
+  { title: "Policies & Procedures", items: [] },
   {
     title: "Other Supporting Docs",
     items: ["+ Add more"],
@@ -51,7 +33,9 @@ const sections = [
 ];
 
 export const Sidebar = ({ onSelectItem }: Props) => {
-  const [activeSection, setActiveSection] = useState<string>("Financial Reporting");
+  const [activeSection, setActiveSection] = useState<string>(
+    "Financial Reporting"
+  );
   const [activeItem, setActiveItem] = useState<string | null>(null);
 
   const toggleSection = (title: string) => {
@@ -72,10 +56,22 @@ export const Sidebar = ({ onSelectItem }: Props) => {
               style={{
                 ...sectionHeader,
                 background: isOpen
-                  ? "linear-gradient(90deg,#0A4178,#0A4174)"
+                  ? theme.colors.gradientHeader
                   : "transparent",
-                color: isOpen ? "#fff" : "#111827",
+                color: isOpen
+                  ? "#fff"
+                  : theme.colors.textPrimary,
               }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = isOpen
+                  ? theme.colors.gradientHeader
+                  : theme.colors.appBackground)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = isOpen
+                  ? theme.colors.gradientHeader
+                  : "transparent")
+              }
             >
               {section.title}
 
@@ -84,7 +80,7 @@ export const Sidebar = ({ onSelectItem }: Props) => {
               </span>
             </div>
 
-            {/* 📂 DROPDOWN ITEMS */}
+            {/* 📂 ITEMS */}
             {isOpen && section.items.length > 0 && (
               <div style={{ marginTop: 6, paddingLeft: 10 }}>
                 {section.items.map((item) => {
@@ -95,22 +91,26 @@ export const Sidebar = ({ onSelectItem }: Props) => {
                       key={item}
                       style={{
                         ...itemStyle,
-                        background: isActive ? "#0A4178" : "transparent",
-                        color: isActive ? "#fff" : "#475569",
+                        background: isActive
+                          ? theme.colors.primary
+                          : "transparent",
+                        color: isActive
+                          ? "#fff"
+                          : theme.colors.textSecondary,
                         fontWeight: isActive ? 500 : 400,
                       }}
                       onClick={() => {
-                        setActiveItem(item);       // ✅ existing
-                        onSelectItem(item);        // 🔥 NEW (CONNECTS EVERYTHING)
+                        setActiveItem(item);
+                        onSelectItem(item);
                       }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.background = isActive
-                          ? "#0A4178"
-                          : "#f1f5f9")
+                          ? theme.colors.primary
+                          : theme.colors.appBackground)
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.background = isActive
-                          ? "#0A4178"
+                          ? theme.colors.primary
                           : "transparent")
                       }
                     >
@@ -127,12 +127,12 @@ export const Sidebar = ({ onSelectItem }: Props) => {
   );
 };
 
-/* 🎨 STYLES */
+/* 🎨 THEME-ALIGNED STYLES */
 
 const container: React.CSSProperties = {
   width: 260,
-  background: "#f8fafc",
-  borderRight: "1px solid #e5e7eb",
+  background: theme.colors.Surface,
+  borderRight: `1px solid ${theme.colors.border}`,
   height: "100vh",
   padding: 12,
 };

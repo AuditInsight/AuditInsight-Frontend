@@ -3,10 +3,14 @@
 import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/layout/evidenceSidebar";
 import { EvidenceHeader } from "@/components/evidence/EvidenceHeader";
-import { EvidenceFilters, EvidenceTab } from "@/components/evidence/EvidenceFilters";
+import {
+  EvidenceFilters,
+  EvidenceTab,
+} from "@/components/evidence/EvidenceFilters";
 import { EvidenceTable } from "@/components/evidence/EvidenceTable";
 import { EvidencePagination } from "@/components/evidence/EvidencePagination";
 import { evidenceData } from "@/data/evidence.data";
+import { theme } from "@/styles/theme";
 
 export default function EvidencePage() {
   // 🔥 GLOBAL STATE
@@ -17,22 +21,20 @@ export default function EvidencePage() {
 
   const pageSize = 25;
 
-  // 🔥 FILTERING LOGIC (CORE SYSTEM)
+  // 🔥 FILTERING LOGIC
   const filteredData = useMemo(() => {
     return evidenceData.filter((e) => {
-      // ✅ CATEGORY (from sidebar)
       if (activeCategory && e.category !== activeCategory) return false;
 
-      // ✅ STATUS TABS
       if (activeTab === "Pending" && e.status !== "Pending") return false;
       if (activeTab === "Complete" && e.status !== "Verified") return false;
       if (activeTab === "Red Flagged" && e.status !== "Missing") return false;
 
-      // ✅ SEARCH
       if (
         search &&
         !e.name.toLowerCase().includes(search.toLowerCase())
-      ) return false;
+      )
+        return false;
 
       return true;
     });
@@ -47,13 +49,29 @@ export default function EvidencePage() {
   );
 
   return (
-    <div style={{ display: "flex" }}>
-      
-      {/* 🔹 SIDEBAR (CONNECTED ✅) */}
+    <div
+      style={{
+        display: "flex",
+
+        /* ✅ GLOBAL APP STYLING */
+        background: theme.colors.appBackground,
+        minHeight: "100vh",
+        fontFamily: theme.typography.fontFamily,
+      }}
+    >
+      {/* 🔹 SIDEBAR */}
       <Sidebar onSelectItem={setActiveCategory} />
 
       {/* 🔹 MAIN CONTENT */}
-      <div style={{ flex: 1, padding: 20 }}>
+      <div
+        style={{
+          flex: 1,
+          padding: theme.spacing.lg,
+          display: "flex",
+          flexDirection: "column",
+          gap: theme.spacing.md,
+        }}
+      >
         <EvidenceHeader />
 
         <EvidenceFilters
@@ -62,7 +80,7 @@ export default function EvidencePage() {
           search={search}
           setSearch={setSearch}
           total={filteredData.length}
-          setPage={setPage} // ✅ REQUIRED (for reset on tab/search)
+          setPage={setPage}
         />
 
         <EvidenceTable data={paginatedData} />

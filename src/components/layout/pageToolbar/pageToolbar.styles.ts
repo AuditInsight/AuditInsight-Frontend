@@ -74,4 +74,13 @@ export const pageToolbarStyles = {
     cursor: "pointer",
     fontSize: theme.typography.sm,
   },
+
+  button: {
+  padding: "6px 12px",
+  borderRadius: theme.radius.md,
+  border: `1px solid ${theme.colors.border}`,
+  background: theme.colors.Surface,
+  fontSize: theme.typography.sm,
+  cursor: "pointer",
+},
 }
