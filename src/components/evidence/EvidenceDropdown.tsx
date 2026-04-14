@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { theme } from "@/styles/theme";
 
 export const EvidenceDropdown = ({
   label,
@@ -22,7 +23,17 @@ export const EvidenceDropdown = ({
       {open && (
         <div style={dropdown}>
           {options.map((opt) => (
-            <div key={opt} style={item}>
+            <div
+              key={opt}
+              style={item}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background =
+                  theme.colors.appBackground)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
               {opt}
             </div>
           ))}
@@ -32,36 +43,38 @@ export const EvidenceDropdown = ({
   );
 };
 
-/* 🎨 */
-const container = {
-  position: "relative" as const,
+/* 🎨 STYLES */
+
+const container: React.CSSProperties = {
+  position: "relative",
 };
 
-const button = {
+const button: React.CSSProperties = {
   padding: "6px 12px",
-  border: "1px solid #e5e7eb",
-  borderRadius: 6,
-  background: "#fff",
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
+  background: theme.colors.Surface,
   display: "flex",
   alignItems: "center",
   gap: 6,
   cursor: "pointer",
+  fontSize: theme.typography.sm,
 };
 
-const dropdown = {
-  position: "absolute" as const,
+const dropdown: React.CSSProperties = {
+  position: "absolute",
   top: "110%",
   left: 0,
-  background: "#fff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 6,
-  boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+  background: theme.colors.Surface,
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
+  boxShadow: theme.shadows.sm,
   width: 160,
   zIndex: 10,
 };
 
-const item = {
+const item: React.CSSProperties = {
   padding: "8px 10px",
-  fontSize: 13,
+  fontSize: theme.typography.sm,
   cursor: "pointer",
 };
