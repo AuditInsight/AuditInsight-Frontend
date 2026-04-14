@@ -2,6 +2,7 @@
 
 import { EvidenceSearch } from "./EvidenceSearch";
 import { EvidenceDropdown } from "./EvidenceDropdown";
+import { theme } from "@/styles/theme"; // ✅ ADDED
 
 export type EvidenceTab = "All" | "Complete" | "Pending" | "Red Flagged";
 
@@ -14,7 +15,7 @@ interface EvidenceFiltersProps {
 
   total: number;
 
-  setPage: (page: number) => void; // ✅ NEW
+  setPage: (page: number) => void;
 }
 
 export const EvidenceFilters = ({
@@ -23,7 +24,7 @@ export const EvidenceFilters = ({
   search,
   setSearch,
   total,
-  setPage, // ✅ NEW
+  setPage,
 }: EvidenceFiltersProps) => {
   const tabs: EvidenceTab[] = [
     "All",
@@ -33,8 +34,15 @@ export const EvidenceFilters = ({
   ];
 
   return (
-    <div style={{ marginBottom: 20 }}>
-      
+    <div
+      style={{
+        background: theme.colors.Surface,
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.lg,
+        padding: 16,
+        marginBottom: 20,
+      }}
+    >
       {/* 🔹 ROW 1 */}
       <div style={row}>
         
@@ -70,13 +78,18 @@ export const EvidenceFilters = ({
               key={tab}
               onClick={() => {
                 setActiveTab(tab);
-                setPage(1); // 🔥 RESET PAGE HERE
+                setPage(1);
               }}
               style={{
                 ...pill,
                 background:
-                  activeTab === tab ? "#0A4178" : "#f1f5f9",
-                color: activeTab === tab ? "#fff" : "#475569",
+                  activeTab === tab
+                    ? theme.colors.primary
+                    : theme.colors.appBackground,
+                color:
+                  activeTab === tab
+                    ? "#fff"
+                    : theme.colors.textSecondary,
               }}
             >
               {tab}
@@ -91,11 +104,10 @@ export const EvidenceFilters = ({
           Showing 1–25 of {total.toLocaleString()} documents
         </span>
 
-        {/* ✅ ONLY CHANGE HERE */}
         <EvidenceSearch
           value={search}
           onChange={setSearch}
-          setPage={setPage} // 🔥 ADDED
+          setPage={setPage}
         />
       </div>
     </div>
@@ -103,6 +115,7 @@ export const EvidenceFilters = ({
 };
 
 /* 🎨 STYLES */
+
 const row: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
@@ -122,5 +135,5 @@ const pill: React.CSSProperties = {
 
 const countText: React.CSSProperties = {
   fontSize: 13,
-  color: "#64748b",
+  color: theme.colors.textMuted, // ✅ themed
 };

@@ -7,6 +7,7 @@ import { evidenceData } from "@/data/evidence.data";
 import { Evidence } from "@/types/evidence.types";
 import { EvidenceRow } from "./EvidenceRow";
 import { Transaction } from "@/types/transaction.types";
+import { theme } from "@/styles/theme"; // ✅ ADDED
 
 interface Props {
   data: Evidence[];
@@ -76,12 +77,13 @@ export const EvidenceTable = ({ data }: Props) => {
 
 /* 🎨 STYLES */
 
+/* ✅ FIXED WRAPPER (THEME-BASED) */
 const wrapper: React.CSSProperties = {
   overflowX: "auto",
   marginTop: 16,
-  background: "#fff",
-  borderRadius: 10,
-  border: "1px solid #e5e7eb",
+  background: theme.colors.Surface,
+  borderRadius: theme.radius.lg,
+  border: `1px solid ${theme.colors.border}`,
 };
 
 const table: React.CSSProperties = {
@@ -89,15 +91,17 @@ const table: React.CSSProperties = {
   borderCollapse: "collapse",
 };
 
+/* ✅ FIXED THEAD (YOUR REQUEST) */
 const thead: React.CSSProperties = {
-  background: "#f8fafc",
-  borderBottom: "1px solid #e2e8f0",
+  background: theme.colors.appBackground,
+  borderBottom: `1px solid ${theme.colors.border}`, // 🔥 optional polish
 };
 
+/* ✅ FIXED TH */
 const th: React.CSSProperties = {
   textAlign: "left",
   padding: "12px 16px",
-  fontSize: 12,
+  fontSize: theme.typography.sm,
   fontWeight: 600,
-  color: "#64748b",
+  color: theme.colors.textSecondary,
 };
