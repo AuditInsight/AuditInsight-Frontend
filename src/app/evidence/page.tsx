@@ -49,11 +49,10 @@ export default function EvidencePage() {
   );
 
   return (
+    /* ✅ GLOBAL APP WRAPPER */
     <div
       style={{
         display: "flex",
-
-        /* ✅ GLOBAL APP STYLING */
         background: theme.colors.appBackground,
         minHeight: "100vh",
         fontFamily: theme.typography.fontFamily,

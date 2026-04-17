@@ -7,7 +7,7 @@ import { evidenceData } from "@/data/evidence.data";
 import { Evidence } from "@/types/evidence.types";
 import { EvidenceRow } from "./EvidenceRow";
 import { Transaction } from "@/types/transaction.types";
-import { theme } from "@/styles/theme"; // ✅ ADDED
+import { theme } from "@/styles/theme";
 
 interface Props {
   data: Evidence[];
@@ -19,7 +19,7 @@ export const EvidenceTable = ({ data }: Props) => {
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleOpen = (id: string) => {
+  const handleOpen = (id: number) => {
     const txn =
       transactionsData.find((t) => t.id === id) || null;
 
@@ -77,7 +77,6 @@ export const EvidenceTable = ({ data }: Props) => {
 
 /* 🎨 STYLES */
 
-/* ✅ FIXED WRAPPER (THEME-BASED) */
 const wrapper: React.CSSProperties = {
   overflowX: "auto",
   marginTop: 16,
@@ -91,13 +90,11 @@ const table: React.CSSProperties = {
   borderCollapse: "collapse",
 };
 
-/* ✅ FIXED THEAD (YOUR REQUEST) */
 const thead: React.CSSProperties = {
   background: theme.colors.appBackground,
-  borderBottom: `1px solid ${theme.colors.border}`, // 🔥 optional polish
+  borderBottom: `1px solid ${theme.colors.border}`,
 };
 
-/* ✅ FIXED TH */
 const th: React.CSSProperties = {
   textAlign: "left",
   padding: "12px 16px",

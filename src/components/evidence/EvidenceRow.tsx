@@ -1,11 +1,14 @@
+"use client";
+
 import { Evidence } from "@/types/evidence.types";
 import { Badge } from "@/components/ui/badge/badge";
 import { FileText, AlertTriangle } from "lucide-react";
 import { useState } from "react";
+import { theme } from "@/styles/theme"; // ✅ ADDED
 
 interface Props {
   evidence: Evidence;
-  onOpenTransaction: (id: string) => void;
+  onOpenTransaction: (id: number) => void;
 }
 
 export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
@@ -15,7 +18,10 @@ export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
     <tr
       style={{
         ...row,
-        background: hover ? "#f8fafc" : "transparent",
+        background: hover
+          ? theme.colors.appBackground
+          : "transparent",
+        cursor: "pointer",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -23,7 +29,7 @@ export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
       {/* 📄 DOCUMENT */}
       <td style={td}>
         <div style={docCell}>
-          <FileText size={16} color="#64748b" />
+          <FileText size={16} color={theme.colors.textMuted} />
           <span>{evidence.name}</span>
         </div>
       </td>
@@ -32,7 +38,9 @@ export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
       <td style={td}>{evidence.category}</td>
 
       {/* AMOUNT */}
-      <td style={td}>{evidence.amount ? `$${evidence.amount}` : "-"}</td>
+      <td style={td}>
+        {evidence.amount ? `$${evidence.amount}` : "-"}
+      </td>
 
       {/* DATE */}
       <td style={td}>{evidence.date}</td>
@@ -41,7 +49,10 @@ export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
       <td style={td}>
         <span
           style={link}
-          onClick={() => onOpenTransaction(evidence.transactionId)}
+          onClick={(e) => {
+            e.stopPropagation(); // 🔥 prevents row click conflict
+            onOpenTransaction(evidence.transactionId);
+          }}
         >
           {evidence.transactionId}
         </span>
@@ -75,14 +86,16 @@ export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
 };
 
 /* 🎨 STYLES */
+
 const row: React.CSSProperties = {
-  borderTop: "1px solid #f1f5f9",
-  transition: "background 0.2s ease",
+  transition: "all 0.2s ease",
 };
 
 const td: React.CSSProperties = {
-  padding: "14px 16px",
-  fontSize: 14,
+  padding: "12px 16px",
+  fontSize: theme.typography.sm,
+  color: theme.colors.textPrimary,
+  borderBottom: `1px solid ${theme.colors.border}`,
 };
 
 const docCell: React.CSSProperties = {
@@ -92,7 +105,7 @@ const docCell: React.CSSProperties = {
 };
 
 const link: React.CSSProperties = {
-  color: "#2563eb",
+  color: theme.colors.primary,
   cursor: "pointer",
   fontWeight: 500,
 };
@@ -101,7 +114,7 @@ const risk: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 6,
-  color: "#dc2626",
+  color: theme.colors.danger,
   fontSize: 12,
   fontWeight: 500,
 };

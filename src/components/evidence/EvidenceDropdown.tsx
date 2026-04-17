@@ -15,7 +15,10 @@ export const EvidenceDropdown = ({
 
   return (
     <div style={container}>
-      <button style={button} onClick={() => setOpen(!open)}>
+      <button
+        style={button}
+        onClick={() => setOpen(!open)}
+      >
         {label}
         <ChevronDown size={14} />
       </button>
@@ -49,6 +52,7 @@ const container: React.CSSProperties = {
   position: "relative",
 };
 
+/* ✅ THEME BUTTON */
 const button: React.CSSProperties = {
   padding: "6px 12px",
   border: `1px solid ${theme.colors.border}`,
@@ -61,6 +65,7 @@ const button: React.CSSProperties = {
   fontSize: theme.typography.sm,
 };
 
+/* ✅ THEME DROPDOWN */
 const dropdown: React.CSSProperties = {
   position: "absolute",
   top: "110%",
@@ -73,6 +78,7 @@ const dropdown: React.CSSProperties = {
   zIndex: 10,
 };
 
+/* ✅ ITEM */
 const item: React.CSSProperties = {
   padding: "8px 10px",
   fontSize: theme.typography.sm,

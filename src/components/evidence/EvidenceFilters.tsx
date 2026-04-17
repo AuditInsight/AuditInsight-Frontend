@@ -2,7 +2,7 @@
 
 import { EvidenceSearch } from "./EvidenceSearch";
 import { EvidenceDropdown } from "./EvidenceDropdown";
-import { theme } from "@/styles/theme"; // ✅ ADDED
+import { theme } from "@/styles/theme";
 
 export type EvidenceTab = "All" | "Complete" | "Pending" | "Red Flagged";
 
@@ -34,6 +34,7 @@ export const EvidenceFilters = ({
   ];
 
   return (
+    /* ✅ CARD WRAPPER */
     <div
       style={{
         background: theme.colors.Surface,
@@ -73,28 +74,40 @@ export const EvidenceFilters = ({
 
         {/* RIGHT: TABS */}
         <div style={{ display: "flex", gap: 8 }}>
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                setPage(1);
-              }}
-              style={{
-                ...pill,
-                background:
-                  activeTab === tab
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab;
+
+            return (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setPage(1);
+                }}
+                style={{
+                  ...pill,
+                  background: isActive
                     ? theme.colors.primary
                     : theme.colors.appBackground,
-                color:
-                  activeTab === tab
+                  color: isActive
                     ? "#fff"
                     : theme.colors.textSecondary,
-              }}
-            >
-              {tab}
-            </button>
-          ))}
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = isActive
+                    ? theme.colors.primary
+                    : theme.colors.appBackground)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = isActive
+                    ? theme.colors.primary
+                    : theme.colors.appBackground)
+                }
+              >
+                {tab}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -135,5 +148,5 @@ const pill: React.CSSProperties = {
 
 const countText: React.CSSProperties = {
   fontSize: 13,
-  color: theme.colors.textMuted, // ✅ themed
+  color: theme.colors.textMuted,
 };

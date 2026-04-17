@@ -1,22 +1,26 @@
+"use client";
+
 import { Search } from "lucide-react";
+import { theme } from "@/styles/theme"; // ✅ ADDED
 
 export const EvidenceSearch = ({
   value,
   onChange,
-  setPage, // ✅ NEW
+  setPage,
 }: {
   value: string;
   onChange: (v: string) => void;
-  setPage: (page: number) => void; // ✅ NEW
+  setPage: (page: number) => void;
 }) => {
   return (
     <div style={container}>
-      <Search size={14} color="#64748b" />
+      <Search size={14} color={theme.colors.textMuted} />
+
       <input
         value={value}
         onChange={(e) => {
-          onChange(e.target.value); // ✅ existing
-          setPage(1);               // 🔥 RESET PAGE
+          onChange(e.target.value);
+          setPage(1); // 🔥 RESET PAGE
         }}
         placeholder="Search documents..."
         style={input}
@@ -25,18 +29,22 @@ export const EvidenceSearch = ({
   );
 };
 
-const container = {
+/* 🎨 STYLES (THEME-BASED) */
+
+const container: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 6,
-  border: "1px solid #e5e7eb",
-  borderRadius: 6,
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
   padding: "6px 10px",
-  background: "#fff",
+  background: theme.colors.Surface,
 };
 
-const input = {
+const input: React.CSSProperties = {
   border: "none",
   outline: "none",
-  fontSize: 13,
+  fontSize: theme.typography.sm,
+  background: "transparent",
+  color: theme.colors.textPrimary,
 };

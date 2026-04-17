@@ -26,7 +26,7 @@ export const TransactionsStats = ({ transactions, evidences }: Props) => {
   ).length;
 
   const overdue = transactions.filter(
-    (t: Transaction) => t.status === "Overdue"
+    (t: Transaction) => t.status === "FLAGGED"
   ).length;
 
   return (

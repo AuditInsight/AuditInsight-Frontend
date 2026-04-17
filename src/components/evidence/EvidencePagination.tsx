@@ -1,3 +1,7 @@
+"use client";
+
+import { theme } from "@/styles/theme"; // ✅ ADDED
+
 interface EvidencePaginationProps {
   page: number;
   setPage: (page: number) => void;
@@ -21,9 +25,26 @@ export const EvidencePagination = ({
             style={{
               ...button,
               background:
-                page === currentPage ? "#0A4178" : "#fff",
-              color: page === currentPage ? "#fff" : "#000",
+                page === currentPage
+                  ? theme.colors.primary
+                  : theme.colors.Surface,
+              color:
+                page === currentPage
+                  ? "#fff"
+                  : theme.colors.textPrimary,
             }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background =
+                page === currentPage
+                  ? theme.colors.primary
+                  : theme.colors.appBackground)
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background =
+                page === currentPage
+                  ? theme.colors.primary
+                  : theme.colors.Surface)
+            }
           >
             {currentPage}
           </button>
@@ -33,7 +54,8 @@ export const EvidencePagination = ({
   );
 };
 
-/* 🎨 styles */
+/* 🎨 STYLES */
+
 const container: React.CSSProperties = {
   marginTop: 16,
   display: "flex",
@@ -42,7 +64,9 @@ const container: React.CSSProperties = {
 
 const button: React.CSSProperties = {
   padding: "6px 10px",
-  borderRadius: 6,
-  border: "1px solid #e5e7eb",
+  borderRadius: theme.radius.sm,
+  border: `1px solid ${theme.colors.border}`,
   cursor: "pointer",
+  background: theme.colors.Surface,
+  fontSize: theme.typography.sm,
 };

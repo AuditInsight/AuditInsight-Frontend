@@ -4,15 +4,14 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
 import Link from "next/dist/client/link";
-import { useRouter } from "next/navigation"; // ✅ ADD THIS
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const router = useRouter(); // ✅ ADD THIS
+  const router = useRouter();
 
-  // ✅ ADD THIS FUNCTION
   const handleLogin = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/auth/login", {
@@ -39,11 +38,9 @@ export default function LoginPage() {
         return;
       }
 
-      // ✅ Save token
       localStorage.setItem("token", data.token);
 
-      // 🚀 NO ALERT → instant redirect
-      router.replace("/dashboard");  
+      router.replace("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
       alert("Something went wrong");
@@ -60,7 +57,6 @@ export default function LoginPage() {
         justifyContent: "center",
       }}
     >
-      {/* MAIN CARD */}
       <div
         style={{
           width: "460px",
@@ -71,7 +67,6 @@ export default function LoginPage() {
           border: `1px solid ${Colors.border}`,
         }}
       >
-        {/* HEADER */}
         <div
           style={{
             background: Colors.gradientHeader,
@@ -90,9 +85,7 @@ export default function LoginPage() {
           </h2>
         </div>
 
-        {/* BODY */}
         <div style={{ padding: "34px" }}>
-          {/* TITLE */}
           <h3
             style={{
               textAlign: "center",
@@ -105,7 +98,6 @@ export default function LoginPage() {
             Login
           </h3>
 
-          {/* FORM BOX */}
           <div
             style={{
               background: Colors.appBackground,
@@ -114,7 +106,6 @@ export default function LoginPage() {
               border: `1px solid ${Colors.divider}`,
             }}
           >
-            {/* EMAIL */}
             <Input
               label="Email Address"
               placeholder="Enter your email"
@@ -123,7 +114,6 @@ export default function LoginPage() {
               type="email"
             />
 
-            {/* PASSWORD */}
             <div style={{ marginTop: "18px" }}>
               <Input
                 label="Password"
@@ -134,7 +124,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* FORGOT */}
             <Link href="/forgot-password">
               <div
                 style={{
@@ -149,10 +138,11 @@ export default function LoginPage() {
               </div>
             </Link>
 
-            {/* BUTTON */}
-            <div style={{ marginTop: "22px" }}>
+            {/* LOGIN + GOOGLE */}
+            <div style={{ marginTop: "22px", display: "flex", flexDirection: "column", gap: "12px" }}>
               <button
-                onClick={handleLogin} // ✅ ADD THIS ONLY
+                type="button"
+                onClick={handleLogin}
                 style={{
                   width: "100%",
                   padding: "13px",
@@ -173,10 +163,28 @@ export default function LoginPage() {
               >
                 Login
               </button>
+
+              <a
+                href="http://localhost:8080/oauth2/authorization/google"
+                style={{
+                  width: "100%",
+                  padding: "13px",
+                  borderRadius: "8px",
+                  border: `1px solid ${Colors.border}`,
+                  background: Colors.Surface,
+                  color: Colors.textPrimary,
+                  fontWeight: 600,
+                  fontSize: "15px",
+                  textAlign: "center",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Continue with Google
+              </a>
             </div>
           </div>
 
-          {/* SIGN UP */}
           <p
             style={{
               textAlign: "center",

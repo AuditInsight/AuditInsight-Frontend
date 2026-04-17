@@ -77,7 +77,7 @@ export const TransactionsTable = ({ data, onRowClick }: Props) => {
                 {/* Source */}
                 <td>
                   <span style={sourceBadge}>
-                    {t.source === "Bank" ? "🏦" : "📊"} {t.source}
+                    {t.source === "BANK" ? "🏦" : "📊"} {t.source}
                   </span>
                 </td>
 

@@ -1,5 +1,5 @@
 export interface Evidence {
-  id: string;
+  id: number;
   name: string;
   category: "Invoice" | "Contract" | "Receipt" | "Approval" | "Other";
 
@@ -13,7 +13,7 @@ export interface Evidence {
   uploadedAt: string;
 
   // 🔗 RELATION
-  transactionId: string;
+  transactionId: number;
 
   // 🔐 AUDIT STATE
   status: "Verified" | "Pending" | "Missing";

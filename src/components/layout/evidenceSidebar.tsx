@@ -74,7 +74,6 @@ export const Sidebar = ({ onSelectItem }: Props) => {
               }
             >
               {section.title}
-
               <span style={{ fontSize: 12 }}>
                 {isOpen ? "▾" : "▸"}
               </span>
@@ -127,7 +126,7 @@ export const Sidebar = ({ onSelectItem }: Props) => {
   );
 };
 
-/* 🎨 THEME-ALIGNED STYLES */
+/* 🎨 FINAL THEME-ALIGNED STYLES */
 
 const container: React.CSSProperties = {
   width: 260,
@@ -152,7 +151,7 @@ const itemStyle: React.CSSProperties = {
   padding: "6px 12px",
   marginBottom: 4,
   borderRadius: 6,
-  fontSize: 13,
+  fontSize: theme.typography.sm,
   cursor: "pointer",
   transition: "all 0.2s ease",
 };

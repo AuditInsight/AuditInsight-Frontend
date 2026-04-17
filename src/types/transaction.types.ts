@@ -1,23 +1,27 @@
 export type TransactionStatus =
-  | "New"
-  | "Reviewed"
-  | "Flagged"
-  | "Overdue";
+  | "COMPLETED"
+  | "PENDING"
+  | "FLAGGED";
+
+export type TransactionSource =
+  | "MOBILE_MONEY"
+  | "BANK"
+  | "CASH";
+
+export type TransactionType =
+  | "EXPENSE"
+  | "INCOME";
 
 export interface Transaction {
-  id: string;              // TXN10651
+  id: number;
+
   date: string;
   amount: number;
   counterparty: string;
-  source: "Bank" | "Excel";
-  type: string;
 
-  // 🔥 CORE AUDIT FIELDS
-  evidenceCoverage: number;  // 0–100%
-  riskScore: number;         // 0–100%
-
+  source: TransactionSource;
+  type: TransactionType;
   status: TransactionStatus;
 
-  // 🔗 RELATION
-  evidenceIds: string[];     // links to documents
+  riskScore: number;
 }
