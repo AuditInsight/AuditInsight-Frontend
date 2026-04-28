@@ -1,23 +1,21 @@
 export interface Evidence {
   id: number;
   name: string;
-  category: "Invoice" | "Contract" | "Receipt" | "Approval" | "Other";
+  category: string;
+  subCategory: string;
 
-  type: "Document" | "Image" | "Email";
+  type: "Document" | "Image" | "PDF";
   url: string;
 
-  amount?: number;
   date: string;
-
   uploadedBy: string;
   uploadedAt: string;
 
-  // 🔗 RELATION
-  transactionId: number;
+  transactionId?: number;
 
-  // 🔐 AUDIT STATE
   status: "Verified" | "Pending" | "Missing";
 
-  // 🔁 VERSIONING
-  versionStatus?: "active" | "superseded";
+  notes?: string;
+
+  amount?: number; // ✅ ADD THIS
 }

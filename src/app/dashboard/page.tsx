@@ -24,11 +24,7 @@ export default function DashboardPage() {
         <EvidenceChart />
       </div>
 
-      {/* ⭐ SECOND GRID → BIG TABLE + ALERT PANEL */}
-      <div style={dashboardLayoutStyles.secondaryGrid}>
-        <HighRiskTransactions />
-        <ComplianceAlerts />
-      </div>
+      
     </div>
   );
 }

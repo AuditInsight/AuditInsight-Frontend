@@ -1,35 +1,35 @@
 export const Colors = {
+  // backgrounds
+  appBackground: "#F8FAFC",
+  Surface: "#FFFFFF",
+  surfaceElevated: "#FCFDFE",
 
-    // Background;
-    appBackground: '#F3F5FA',
-    Surface: '#FFFFFF',
+  // borders
+  border: "rgba(15, 23, 42, 0.08)",
+  divider: "rgba(15, 23, 42, 0.05)",
 
-    // Borders
-    border: '#E4E7EE',
-    divider: '#EDF0F6',
+  // text
+  textPrimary: "#0F172A",
+  textSecondary: "#475569",
+  textMuted: "#94A3B8",
 
-    // Text
-    textPrimary: '#1B2430',
-    textSecondary: '#6B7280',
-    textMuted: '#9AA3B2',
+  // brand
+  primary: "rgba(10, 65, 120, 0.92)",
+  primaryHover: "rgba(10, 65, 120, 0.92)",
+  primarySoft: "#DBEAFE",
 
-    // Brandactions
-    primary: '#2563EB',
-    primaryHover: '#1D4ED8',
+  // header
+  primaryDark: "#0F3D75",
+  primaryDarker: "#0B315E",
+  gradientHeader: "linear-gradient(135deg,#0F3D75,#0B315E)",
 
-    // for header + auth screens
-    primaryDark: '#0A4178',
-    primaryDarker: '#0A4174',
-    gradientHeader: 'linear-gradient(90deg,#0A4178,#0A4174)',
+  // status
+  success: "#16A34A",
+  successBg: "#DCFCE7",
 
+  warning: "#D97706",
+  warningBg: "#FEF3C7",
 
-    // Status colors
-    success: '#2E7D32',
-    successBg: '#EAF5EE',
-
-    warning: '#F59E0B',
-    warningBg: '#FEF3C7',
-
-    danger: '#DC2626',
-    dangerBg: '#FEE2E2',
+  danger: "#DC2626",
+  dangerBg: "#FEE2E2",
 };

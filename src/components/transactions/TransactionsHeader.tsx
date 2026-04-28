@@ -59,7 +59,7 @@ const NavItem = ({
 const container: React.CSSProperties = {
   width: "100%",
   height: 60,
-  background: "#0A4178",
+  background: "rgba(10, 65, 120, 0.92)",
   color: "#fff",
   display: "flex",
   justifyContent: "space-between",
@@ -89,7 +89,7 @@ const avatar: React.CSSProperties = {
   height: 30,
   borderRadius: "50%",
   background: "#fff",
-  color: "#0A4178",
+  color: "rgba(10, 65, 120, 0.92)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
