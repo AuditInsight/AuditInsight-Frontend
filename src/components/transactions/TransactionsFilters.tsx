@@ -51,6 +51,6 @@ const btn: React.CSSProperties = {
 
 const primary: React.CSSProperties = {
   ...btn,
-  background: "#0A4178",
+  background: "rgba(10, 65, 120, 0.92)",
   color: "#fff"
 };

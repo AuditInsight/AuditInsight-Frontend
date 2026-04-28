@@ -9,22 +9,96 @@ import {
 } from "@/components/evidence/EvidenceFilters";
 import { EvidenceTable } from "@/components/evidence/EvidenceTable";
 import { EvidencePagination } from "@/components/evidence/EvidencePagination";
+import { EvidenceUploadModal } from "@/components/evidence/EvidenceUploadModal"; // ✅ ADD THIS
 import { evidenceData } from "@/data/evidence.data";
 import { theme } from "@/styles/theme";
+import { Evidence } from "@/types/evidence.types";
+
+/* ✅ SIDEBAR SECTIONS */
+const sections = [
+  {
+    title: "Financial Reporting",
+    items: [
+      "Financial statements",
+      "Trial balance",
+      "General ledger extracts",
+    ],
+  },
+  {
+    title: "Banking & Cash",
+    items: [
+      "Bank statements",
+      "Bank reconciliations",
+      "Payment confirmations",
+    ],
+  },
+  {
+    title: "Sales Evidence",
+    items: ["Sales invoices", "Receipts", "Credit notes"],
+  },
+  {
+    title: "Payroll & HR",
+    items: [
+      "Payroll registers",
+      "Employment contracts",
+      "Leave records",
+      "Staff ID documents",
+      "Salary change approvals",
+      "Timesheets",
+      "Pension contribution records",
+    ],
+  },
+  {
+    title: "Tax & Compliance",
+    items: [
+      "VAT returns",
+      "PAYE filings",
+      "Corporate tax returns",
+      "Tax clearance certificates",
+      "RRA correspondence",
+      "Withholding tax records",
+      "Compliance licenses",
+    ],
+  },
+  {
+    title: "Inventory & Assets",
+    items: [
+      "Stock count sheets",
+      "Asset register",
+      "Purchase records",
+      "Disposal approvals",
+      "Depreciation schedules",
+      "Warehouse reports",
+      "Transfer forms",
+    ],
+  },
+  {
+    title: "Other Supporting Docs",
+    items: ["Emails", "Screenshots", "Supporting schedules"],
+  },
+];
 
 export default function EvidencePage() {
-  // 🔥 GLOBAL STATE
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<EvidenceTab>("All");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
+  /* ✅ LIVE STATE */
+  const [documents, setDocuments] = useState<Evidence[]>(evidenceData);
+  const [uploadOpen, setUploadOpen] = useState(false);
+
   const pageSize = 25;
 
-  // 🔥 FILTERING LOGIC
+  /* ✅ ADD EVIDENCE HANDLER */
+  const handleAddEvidence = (newEvidence: Evidence) => {
+    setDocuments((prev) => [newEvidence, ...prev]);
+  };
+
+  /* ✅ FILTERING */
   const filteredData = useMemo(() => {
-    return evidenceData.filter((e) => {
-      if (activeCategory && e.category !== activeCategory) return false;
+    return documents.filter((e) => {
+      if (activeCategory && e.subCategory !== activeCategory) return false;
 
       if (activeTab === "Pending" && e.status !== "Pending") return false;
       if (activeTab === "Complete" && e.status !== "Verified") return false;
@@ -33,14 +107,15 @@ export default function EvidencePage() {
       if (
         search &&
         !e.name.toLowerCase().includes(search.toLowerCase())
-      )
+      ) {
         return false;
+      }
 
       return true;
     });
-  }, [activeCategory, activeTab, search]);
+  }, [documents, activeCategory, activeTab, search]);
 
-  // 🔥 PAGINATION
+  /* ✅ PAGINATION */
   const totalPages = Math.ceil(filteredData.length / pageSize);
 
   const paginatedData = filteredData.slice(
@@ -49,7 +124,6 @@ export default function EvidencePage() {
   );
 
   return (
-    /* ✅ GLOBAL APP WRAPPER */
     <div
       style={{
         display: "flex",
@@ -59,7 +133,11 @@ export default function EvidencePage() {
       }}
     >
       {/* 🔹 SIDEBAR */}
-      <Sidebar onSelectItem={setActiveCategory} />
+      <Sidebar
+        sections={sections}
+        evidenceData={documents}
+        onSelectItem={setActiveCategory}
+      />
 
       {/* 🔹 MAIN CONTENT */}
       <div
@@ -71,8 +149,10 @@ export default function EvidencePage() {
           gap: theme.spacing.md,
         }}
       >
-        <EvidenceHeader />
+        {/* HEADER */}
+        <EvidenceHeader onAdd={() => setUploadOpen(true)} />
 
+        {/* FILTERS */}
         <EvidenceFilters
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -82,14 +162,24 @@ export default function EvidencePage() {
           setPage={setPage}
         />
 
+        {/* TABLE */}
         <EvidenceTable data={paginatedData} />
 
+        {/* PAGINATION */}
         <EvidencePagination
           page={page}
           setPage={setPage}
           totalPages={totalPages}
         />
       </div>
+
+      {/* ✅ THIS IS WHERE THE MODAL GOES (IMPORTANT) */}
+      <EvidenceUploadModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onSave={handleAddEvidence}
+        sections={sections}
+      />
     </div>
   );
 }

@@ -1,20 +1,25 @@
-"use client";
+"use client"
 
-import { PageToolbarProps } from "./pageToolbar.types";
-import { pageToolbarStyles } from "./pageToolbar.styles";
+import {
+  Calendar,
+  Search,
+  RotateCcw,
+  Download,
+  Plus,
+} from "lucide-react"
+
+import { PageToolbarProps } from "./pageToolbar.types"
+import { pageToolbarStyles } from "./pageToolbar.styles"
 
 export default function PageToolbar({
   title,
-  filters = [],
   showSearch = false,
   primaryActionLabel,
-
   search,
   setSearch,
   onReset,
   onExport,
   onAdd,
-
   startDate,
   endDate,
   setStartDate,
@@ -22,65 +27,73 @@ export default function PageToolbar({
 }: PageToolbarProps) {
   return (
     <div style={pageToolbarStyles.container}>
-      
-      {/* 🔹 TITLE */}
       <div style={pageToolbarStyles.topRow}>
         <h1 style={pageToolbarStyles.title}>{title}</h1>
       </div>
 
-      {/* 🔹 CONTROLS */}
       <div style={pageToolbarStyles.bottomRow}>
-        
-        {/* LEFT */}
         <div style={pageToolbarStyles.filters}>
-          
-          {/* 📅 DATE FILTER */}
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate?.(e.target.value)}
-            style={pageToolbarStyles.search}
-          />
-
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate?.(e.target.value)}
-            style={pageToolbarStyles.search}
-          />
-
-          {/* 🔍 SEARCH */}
-          {showSearch && (
+          <div style={pageToolbarStyles.inputWrapper}>
+            <Calendar size={16} />
             <input
-              placeholder="🔍 Search transactions..."
-              value={search}
-              onChange={(e) => setSearch?.(e.target.value)}
-              style={pageToolbarStyles.search}
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate?.(e.target.value)}
+              style={pageToolbarStyles.input}
             />
+          </div>
+
+          <div style={pageToolbarStyles.inputWrapper}>
+            <Calendar size={16} />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate?.(e.target.value)}
+              style={pageToolbarStyles.input}
+            />
+          </div>
+
+          {showSearch && (
+            <div style={pageToolbarStyles.inputWrapper}>
+              <Search size={16} />
+              <input
+                placeholder="Search transactions..."
+                value={search}
+                onChange={(e) => setSearch?.(e.target.value)}
+                style={pageToolbarStyles.input}
+              />
+            </div>
           )}
 
-          {/* 🔄 RESET */}
-          <button onClick={onReset} style={pageToolbarStyles.button}>
-            🔄 Reset
+          <button
+            onClick={onReset}
+            style={pageToolbarStyles.button}
+          >
+            <RotateCcw size={16} />
+            Reset
           </button>
         </div>
 
-        {/* RIGHT */}
         <div style={pageToolbarStyles.actions}>
-          
-          {/* 📤 EXPORT */}
-          <button onClick={onExport} style={pageToolbarStyles.exportBtn}>
-            📤 Export
+          <button
+            onClick={onExport}
+            style={pageToolbarStyles.exportBtn}
+          >
+            <Download size={16} />
+            Export
           </button>
 
-          {/* ➕ ADD */}
           {primaryActionLabel && (
-            <button onClick={onAdd} style={pageToolbarStyles.primaryBtn}>
-              + {primaryActionLabel}
+            <button
+              onClick={onAdd}
+              style={pageToolbarStyles.primaryBtn}
+            >
+              <Plus size={16} />
+              {primaryActionLabel}
             </button>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }

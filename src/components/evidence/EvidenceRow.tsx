@@ -50,9 +50,12 @@ export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
         <span
           style={link}
           onClick={(e) => {
-            e.stopPropagation(); // 🔥 prevents row click conflict
-            onOpenTransaction(evidence.transactionId);
-          }}
+  e.stopPropagation();
+
+  if (!evidence.transactionId) return;
+
+  onOpenTransaction(evidence.transactionId);
+}}
         >
           {evidence.transactionId}
         </span>

@@ -2,15 +2,29 @@
 
 import { theme } from "@/styles/theme";
 
-export const EvidenceHeader = () => {
+interface EvidenceHeaderProps {
+  onAdd: () => void;
+}
+
+export const EvidenceHeader = ({
+  onAdd,
+}: EvidenceHeaderProps) => {
   return (
     <div style={wrapper}>
       <div style={header}>
         <h2 style={title}>Document Control Center</h2>
 
         <div style={actions}>
-          <button style={secondaryBtn}>📤 Export</button>
-          <button style={primaryBtn}>+ Add Evidence</button>
+          <button style={secondaryBtn}>
+            📤 Export
+          </button>
+
+          <button
+            style={primaryBtn}
+            onClick={onAdd}
+          >
+            + Add Evidence
+          </button>
         </div>
       </div>
     </div>
@@ -19,7 +33,6 @@ export const EvidenceHeader = () => {
 
 /* 🎨 STYLES */
 
-/* ✅ WRAPPER (CARD STYLE) */
 const wrapper: React.CSSProperties = {
   overflowX: "auto",
   marginTop: 16,
@@ -30,33 +43,30 @@ const wrapper: React.CSSProperties = {
   padding: theme.spacing.md,
 };
 
-/* ✅ HEADER LAYOUT */
 const header: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
 };
 
-/* ✅ TITLE (USING YOUR SIMPLE STYLE BUT THEMED) */
 const title: React.CSSProperties = {
-  fontSize: 22, // 👈 kept your original size
+  fontSize: 22,
   fontWeight: 600,
   color: theme.colors.textPrimary,
 };
 
-/* ✅ ACTIONS */
 const actions: React.CSSProperties = {
   display: "flex",
-  gap: 10, // 👈 kept your original spacing
+  gap: 10,
 };
 
-/* ✅ BUTTONS */
 const secondaryBtn: React.CSSProperties = {
   padding: "8px 14px",
   border: `1px solid ${theme.colors.border}`,
   borderRadius: theme.radius.sm,
   background: theme.colors.Surface,
   cursor: "pointer",
+  color: theme.colors.textPrimary,
 };
 
 const primaryBtn: React.CSSProperties = {
@@ -66,4 +76,5 @@ const primaryBtn: React.CSSProperties = {
   color: "#fff",
   border: "none",
   cursor: "pointer",
+  fontWeight: 600,
 };

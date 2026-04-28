@@ -1,29 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TransactionsStats } from "@/components/transactions/TransactionsStats";
 import { TransactionsTable } from "@/components/transactions/TransactionsTable";
 import { TransactionsPagination } from "@/components/transactions/TransactionsPagination";
 import { TransactionDetailsModal } from "@/components/transactions/modals/TransactionDetailsModal";
 import { AddTransactionModal } from "@/components/transactions/modals/AddTransactionModal";
-
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
-import { theme } from "@/styles/theme";
 
-import { transactionsData } from "@/data/transactions.data";
+import { theme } from "@/styles/theme";
 import { evidenceData } from "@/data/evidence.data";
 import { Transaction } from "@/types/transaction.types";
-
-import { createTransaction } from "@/utils/api";
+import { createTransaction, getTransactions } from "@/utils/api";
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(transactionsData);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-
   const [page, setPage] = useState(1);
 
   const [selectedTransaction, setSelectedTransaction] =
@@ -34,14 +29,36 @@ export default function TransactionsPage() {
 
   const pageSize = 25;
 
-  /* 🔍 FILTER */
+  // ✅ Load transactions from backend
+  const loadTransactions = async () => {
+    try {
+      const res = await getTransactions();
+      setTransactions(res.data);
+    } catch (error) {
+      console.error("Failed to load transactions:", error);
+    }
+  };
+
+  // ✅ Fetch transactions when page loads
+  useEffect(() => {
+  const fetchTransactions = async () => {
+    try {
+      const res = await getTransactions();
+      setTransactions(res.data);
+    } catch (error) {
+      console.error("Failed to load transactions:", error);
+    }
+  };
+
+  fetchTransactions();
+}, []);
+
   const filteredData = useMemo(() => {
     return transactions.filter((t) => {
       if (
         search &&
         !t.counterparty.toLowerCase().includes(search.toLowerCase())
-      )
-        return false;
+      ) return false;
 
       if (startDate && new Date(t.date) < new Date(startDate)) return false;
       if (endDate && new Date(t.date) > new Date(endDate)) return false;
@@ -54,10 +71,9 @@ export default function TransactionsPage() {
 
   const paginatedData = filteredData.slice(
     (page - 1) * pageSize,
-    page * pageSize,
+    page * pageSize
   );
 
-  /* 🔄 RESET */
   const handleReset = () => {
     setSearch("");
     setStartDate("");
@@ -65,10 +81,9 @@ export default function TransactionsPage() {
     setPage(1);
   };
 
-  /* 📤 EXPORT */
   const handleExport = () => {
     const csv = filteredData.map(
-      (t) => `${t.id},${t.date},${t.amount},${t.counterparty},${t.status}`,
+      (t) => `${t.id},${t.date},${t.amount},${t.counterparty},${t.status}`
     );
 
     const blob = new Blob([csv.join("\n")], {
@@ -76,39 +91,22 @@ export default function TransactionsPage() {
     });
 
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
     a.href = url;
     a.download = "transactions.csv";
     a.click();
   };
 
-  const handleAdd = () => {
-    setIsAddModalOpen(true);
-  };
-
-  /* 🚀 CREATE TRANSACTION (FIXED) */
+  // ✅ Create transaction then reload backend data
   const handleCreateTransaction = async (data: Omit<Transaction, "id">) => {
-  try {
-    const res = await createTransaction(data);
-
-    const newTransaction: Transaction = {
-      id: res.data.id ?? Date.now(),
-      date: res.data.date,
-      amount: res.data.amount,
-      counterparty: res.data.counterparty,
-      type: res.data.type,
-      source: res.data.source,
-      status: res.data.status,
-      riskScore: res.data.riskScore,
-    };
-
-    setTransactions((prev) => [newTransaction, ...prev]);
-    setIsAddModalOpen(false);
-  } catch (error) {
-    console.error("Failed to create transaction:", error);
-  }
-};
+    try {
+      await createTransaction(data);
+      await loadTransactions();
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create transaction:", error);
+    }
+  };
 
   const handleOpen = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
@@ -116,59 +114,48 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: theme.spacing.lg,
-        background: theme.colors.appBackground,
-        padding: theme.spacing.lg,
-        minHeight: "100vh",
-        fontFamily: theme.typography.fontFamily,
-      }}
-    >
-      {/* STATS */}
-      <TransactionsStats transactions={transactions} evidences={evidenceData} />
-
-      {/* TOOLBAR */}
-      <PageToolbar
-        title="Transactions"
-        showSearch
-        primaryActionLabel="Add Transaction"
-        search={search}
-        setSearch={setSearch}
-        startDate={startDate}
-        endDate={endDate}
-        setStartDate={setStartDate}
-        setEndDate={setEndDate}
-        onReset={handleReset}
-        onExport={handleExport}
-        onAdd={handleAdd}
+    <div style={pageStyles}>
+      <TransactionsStats
+        transactions={transactions}
+        evidences={evidenceData}
       />
 
-      {/* TABLE */}
-      <TransactionsTable data={paginatedData} onRowClick={handleOpen} />
+      <section style={section}>
+        <PageToolbar
+          title="Transactions"
+          showSearch
+          primaryActionLabel="Add Transaction"
+          search={search}
+          setSearch={setSearch}
+          startDate={startDate}
+          endDate={endDate}
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
+          onReset={handleReset}
+          onExport={handleExport}
+          onAdd={() => setIsAddModalOpen(true)}
+        />
 
-      {/* PAGINATION */}
-      <TransactionsPagination
-        page={page}
-        setPage={setPage}
-        totalPages={totalPages}
-      />
+        <TransactionsTable
+          data={paginatedData}
+          onRowClick={handleOpen}
+        />
 
-      {/* FOOTER */}
-      <div
-        style={{
-          fontSize: theme.typography.sm,
-          color: theme.colors.textMuted,
-        }}
-      >
-        Showing {(page - 1) * pageSize + 1}–
-        {Math.min(page * pageSize, filteredData.length)} of{" "}
-        {filteredData.length.toLocaleString()} transactions
-      </div>
+        <div style={footer}>
+          <span>
+            Showing {filteredData.length === 0 ? 0 : (page - 1) * pageSize + 1}–
+            {Math.min(page * pageSize, filteredData.length)} of{" "}
+            {filteredData.length.toLocaleString()} transactions
+          </span>
 
-      {/* MODALS */}
+          <TransactionsPagination
+            page={page}
+            setPage={setPage}
+            totalPages={totalPages}
+          />
+        </div>
+      </section>
+
       <TransactionDetailsModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
@@ -176,7 +163,7 @@ export default function TransactionsPage() {
         evidences={
           selectedTransaction
             ? evidenceData.filter(
-                (e) => e.transactionId === selectedTransaction.id,
+                (e) => e.transactionId === selectedTransaction.id
               )
             : []
         }
@@ -190,3 +177,32 @@ export default function TransactionsPage() {
     </div>
   );
 }
+
+/* styles */
+
+const pageStyles: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing.xl,
+  background: theme.colors.appBackground,
+  minHeight: "100vh",
+  fontFamily: theme.typography.fontFamily,
+};
+
+const section: React.CSSProperties = {
+  background: "rgba(255,255,255,0.78)",
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.xl,
+  padding: theme.spacing.lg,
+  boxShadow: theme.shadows.md,
+  ...theme.effects.glass,
+};
+
+const footer: React.CSSProperties = {
+  marginTop: theme.spacing.md,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  color: theme.colors.textMuted,
+  fontSize: theme.typography.sm,
+};

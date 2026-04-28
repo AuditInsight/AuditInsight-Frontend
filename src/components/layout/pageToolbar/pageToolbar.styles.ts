@@ -16,7 +16,7 @@ export const pageToolbarStyles = {
 
   title: {
     fontSize: theme.typography.heading,
-    fontWeight: 600,
+    fontWeight: 700,
     color: theme.colors.textPrimary,
   },
 
@@ -24,30 +24,35 @@ export const pageToolbarStyles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: theme.spacing.md,
+    flexWrap: "wrap" as const,
   },
 
   filters: {
     display: "flex",
     alignItems: "center",
     gap: theme.spacing.sm,
+    flexWrap: "wrap" as const,
   },
 
-  filterButton: {
-    padding: "6px 12px",
+  inputWrapper: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "8px 12px",
     borderRadius: theme.radius.md,
     border: `1px solid ${theme.colors.border}`,
     background: theme.colors.Surface,
-    fontSize: theme.typography.sm,
-    cursor: "pointer",
+    boxShadow: theme.shadows.sm,
   },
 
-  search: {
-    padding: "6px 12px",
-    borderRadius: theme.radius.md,
-    border: `1px solid ${theme.colors.border}`,
+  input: {
+    border: "none",
+    outline: "none",
+    background: "transparent",
     fontSize: theme.typography.sm,
-    width: 200,
-    marginLeft: theme.spacing.md,
+    color: theme.colors.textPrimary,
+    minWidth: "140px",
   },
 
   actions: {
@@ -57,30 +62,43 @@ export const pageToolbarStyles = {
   },
 
   exportBtn: {
-    padding: "6px 14px",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "8px 14px",
     borderRadius: theme.radius.md,
     border: `1px solid ${theme.colors.border}`,
     background: theme.colors.Surface,
     cursor: "pointer",
     fontSize: theme.typography.sm,
+    transition: "all 0.2s ease",
   },
 
   primaryBtn: {
-    padding: "6px 14px",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "8px 14px",
     borderRadius: theme.radius.md,
     border: "none",
     background: theme.colors.primary,
     color: "#fff",
     cursor: "pointer",
     fontSize: theme.typography.sm,
+    fontWeight: 600,
+    transition: "all 0.2s ease",
   },
 
   button: {
-  padding: "6px 12px",
-  borderRadius: theme.radius.md,
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.Surface,
-  fontSize: theme.typography.sm,
-  cursor: "pointer",
-},
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "8px 12px",
+    borderRadius: theme.radius.md,
+    border: `1px solid ${theme.colors.border}`,
+    background: theme.colors.Surface,
+    fontSize: theme.typography.sm,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
 }

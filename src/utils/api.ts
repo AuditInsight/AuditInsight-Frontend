@@ -1,4 +1,5 @@
 import axios from "axios";
+import { Transaction } from "@/types/transaction.types";
 
 /* =========================
    Axios instance
@@ -28,16 +29,7 @@ API.interceptors.request.use((config) => {
 /* =========================
    Types
 ========================= */
-export interface Transaction {
-  id?: number;
-  date: string;
-  amount: number;
-  counterparty: string;
-  type: "INCOME" | "EXPENSE";
-  source: "BANK" | "MOBILE_MONEY" | "CASH";
-  status: "PENDING" | "COMPLETED" | "FLAGGED";
-  riskScore: number;
-}
+
 
 /* =========================
    API calls
@@ -48,7 +40,6 @@ export const getTransactions = () =>
 export const getTransactionById = (id: number) =>
   API.get<Transaction>(`/transactions/${id}`);
 
-export const createTransaction = (data: Transaction) =>
+export const createTransaction = (data: Omit<Transaction, "id">) =>
   API.post<Transaction>("/transactions", data);
-
 export default API;

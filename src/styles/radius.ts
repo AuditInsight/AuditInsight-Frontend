@@ -1,6 +1,6 @@
 export const radius = {
-    sm: '6px',
-    md: '10px',
-    lg: '14px',
-    xl: '18px',
+  sm: "8px",
+  md: "12px",
+  lg: "18px",
+  xl: "24px",
 };
