@@ -1,6 +1,6 @@
-import { theme } from "@/styles/theme"
+import { theme } from "@/styles/theme";
 
-export const statsStyles = {
+const statsStyles = {
   container: {
     display: "grid",
     gridTemplateColumns: "repeat(4, 1fr)",
@@ -42,4 +42,6 @@ export const statsStyles = {
     borderRadius: theme.radius.md,
     background: theme.colors.appBackground,
   },
-}
+};
+
+export default statsStyles;

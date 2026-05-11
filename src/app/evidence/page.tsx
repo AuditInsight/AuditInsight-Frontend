@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sidebar } from "@/components/layout/evidenceSidebar";
 import { EvidenceHeader } from "@/components/evidence/EvidenceHeader";
 import {
@@ -9,32 +9,45 @@ import {
 } from "@/components/evidence/EvidenceFilters";
 import { EvidenceTable } from "@/components/evidence/EvidenceTable";
 import { EvidencePagination } from "@/components/evidence/EvidencePagination";
-import { EvidenceUploadModal } from "@/components/evidence/EvidenceUploadModal"; // ✅ ADD THIS
-import { evidenceData } from "@/data/evidence.data";
+import { EvidenceUploadModal } from "@/components/evidence/EvidenceUploadModal";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
+import { getEvidence, createEvidence } from "@/utils/api";
 
-/* ✅ SIDEBAR SECTIONS */
-const sections = [
+/* =========================
+   TYPES
+========================= */
+type EvidenceSection = {
+  title: string;
+  items: string[];
+};
+
+/* =========================
+   SIDEBAR SECTIONS
+========================= */
+const sections: EvidenceSection[] = [
   {
     title: "Financial Reporting",
-    items: [
-      "Financial statements",
-      "Trial balance",
-      "General ledger extracts",
-    ],
+    items: ["Financial statements", "Trial balance", "General ledger extracts"],
   },
   {
     title: "Banking & Cash",
-    items: [
-      "Bank statements",
-      "Bank reconciliations",
-      "Payment confirmations",
-    ],
+    items: ["Bank statements", "Bank reconciliations", "Payment confirmations"],
   },
   {
     title: "Sales Evidence",
     items: ["Sales invoices", "Receipts", "Credit notes"],
+  },
+  {
+    title: "Purchases & Procurement",
+    items: [
+      "Purchase orders",
+      "Supplier invoices",
+      "Goods received notes",
+      "Supplier contracts",
+      "Tender documents",
+      "Approval memos",
+    ],
   },
   {
     title: "Payroll & HR",
@@ -73,8 +86,45 @@ const sections = [
     ],
   },
   {
+    title: "Policies & Procedures",
+    items: [
+      "Accounting policies",
+      "Procurement policies",
+      "HR policies",
+      "Internal control manuals",
+      "Approval workflows",
+      "Risk management policies",
+    ],
+  },
+  {
+    title: "Legal & Governance",
+    items: [
+      "Board meeting minutes",
+      "Shareholder resolutions",
+      "Company registration documents",
+      "Litigation records",
+      "Contracts & agreements",
+      "Regulatory correspondence",
+    ],
+  },
+  {
+  title: "IT & Systems Evidence",
+  items: [
+    "System access logs",
+    "User permissions reports",
+    "Audit trail exports",
+    "Backup reports",
+    "Security incident logs",
+    "ERP transaction logs",
+  ],
+},
+  {
     title: "Other Supporting Docs",
-    items: ["Emails", "Screenshots", "Supporting schedules"],
+    items: [
+      "Emails",
+      "Documentation", 
+      "Screenshots", 
+      "Supporting schedules"],
   },
 ];
 
@@ -84,30 +134,71 @@ export default function EvidencePage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  /* ✅ LIVE STATE */
-  const [documents, setDocuments] = useState<Evidence[]>(evidenceData);
+  const [documents, setDocuments] = useState<Evidence[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
 
   const pageSize = 25;
 
-  /* ✅ ADD EVIDENCE HANDLER */
-  const handleAddEvidence = (newEvidence: Evidence) => {
-    setDocuments((prev) => [newEvidence, ...prev]);
-  };
+  /* =========================
+     LOAD FROM BACKEND
+  ========================= */
+  useEffect(() => {
+    const fetchEvidence = async () => {
+      try {
+        const res = await getEvidence();
+        setDocuments(res.data);
+      } catch (error) {
+        console.error("Failed to load evidence:", error);
+      }
+    };
 
-  /* ✅ FILTERING */
+    fetchEvidence();
+  }, []);
+
+  /* =========================
+     SAVE TO BACKEND
+  ========================= */
+  const handleAddEvidence = async (
+  newEvidence: Omit<Evidence, "id" | "uploadedAt">
+) => {
+  try {
+    const res = await createEvidence(newEvidence);
+
+    const savedEvidence: Evidence = {
+      ...res.data,
+
+      // ✅ preserve local file preview URL if backend does not return one
+      url: res.data.url || newEvidence.url,
+    };
+
+    setDocuments((prev) => [savedEvidence, ...prev]);
+  } catch (error) {
+    console.error("Failed to create evidence:", error);
+  }
+};
+
+  /* =========================
+     FILTERING
+  ========================= */
   const filteredData = useMemo(() => {
     return documents.filter((e) => {
-      if (activeCategory && e.subCategory !== activeCategory) return false;
+      if (activeCategory && e.subCategory !== activeCategory) {
+        return false;
+      }
 
-      if (activeTab === "Pending" && e.status !== "Pending") return false;
-      if (activeTab === "Complete" && e.status !== "Verified") return false;
-      if (activeTab === "Red Flagged" && e.status !== "Missing") return false;
+      if (activeTab === "Pending" && e.status !== "Pending") {
+        return false;
+      }
 
-      if (
-        search &&
-        !e.name.toLowerCase().includes(search.toLowerCase())
-      ) {
+      if (activeTab === "Complete" && e.status !== "Verified") {
+        return false;
+      }
+
+      if (activeTab === "Red Flagged" && e.status !== "Missing") {
+        return false;
+      }
+
+      if (search && !e.name.toLowerCase().includes(search.toLowerCase())) {
         return false;
       }
 
@@ -115,12 +206,14 @@ export default function EvidencePage() {
     });
   }, [documents, activeCategory, activeTab, search]);
 
-  /* ✅ PAGINATION */
+  /* =========================
+     PAGINATION
+  ========================= */
   const totalPages = Math.ceil(filteredData.length / pageSize);
 
   const paginatedData = filteredData.slice(
     (page - 1) * pageSize,
-    page * pageSize
+    page * pageSize,
   );
 
   return (
@@ -132,14 +225,12 @@ export default function EvidencePage() {
         fontFamily: theme.typography.fontFamily,
       }}
     >
-      {/* 🔹 SIDEBAR */}
       <Sidebar
         sections={sections}
         evidenceData={documents}
         onSelectItem={setActiveCategory}
       />
 
-      {/* 🔹 MAIN CONTENT */}
       <div
         style={{
           flex: 1,
@@ -149,10 +240,8 @@ export default function EvidencePage() {
           gap: theme.spacing.md,
         }}
       >
-        {/* HEADER */}
         <EvidenceHeader onAdd={() => setUploadOpen(true)} />
 
-        {/* FILTERS */}
         <EvidenceFilters
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -162,10 +251,8 @@ export default function EvidencePage() {
           setPage={setPage}
         />
 
-        {/* TABLE */}
         <EvidenceTable data={paginatedData} />
 
-        {/* PAGINATION */}
         <EvidencePagination
           page={page}
           setPage={setPage}
@@ -173,7 +260,6 @@ export default function EvidencePage() {
         />
       </div>
 
-      {/* ✅ THIS IS WHERE THE MODAL GOES (IMPORTANT) */}
       <EvidenceUploadModal
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}

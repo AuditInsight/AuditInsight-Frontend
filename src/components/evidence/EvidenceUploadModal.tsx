@@ -25,28 +25,78 @@ export const EvidenceUploadModal = ({
   const [subCategory, setSubCategory] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [transactionId, setTransactionId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [counterpartyName, setCounterpartyName] = useState("");
+
+  const [file, setFile] = useState<File | null>(null);
+  const [fileType, setFileType] = useState("");
+
   if (!isOpen) return null;
 
   const selectedSection = sections.find(
     (s) => s.title === category
   );
 
+  // ✅ FILE VALIDATION
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selectedFile = e.target.files?.[0];
+
+    if (!selectedFile) return;
+
+    const allowedTypes = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (!allowedTypes.includes(selectedFile.type)) {
+      alert("Invalid file type");
+      return;
+    }
+
+    setFile(selectedFile);
+  };
+
+  // =========================
+  // SAVE HANDLER
+  // =========================
   const handleSave = () => {
     const newEvidence: Evidence = {
       id: Date.now(),
       name,
       category,
       subCategory,
-      type: "Document",
-      url: "#",
+      type: file?.type || "Document",
+
+      // ✅ safer object URL
+      url: file ? URL.createObjectURL(file) : "#",
+
+      // ✅ store original uploaded file
+      fileObject: file || undefined,
+
       date: new Date().toISOString().split("T")[0],
       uploadedBy: "Current User",
       uploadedAt: new Date().toISOString(),
       status: "Pending",
       notes,
+
+      transactionId: transactionId
+        ? Number(transactionId)
+        : undefined,
+      amount: amount ? Number(amount) : undefined,
+      counterpartyName: counterpartyName || undefined,
     };
 
     onSave(newEvidence);
+
+    // 🔥 CLEANUP FIX
+    setFile(null);
+
     onClose();
   };
 
@@ -62,6 +112,30 @@ export const EvidenceUploadModal = ({
           style={input}
         />
 
+        <input
+          placeholder="Transaction ID"
+          value={transactionId}
+          onChange={(e) => setTransactionId(e.target.value)}
+          style={input}
+        />
+
+        <input
+          placeholder="Amount"
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          style={input}
+        />
+
+        <input
+          placeholder="Counterparty Name"
+          value={counterpartyName}
+          onChange={(e) =>
+            setCounterpartyName(e.target.value)
+          }
+          style={input}
+        />
+
         <select
           value={category}
           onChange={(e) => {
@@ -72,7 +146,10 @@ export const EvidenceUploadModal = ({
         >
           <option value="">Select category</option>
           {sections.map((section) => (
-            <option key={section.title} value={section.title}>
+            <option
+              key={section.title}
+              value={section.title}
+            >
               {section.title}
             </option>
           ))}
@@ -96,10 +173,49 @@ export const EvidenceUploadModal = ({
           style={textarea}
         />
 
+        {/* FILE TYPE */}
+        <select
+          value={fileType}
+          onChange={(e) => setFileType(e.target.value)}
+          style={input}
+        >
+          <option value="">Choose file type</option>
+          <option value="image">Image</option>
+          <option value="pdf">PDF</option>
+          <option value="excel">Excel</option>
+          <option value="word">Word</option>
+        </select>
+
+        {/* FILE UPLOAD */}
+        <input
+          type="file"
+          accept={
+            fileType === "image"
+              ? ".png,.jpg,.jpeg"
+              : fileType === "pdf"
+              ? ".pdf"
+              : fileType === "excel"
+              ? ".xlsx"
+              : fileType === "word"
+              ? ".docx"
+              : ".pdf,.png,.jpg,.jpeg,.xlsx,.docx"
+          }
+          onChange={handleFileChange}
+          style={input}
+        />
+
+        {/* FILE NAME */}
+        {file && (
+          <span style={fileName}>
+            Selected: {file.name}
+          </span>
+        )}
+
         <div style={actions}>
           <button style={cancelBtn} onClick={onClose}>
             Cancel
           </button>
+
           <button style={saveBtn} onClick={handleSave}>
             Save
           </button>
@@ -108,6 +224,10 @@ export const EvidenceUploadModal = ({
     </div>
   );
 };
+
+/* =========================
+   STYLES (UNCHANGED)
+========================= */
 
 const overlay: React.CSSProperties = {
   position: "fixed",
@@ -140,6 +260,11 @@ const textarea: React.CSSProperties = {
   minHeight: 100,
   border: `1px solid ${theme.colors.border}`,
   borderRadius: 8,
+};
+
+const fileName: React.CSSProperties = {
+  fontSize: 12,
+  color: theme.colors.textMuted,
 };
 
 const actions: React.CSSProperties = {

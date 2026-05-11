@@ -1,42 +1,99 @@
-import { Colors } from '@/styles/colors';
-import { spacing } from '@/styles/spacing';
-import { radius } from '@/styles/radius';
-import { shadows } from '@/styles/shadows';
+import { Colors } from "@/styles/colors";
+import { spacing } from "@/styles/spacing";
+import { radius } from "@/styles/radius";
+import { shadows } from "@/styles/shadows";
+import { theme } from "@/styles/theme";
 
 export const modalStyles = {
+  /* =========================
+     BACKDROP OVERLAY
+  ========================= */
+
   overlay: {
-    position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    background: 'rgba(0, 0, 0, 0.4)', 
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "fixed" as const,
+
+    inset: 0,
+
+    background: "rgba(15,23,42,0.45)",
+
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+
+    zIndex: 999,
   },
+
+  /* =========================
+     MODAL CONTAINER (UPGRADED)
+  ========================= */
 
   container: {
-    background: Colors.Surface,
-    borderRadius: radius.lg,
-    boxShadow: shadows.lg,
-    width: '500px',
-    maxWidth: '90%',
-    padding: spacing.lg,
-    },
+    width: 640,
+    maxWidth: "92%",
 
-    header: { 
-    fontSize: '18px',
-    fontWeight: 600,
-    marginBottom: spacing.md,
-    color: Colors.textPrimary,
+    background: `
+      linear-gradient(
+        180deg,
+        rgba(255,255,255,0.94),
+        rgba(255,255,255,0.88)
+      )
+    `,
+
+    backdropFilter: "blur(30px)",
+    WebkitBackdropFilter: "blur(30px)",
+
+    borderRadius: 28,
+
+    border: "1px solid rgba(255,255,255,0.6)",
+
+    boxShadow: shadows.xl,
+
+    padding: 28,
+
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 18,
+
+    transition: "all 0.25s ease",
   },
 
+  /* =========================
+     HEADER
+  ========================= */
+
+  header: {
+    fontSize: "18px",
+    fontWeight: 600,
+
+    color: Colors.textPrimary,
+
+    marginBottom: spacing.md,
+  },
+
+  /* =========================
+     CLOSE BUTTON
+  ========================= */
+
   closeButton: {
-    position: 'absolute' as const,
+    position: "absolute" as const,
+
     top: spacing.md,
     right: spacing.md,
-    cursor: 'pointer',
-    fontSize: '18px',
+
+    cursor: "pointer",
+
+    fontSize: "18px",
+
+    opacity: 0.7,
+
+    transition: "0.2s ease",
+  },
+
+  closeButtonHover: {
+    opacity: 1,
+    transform: "scale(1.05)",
   },
 };

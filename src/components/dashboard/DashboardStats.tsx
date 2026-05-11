@@ -1,26 +1,80 @@
-import { statsStyles } from "@/components/dashboard/DashboardStats.styles"
+import statsStyles from "@/components/dashboard/DashboardStats.styles";
 
-const stats = [
-  { label: "Transactions", value: "12,540", trend: "+8%" },
-  { label: "High Risk", value: "342", trend: "-2%" },
-  { label: "Evidence Uploaded", value: "1,245", trend: "+18%" },
-  { label: "Alerts", value: "27", trend: "+4%" },
-]
+type Transaction = {
+  id: number;
+  riskScore: number;
+};
 
-export default function DashboardStats() {
+type Evidence = {
+  id: number;
+};
+
+type Props = {
+  transactions?: Transaction[];
+  evidence?: Evidence[];
+};
+
+export default function DashboardStats({
+  transactions,
+  evidence,
+}: Props) {
+  const totalTransactions = transactions?.length || 0;
+
+  const highRisk =
+    transactions?.filter((t) => t.riskScore >= 80)
+      .length || 0;
+
+  const evidenceCount = evidence?.length || 0;
+
+  const coverage =
+    totalTransactions > 0
+      ? Math.round(
+          (evidenceCount / totalTransactions) * 100
+        )
+      : 0;
+
+  const stats = [
+    {
+      label: "Transactions",
+      value: totalTransactions,
+      trend: "+ realtime",
+    },
+    {
+      label: "High Risk",
+      value: highRisk,
+      trend: "needs review",
+    },
+    {
+      label: "Evidence Coverage",
+      value: `${coverage}%`,
+      trend: "auto-calculated",
+    },
+    {
+      label: "Evidence Files",
+      value: evidenceCount,
+      trend: "uploaded",
+    },
+  ];
+
   return (
     <div style={statsStyles.container}>
       {stats.map((s) => (
         <div key={s.label} style={statsStyles.card}>
           <div>
-            <div style={statsStyles.label}>{s.label}</div>
-            <div style={statsStyles.value}>{s.value}</div>
-            <div style={statsStyles.trend}>{s.trend} vs last period</div>
+            <div style={statsStyles.label}>
+              {s.label}
+            </div>
+            <div style={statsStyles.value}>
+              {s.value}
+            </div>
+            <div style={statsStyles.trend}>
+              {s.trend}
+            </div>
           </div>
 
           <div style={statsStyles.icon} />
         </div>
       ))}
     </div>
-  )
+  );
 }

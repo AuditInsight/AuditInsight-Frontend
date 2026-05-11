@@ -49,63 +49,115 @@ const navItems = [
   },
 ];
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({
+  title,
+}: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
 
   return (
     <header style={headerStyles.container}>
+      {/* =========================
+          LEFT
+      ========================= */}
       <div style={headerStyles.left}>
+        
+        {/* LOGO */}
         <div
           style={headerStyles.logo}
           onClick={() => router.push("/dashboard")}
         >
           <div style={headerStyles.logoMark} />
-          {title}
+
+          <div style={headerStyles.logoText}>
+            <span style={headerStyles.title}>
+              {title}
+            </span>
+
+            <span style={headerStyles.subtitle}>
+              Audit Intelligence
+            </span>
+          </div>
         </div>
 
+        {/* NAVIGATION */}
         <nav style={headerStyles.nav}>
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.path;
+
+            const isActive =
+              pathname === item.path;
 
             return (
               <div
                 key={item.label}
-                onClick={() => router.push(item.path)}
+                onClick={() =>
+                  router.push(item.path)
+                }
                 style={{
                   ...headerStyles.navItem,
-                  ...(isActive ? headerStyles.navItemActive : {}),
+
+                  ...(isActive
+                    ? headerStyles.navItemActive
+                    : {}),
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = "1";
-                  e.currentTarget.style.transform = "translateY(-1px)";
+                  if (!isActive) {
+                    Object.assign(
+                      e.currentTarget.style,
+                      headerStyles.navItemHover
+                    );
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = isActive ? "1" : "0.85";
-                  e.currentTarget.style.transform = "translateY(0)";
+                  if (!isActive) {
+                    e.currentTarget.style.background =
+                      "transparent";
+
+                    e.currentTarget.style.color =
+                      "rgba(255,255,255,0.78)";
+
+                    e.currentTarget.style.transform =
+                      "translateY(0)";
+                  }
                 }}
               >
                 <Icon size={16} />
-                {item.label}
 
-                {isActive && (
-                  <div style={headerStyles.activeUnderline} />
-                )}
+                {item.label}
               </div>
             );
           })}
         </nav>
       </div>
 
+      {/* =========================
+          RIGHT
+      ========================= */}
       <div style={headerStyles.right}>
-        <span style={headerStyles.welcome}>Welcome, Diana</span>
+        
+        {/* USER INFO */}
+        <div style={headerStyles.welcomeBlock}>
+          <span
+            style={headerStyles.welcomeLabel}
+          >
+            Logged in as
+          </span>
 
+          <span style={headerStyles.welcome}>
+            Diana
+          </span>
+        </div>
+
+        {/* AVATAR */}
         <div style={headerStyles.avatar}>
           D
-          <div style={headerStyles.badge}>6</div>
+
+          <div style={headerStyles.badge}>
+            6
+          </div>
         </div>
-      </div> 
+      </div>
     </header>
   );
 }

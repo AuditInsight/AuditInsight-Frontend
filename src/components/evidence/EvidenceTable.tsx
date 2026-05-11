@@ -13,6 +13,38 @@ interface Props {
   data: Evidence[];
 }
 
+export const statusStyles = {
+  Verified: {
+    background: theme.colors.successSoft,
+    color: theme.colors.success,
+  },
+
+  Pending: {
+    background: theme.colors.warningSoft,
+    color: theme.colors.warning,
+  },
+
+  Missing: {
+    background: theme.colors.dangerSoft,
+    color: theme.colors.danger,
+  },
+};
+
+export const rowStyle: React.CSSProperties = {
+  transition: "all 0.18s ease",
+};
+
+export const rowHoverStyles = {
+  background: "#fff",
+
+  transform: "scale(1.002)",
+
+  boxShadow: `
+    inset 0 1px 0 rgba(255,255,255,0.8),
+    0 8px 20px rgba(15,23,42,0.05)
+  `,
+};
+
 export const EvidenceTable = ({ data }: Props) => {
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
@@ -24,6 +56,7 @@ export const EvidenceTable = ({ data }: Props) => {
       transactionsData.find((t) => t.id === id) || null;
 
     setSelectedTransaction(txn);
+
     setIsOpen(true);
   };
 
@@ -31,7 +64,6 @@ export const EvidenceTable = ({ data }: Props) => {
     <>
       <div style={wrapper}>
         <table style={table}>
-          
           {/* 🔹 HEADER */}
           <thead style={thead}>
             <tr>
@@ -51,7 +83,6 @@ export const EvidenceTable = ({ data }: Props) => {
               <EvidenceRow
                 key={e.id}
                 evidence={e}
-                onOpenTransaction={handleOpen}
               />
             ))}
           </tbody>
@@ -66,7 +97,9 @@ export const EvidenceTable = ({ data }: Props) => {
         evidences={
           selectedTransaction
             ? evidenceData.filter(
-                (e) => e.transactionId === selectedTransaction.id
+                (e) =>
+                  e.transactionId ===
+                  selectedTransaction.id
               )
             : []
         }
@@ -75,30 +108,80 @@ export const EvidenceTable = ({ data }: Props) => {
   );
 };
 
-/* 🎨 STYLES */
+/* =========================
+   🎨 STYLES
+========================= */
 
 const wrapper: React.CSSProperties = {
   overflowX: "auto",
+
   marginTop: 16,
-  background: theme.colors.Surface,
+
+  background: `
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.96),
+      rgba(255,255,255,0.92)
+    )
+  `,
+
   borderRadius: theme.radius.lg,
+
   border: `1px solid ${theme.colors.border}`,
+
+  backdropFilter: "blur(18px)",
+
+  boxShadow: `
+    0 10px 30px rgba(15,23,42,0.04)
+  `,
 };
 
 const table: React.CSSProperties = {
   width: "100%",
-  borderCollapse: "collapse",
+
+  borderCollapse: "separate",
+
+  borderSpacing: 0,
 };
 
 const thead: React.CSSProperties = {
-  background: theme.colors.appBackground,
-  borderBottom: `1px solid ${theme.colors.border}`,
+  position: "sticky",
+
+  top: 0,
+
+  zIndex: 3,
+
+  background: `
+    linear-gradient(
+      180deg,
+      rgba(248,250,252,0.95),
+      rgba(241,245,249,0.92)
+    )
+  `,
+
+  backdropFilter: "blur(12px)",
+
+  borderBottom: `
+    1px solid ${theme.colors.border}
+  `,
 };
 
 const th: React.CSSProperties = {
   textAlign: "left",
-  padding: "12px 16px",
+
+  padding: "14px 18px",
+
   fontSize: theme.typography.sm,
-  fontWeight: 600,
+
+  fontWeight: 700,
+
   color: theme.colors.textSecondary,
+
+  letterSpacing: "-0.01em",
+
+  whiteSpace: "nowrap",
+
+  borderBottom: `
+    1px solid ${theme.colors.border}
+  `,
 };

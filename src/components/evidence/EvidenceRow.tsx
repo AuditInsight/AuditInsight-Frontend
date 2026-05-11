@@ -1,18 +1,23 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Evidence } from "@/types/evidence.types";
-import { Badge } from "@/components/ui/badge/badge";
-import { FileText, AlertTriangle } from "lucide-react";
 import { useState } from "react";
-import { theme } from "@/styles/theme"; // ✅ ADDED
+import { theme } from "@/styles/theme";
 
 interface Props {
   evidence: Evidence;
-  onOpenTransaction: (id: number) => void;
 }
 
-export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
+export const EvidenceRow = ({ evidence }: Props) => {
+  const router = useRouter();
   const [hover, setHover] = useState(false);
+
+  const goToTransaction = (id?: number) => {
+    if (!id) return;
+
+    router.push(`/transactions?transactionId=${id}`);
+  };
 
   return (
     <tr
@@ -26,69 +31,56 @@ export const EvidenceRow = ({ evidence, onOpenTransaction }: Props) => {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      {/* 📄 DOCUMENT */}
+      {/* DOCUMENT */}
       <td style={td}>
         <div style={docCell}>
-          <FileText size={16} color={theme.colors.textMuted} />
-          <span>{evidence.name}</span>
+          {evidence.url && evidence.url !== "#" ? (
+            <a
+              href={evidence.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={attachmentLink}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {evidence.name}
+            </a>
+          ) : (
+            <span>{evidence.name}</span>
+          )}
         </div>
       </td>
 
-      {/* CATEGORY */}
       <td style={td}>{evidence.category}</td>
 
-      {/* AMOUNT */}
       <td style={td}>
         {evidence.amount ? `$${evidence.amount}` : "-"}
       </td>
 
-      {/* DATE */}
       <td style={td}>{evidence.date}</td>
 
-      {/* 🔗 LINKED TRANSACTION */}
+      {/* LINKED TRANSACTION */}
       <td style={td}>
         <span
           style={link}
           onClick={(e) => {
-  e.stopPropagation();
-
-  if (!evidence.transactionId) return;
-
-  onOpenTransaction(evidence.transactionId);
-}}
+            e.stopPropagation();
+            goToTransaction(evidence.transactionId);
+          }}
         >
-          {evidence.transactionId}
+          {evidence.transactionId ?? "—"}
         </span>
       </td>
 
-      {/* STATUS */}
-      <td style={td}>
-        <Badge
-          label={evidence.status}
-          variant={
-            evidence.status === "Missing"
-              ? "danger"
-              : evidence.status === "Pending"
-              ? "warning"
-              : "success"
-          }
-        />
-      </td>
+      <td style={td}>{evidence.status}</td>
 
-      {/* 🤖 AI FLAG */}
-      <td style={td}>
-        {evidence.status === "Missing" && (
-          <div style={risk}>
-            <AlertTriangle size={14} />
-            Risk detected
-          </div>
-        )}
-      </td>
+      <td style={td}></td>
     </tr>
   );
 };
 
-/* 🎨 STYLES */
+/* =========================
+   STYLES
+========================= */
 
 const row: React.CSSProperties = {
   transition: "all 0.2s ease",
@@ -103,21 +95,20 @@ const td: React.CSSProperties = {
 
 const docCell: React.CSSProperties = {
   display: "flex",
-  alignItems: "center",
-  gap: 8,
+  flexDirection: "column",
+  gap: 4,
 };
 
 const link: React.CSSProperties = {
   color: theme.colors.primary,
   cursor: "pointer",
-  fontWeight: 500,
+  fontWeight: 600,
+  textDecoration: "underline",
 };
 
-const risk: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  color: theme.colors.danger,
-  fontSize: 12,
-  fontWeight: 500,
+const attachmentLink: React.CSSProperties = {
+  color: theme.colors.primary,
+  cursor: "pointer",
+  fontWeight: 600,
+  textDecoration: "underline",
 };

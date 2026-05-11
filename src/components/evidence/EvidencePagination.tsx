@@ -1,6 +1,6 @@
 "use client";
 
-import { theme } from "@/styles/theme"; // ✅ ADDED
+import { theme } from "@/styles/theme";
 
 interface EvidencePaginationProps {
   page: number;
@@ -15,6 +15,10 @@ export const EvidencePagination = ({
 }: EvidencePaginationProps) => {
   return (
     <div style={container}>
+      {/* 🔹 LABEL (this is what you wanted to add) */}
+      <span style={label}>Page</span>
+
+      {/* 🔹 PAGE BUTTONS (your existing logic untouched) */}
       {Array.from({ length: totalPages }).map((_, i) => {
         const currentPage = i + 1;
 
@@ -50,6 +54,9 @@ export const EvidencePagination = ({
           </button>
         );
       })}
+
+      {/* 🔹 OPTIONAL: DOTS LIKE "..." */}
+      {totalPages > 5 && <span style={dots}>...</span>}
     </div>
   );
 };
@@ -59,7 +66,19 @@ export const EvidencePagination = ({
 const container: React.CSSProperties = {
   marginTop: 16,
   display: "flex",
+  alignItems: "center",
   gap: 6,
+};
+
+const label: React.CSSProperties = {
+  fontSize: theme.typography.sm,
+  color: theme.colors.textMuted,
+  marginRight: 6,
+};
+
+const dots: React.CSSProperties = {
+  padding: "0 6px",
+  color: theme.colors.textMuted,
 };
 
 const button: React.CSSProperties = {

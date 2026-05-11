@@ -1,41 +1,51 @@
-import { Card } from "@/components/ui/card/card"
-import { Badge } from "@/components/ui/badge/badge"
+import { Card } from "@/components/ui/card/card";
+import { Badge } from "@/components/ui/badge/badge";
+
+// =========================
+// TYPES
+// =========================
+type Transaction = {
+  id: number;
+  counterparty: string;
+  riskScore: number;
+};
 
 type AlertItem = {
-  id: string
-  message: string
-  severity: "warning" | "critical" | "info"
-}
+  id: string;
+  message: string;
+  severity: "warning" | "critical" | "info";
+};
 
-const alerts: AlertItem[] = [
-  {
-    id: "1",
-    message: "Missing invoice for transaction #TXN10451",
-    severity: "warning",
-  },
-  {
-    id: "2",
-    message: "Contract not uploaded for ABC Corp",
-    severity: "critical",
-  },
-  {
-    id: "3",
-    message: "Risk score above threshold",
-    severity: "info",
-  },
-]
+type Props = {
+  transactions: Transaction[];
+};
 
-export default function ComplianceAlerts() {
+// =========================
+// COMPONENT
+// =========================
+export default function ComplianceAlerts({ transactions }: Props) {
+  // 🚨 REAL ALERT GENERATION
+  const alerts: AlertItem[] = transactions
+    .filter((t) => t.riskScore >= 85)
+    .slice(0, 5)
+    .map((t) => ({
+      id: String(t.id),
+      message: `High risk transaction ${t.id} (${t.counterparty})`,
+      severity: t.riskScore >= 90 ? "critical" : "warning",
+    }));
+
   return (
     <Card>
       <h3>Compliance Alerts</h3>
 
+      {alerts.length === 0 && <div>No alerts 🎉</div>}
+
       {alerts.map((alert) => (
-        <div key={alert.id}>
+        <div key={alert.id} style={{ marginBottom: 10 }}>
           <Badge label={alert.severity} />
-          <span>{alert.message}</span>
+          <span style={{ marginLeft: 8 }}>{alert.message}</span>
         </div>
       ))}
     </Card>
-  )
+  );
 }

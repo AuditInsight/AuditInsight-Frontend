@@ -4,18 +4,22 @@ export interface Evidence {
   category: string;
   subCategory: string;
 
-  type: "Document" | "Image" | "PDF";
+  type: string;
   url: string;
 
   date: string;
+
   uploadedBy: string;
   uploadedAt: string;
 
-  transactionId?: number;
-
-  status: "Verified" | "Pending" | "Missing";
+  status: "Pending" | "Verified" | "Missing";
 
   notes?: string;
 
-  amount?: number; // ✅ ADD THIS
+  /* ✅ NEW RELATION FIELDS */
+  transactionId?: number;
+  amount?: number;
+  counterpartyName?: string;
+
+  fileObject?: File; // ✅ add here
 }

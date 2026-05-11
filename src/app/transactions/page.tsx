@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+
 import { TransactionsStats } from "@/components/transactions/TransactionsStats";
 import { TransactionsTable } from "@/components/transactions/TransactionsTable";
 import { TransactionsPagination } from "@/components/transactions/TransactionsPagination";
@@ -14,8 +16,12 @@ import { Transaction } from "@/types/transaction.types";
 import { createTransaction, getTransactions } from "@/utils/api";
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
+  const transactionId = searchParams.get("transactionId");
+
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -24,41 +30,53 @@ export default function TransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
 
-  const [isOpen, setIsOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const pageSize = 25;
 
-  // ✅ Load transactions from backend
-  const loadTransactions = async () => {
-    try {
-      const res = await getTransactions();
-      setTransactions(res.data);
-    } catch (error) {
-      console.error("Failed to load transactions:", error);
-    }
-  };
-
-  // ✅ Fetch transactions when page loads
+  /* =========================
+     LOAD DATA
+  ========================= */
   useEffect(() => {
-  const fetchTransactions = async () => {
-    try {
-      const res = await getTransactions();
-      setTransactions(res.data);
-    } catch (error) {
-      console.error("Failed to load transactions:", error);
-    }
-  };
+    const fetchData = async () => {
+      try {
+        const res = await getTransactions();
+        setTransactions(res.data);
+      } catch (error) {
+        console.error("Failed to load transactions:", error);
+      }
+    };
 
-  fetchTransactions();
-}, []);
+    fetchData();
+  }, []);
 
+  /* =========================
+     DERIVED: selected transaction
+  ========================= */
+  const selectedFromUrl = useMemo(() => {
+    if (!transactionId || transactions.length === 0) return null;
+
+    return (
+      transactions.find((t) => t.id === Number(transactionId)) || null
+    );
+  }, [transactionId, transactions]);
+
+  const isOpen = !!selectedFromUrl;
+
+  useEffect(() => {
+    setSelectedTransaction(selectedFromUrl);
+  }, [selectedFromUrl]);
+
+  /* =========================
+     FILTERING
+  ========================= */
   const filteredData = useMemo(() => {
     return transactions.filter((t) => {
       if (
         search &&
         !t.counterparty.toLowerCase().includes(search.toLowerCase())
-      ) return false;
+      )
+        return false;
 
       if (startDate && new Date(t.date) < new Date(startDate)) return false;
       if (endDate && new Date(t.date) > new Date(endDate)) return false;
@@ -74,6 +92,29 @@ export default function TransactionsPage() {
     page * pageSize
   );
 
+  /* =========================
+     ACTIONS
+  ========================= */
+  const handleOpen = (transaction: Transaction) => {
+    router.push(`/transactions?transactionId=${transaction.id}`);
+  };
+
+  const handleCloseModal = () => {
+    router.replace("/transactions");
+    setSelectedTransaction(null);
+  };
+
+  const handleCreateTransaction = async (data: Omit<Transaction, "id">) => {
+    try {
+      await createTransaction(data);
+      const res = await getTransactions();
+      setTransactions(res.data);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create transaction:", error);
+    }
+  };
+
   const handleReset = () => {
     setSearch("");
     setStartDate("");
@@ -83,7 +124,8 @@ export default function TransactionsPage() {
 
   const handleExport = () => {
     const csv = filteredData.map(
-      (t) => `${t.id},${t.date},${t.amount},${t.counterparty},${t.status}`
+      (t) =>
+        `${t.id},${t.date},${t.amount},${t.counterparty},${t.status}`
     );
 
     const blob = new Blob([csv.join("\n")], {
@@ -97,22 +139,9 @@ export default function TransactionsPage() {
     a.click();
   };
 
-  // ✅ Create transaction then reload backend data
-  const handleCreateTransaction = async (data: Omit<Transaction, "id">) => {
-    try {
-      await createTransaction(data);
-      await loadTransactions();
-      setIsAddModalOpen(false);
-    } catch (error) {
-      console.error("Failed to create transaction:", error);
-    }
-  };
-
-  const handleOpen = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setIsOpen(true);
-  };
-
+  /* =========================
+     UI
+  ========================= */
   return (
     <div style={pageStyles}>
       <TransactionsStats
@@ -139,11 +168,18 @@ export default function TransactionsPage() {
         <TransactionsTable
           data={paginatedData}
           onRowClick={handleOpen}
+          highlightId={
+            transactionId ? Number(transactionId) : undefined
+          }
         />
 
         <div style={footer}>
           <span>
-            Showing {filteredData.length === 0 ? 0 : (page - 1) * pageSize + 1}–
+            Showing{" "}
+            {filteredData.length === 0
+              ? 0
+              : (page - 1) * pageSize + 1}
+            –
             {Math.min(page * pageSize, filteredData.length)} of{" "}
             {filteredData.length.toLocaleString()} transactions
           </span>
@@ -157,17 +193,18 @@ export default function TransactionsPage() {
       </section>
 
       <TransactionDetailsModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        transaction={selectedTransaction}
-        evidences={
-          selectedTransaction
-            ? evidenceData.filter(
-                (e) => e.transactionId === selectedTransaction.id
-              )
-            : []
-        }
-      />
+  isOpen={isOpen}
+  onClose={handleCloseModal}
+  transaction={selectedTransaction}
+  evidences={
+    selectedTransaction
+      ? evidenceData.filter(
+          (e) =>
+            Number(e.transactionId) === Number(selectedTransaction.id)
+        )
+      : []
+  }
+/>
 
       <AddTransactionModal
         isOpen={isAddModalOpen}
@@ -178,7 +215,9 @@ export default function TransactionsPage() {
   );
 }
 
-/* styles */
+/* =========================
+   STYLES (ADDED BACK)
+========================= */
 
 const pageStyles: React.CSSProperties = {
   display: "flex",

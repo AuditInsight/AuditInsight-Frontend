@@ -1,8 +1,21 @@
+"use client"
+
+import React from "react";
 import { Table } from "@/components/ui/table/table";
 import { Card } from "@/components/ui/card/card";
 import { CardHeader } from "@/components/ui/cardHeader/CardHeader";
 import { CardContent } from "@/components/ui/cardHeader/CardContent";
 import { Badge } from "@/components/ui/badge/badge";
+
+// =========================
+// TYPES
+// =========================
+type Transaction = {
+  id: number;
+  riskScore: number;
+  counterparty: string;
+  date?: string;
+};
 
 type HighRiskRow = {
   id: string;
@@ -12,32 +25,13 @@ type HighRiskRow = {
   status: "Observed" | "Flagged" | "Reviewed" | "Approved";
 };
 
-// Demo data
-const highRiskData: HighRiskRow[] = [
-  {
-    id: "#TXN10451",
-    date: "03/20/2026",
-    counterparty: "MFI Distributors",
-    riskScore: 92,
-    status: "Flagged",
-  },
-  {
-    id: "#TXN10389",
-    date: "03/15/2026",
-    counterparty: "ABC Corp",
-    riskScore: 85,
-    status: "Flagged",
-  },
-  {
-    id: "#TXN10372",
-    date: "03/10/2026",
-    counterparty: "Global Logistics Ltd",
-    riskScore: 88,
-    status: "Observed",
-  },
-];
+type Props = {
+  transactions: Transaction[];
+};
 
-// ✅ NEW: use variant instead of color
+// =========================
+// STATUS MAPPING
+// =========================
 const statusVariant: Record<
   HighRiskRow["status"],
   "success" | "warning" | "danger"
@@ -48,7 +42,23 @@ const statusVariant: Record<
   Approved: "success",
 };
 
-export default function HighRiskTransactions() {
+// =========================
+// COMPONENT
+// =========================
+export default function HighRiskTransactions({
+  transactions,
+}: Props) {
+  // 🔥 REAL FILTERING (instead of static data)
+  const highRiskData: HighRiskRow[] = transactions
+    .filter((t) => t.riskScore >= 80)
+    .map((t) => ({
+      id: `#TXN${t.id}`,
+      date: "N/A", // replace later with real backend date
+      counterparty: t.counterparty,
+      riskScore: t.riskScore,
+      status: t.riskScore >= 90 ? "Flagged" : "Observed",
+    }));
+
   const columns: {
     header: string;
     accessor: keyof HighRiskRow;
@@ -62,8 +72,6 @@ export default function HighRiskTransactions() {
     {
       header: "Status",
       accessor: "status",
-
-      // ✅ FIXED CELL FUNCTION
       cell: (value: string | number) => {
         const status = value as HighRiskRow["status"];
 
