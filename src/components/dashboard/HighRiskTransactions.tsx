@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React from "react";
 import { Table } from "@/components/ui/table/table";
@@ -30,7 +30,7 @@ type Props = {
 };
 
 // =========================
-// STATUS MAPPING
+// STATUS
 // =========================
 const statusVariant: Record<
   HighRiskRow["status"],
@@ -42,54 +42,50 @@ const statusVariant: Record<
   Approved: "success",
 };
 
-// =========================
-// COMPONENT
-// =========================
 export default function HighRiskTransactions({
   transactions,
 }: Props) {
-  // 🔥 REAL FILTERING (instead of static data)
   const highRiskData: HighRiskRow[] = transactions
     .filter((t) => t.riskScore >= 80)
     .map((t) => ({
-      id: `#TXN${t.id}`,
-      date: "N/A", // replace later with real backend date
+      id: `TXN${t.id}`,
+      date: "N/A",
       counterparty: t.counterparty,
       riskScore: t.riskScore,
       status: t.riskScore >= 90 ? "Flagged" : "Observed",
     }));
 
-  const columns: {
-    header: string;
-    accessor: keyof HighRiskRow;
-    cell?: (value: string | number) => React.ReactNode;
-  }[] = [
-    { header: "ID", accessor: "id" },
-    { header: "Date", accessor: "date" },
-    { header: "Counterparty", accessor: "counterparty" },
-    { header: "Risk Score", accessor: "riskScore" },
-
+  const columns = [
+    { header: "ID", accessor: "id" as const },
+    { header: "Counterparty", accessor: "counterparty" as const },
+    { header: "Risk", accessor: "riskScore" as const },
     {
       header: "Status",
-      accessor: "status",
+      accessor: "status" as const,
       cell: (value: string | number) => {
         const status = value as HighRiskRow["status"];
-
-        return (
-          <Badge
-            label={status}
-            variant={statusVariant[status]}
-          />
-        );
+        return <Badge label={status} variant={statusVariant[status]} />;
       },
     },
   ];
 
   return (
-    <Card padding="lg">
+    <Card padding="sm">
       <CardHeader title="High-Risk Transactions" />
+
       <CardContent>
-        <Table columns={columns} data={highRiskData} />
+        <div
+          style={{
+            width: "100%",
+            overflowX: "auto",
+            maxHeight: 260, // 🔥 KEY: keeps it compact
+          }}
+        >
+          <Table
+            columns={columns}
+            data={highRiskData}
+          />
+        </div>
       </CardContent>
     </Card>
   );

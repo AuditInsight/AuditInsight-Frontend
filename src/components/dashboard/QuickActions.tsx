@@ -5,9 +5,12 @@ export default function QuickActions() {
     <Card>
       <h3>Quick Actions</h3>
 
-      <button>➕ Upload Evidence</button>
-      <button>🔍 Review Risks</button>
-      <button>📊 Generate Report</button>
+      {/* 🚀 UPDATED LAYOUT (COLUMN + GAP) */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <button>➕ Upload Evidence</button>
+        <button>🔍 Review Risks</button>
+        <button>📊 Generate Report</button>
+      </div>
     </Card>
   );
 }

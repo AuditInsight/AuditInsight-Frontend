@@ -1,0 +1,93 @@
+// components/landing/Navbar.tsx
+
+"use client";
+
+import Link from "next/link";
+
+export default function Navbar() {
+  return (
+    <header style={styles.header}>
+      <div style={styles.logo}>
+        AuditInsight
+      </div>
+
+      <nav style={styles.nav}>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#security">Security</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div style={styles.actions}>
+        <Link href="/login">
+          <button style={styles.loginBtn}>
+            Login
+          </button>
+        </Link>
+
+        <Link href="/signup">
+          <button style={styles.primaryBtn}>
+            Start Free Trial
+          </button>
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+const styles: Record<
+  string,
+  React.CSSProperties
+> = {
+  header: {
+    height: 80,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "0 48px",
+    background: "#fff",
+    borderBottom: "1px solid #e5e7eb",
+    position: "sticky",
+    top: 0,
+    zIndex: 100,
+  },
+
+  logo: {
+    fontSize: 22,
+    fontWeight: 800,
+    color: "#1e3a8a",
+  },
+
+  nav: {
+    display: "flex",
+    gap: 28,
+    fontSize: 15,
+    color: "#374151",
+  },
+
+  actions: {
+    display: "flex",
+    gap: 12,
+  },
+
+  loginBtn: {
+    height: 42,
+    padding: "0 18px",
+    borderRadius: 10,
+    border: "1px solid #dbe3ee",
+    background: "#fff",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+
+  primaryBtn: {
+    height: 42,
+    padding: "0 18px",
+    borderRadius: 10,
+    border: "none",
+    background: "#1e3a8a",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 700,
+  },
+};

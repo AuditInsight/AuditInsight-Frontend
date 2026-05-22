@@ -16,7 +16,7 @@ const statsStyles = {
     boxShadow: theme.shadows.sm,
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
   },
 
   label: {
@@ -34,6 +34,7 @@ const statsStyles = {
   trend: {
     fontSize: theme.typography.xs,
     marginTop: theme.spacing.xs,
+    color: theme.colors.textMuted,
   },
 
   icon: {

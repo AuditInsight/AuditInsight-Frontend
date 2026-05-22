@@ -12,7 +12,7 @@ import { EvidencePagination } from "@/components/evidence/EvidencePagination";
 import { EvidenceUploadModal } from "@/components/evidence/EvidenceUploadModal";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
-import { getEvidence, createEvidence } from "@/utils/api";
+import { getEvidence } from "@/utils/api";
 
 /* =========================
    TYPES
@@ -108,23 +108,19 @@ const sections: EvidenceSection[] = [
     ],
   },
   {
-  title: "IT & Systems Evidence",
-  items: [
-    "System access logs",
-    "User permissions reports",
-    "Audit trail exports",
-    "Backup reports",
-    "Security incident logs",
-    "ERP transaction logs",
-  ],
-},
+    title: "IT & Systems Evidence",
+    items: [
+      "System access logs",
+      "User permissions reports",
+      "Audit trail exports",
+      "Backup reports",
+      "Security incident logs",
+      "ERP transaction logs",
+    ],
+  },
   {
     title: "Other Supporting Docs",
-    items: [
-      "Emails",
-      "Documentation", 
-      "Screenshots", 
-      "Supporting schedules"],
+    items: ["Emails", "Documentation", "Screenshots", "Supporting schedules"],
   },
 ];
 
@@ -146,7 +142,13 @@ export default function EvidencePage() {
     const fetchEvidence = async () => {
       try {
         const res = await getEvidence();
-        setDocuments(res.data);
+
+        setDocuments(res.data || []);
+
+        // 🔥 FIX: reset filters so nothing "disappears" after refresh
+        setActiveCategory(null);
+        setActiveTab("All");
+        setPage(1);
       } catch (error) {
         console.error("Failed to load evidence:", error);
       }
@@ -156,33 +158,35 @@ export default function EvidencePage() {
   }, []);
 
   /* =========================
-     SAVE TO BACKEND
+     SAVE TO BACKEND (UI UPDATE ONLY)
   ========================= */
-  const handleAddEvidence = async (
-  newEvidence: Omit<Evidence, "id" | "uploadedAt">
-) => {
-  try {
-    const res = await createEvidence(newEvidence);
+  const handleAddEvidence = (savedEvidence: Evidence) => {
+    setDocuments((prev) => {
+      const exists = prev.some((e) => e.id === savedEvidence.id);
+      if (exists) return prev;
 
-    const savedEvidence: Evidence = {
-      ...res.data,
+      return [savedEvidence, ...prev];
+    });
 
-      // ✅ preserve local file preview URL if backend does not return one
-      url: res.data.url || newEvidence.url,
-    };
-
-    setDocuments((prev) => [savedEvidence, ...prev]);
-  } catch (error) {
-    console.error("Failed to create evidence:", error);
-  }
-};
+    // 🔥 FIX: optional UX improvement
+    setUploadOpen(false);
+    setPage(1);
+  };
 
   /* =========================
      FILTERING
   ========================= */
   const filteredData = useMemo(() => {
     return documents.filter((e) => {
-      if (activeCategory && e.subCategory !== activeCategory) {
+      if (
+        activeCategory &&
+        e.subCategory &&
+        e.subCategory !== activeCategory
+      ) {
+        return false;
+      }
+
+      if (activeCategory && !e.subCategory) {
         return false;
       }
 
@@ -198,7 +202,10 @@ export default function EvidencePage() {
         return false;
       }
 
-      if (search && !e.name.toLowerCase().includes(search.toLowerCase())) {
+      if (
+        search &&
+        !e.name?.toLowerCase().includes(search.toLowerCase())
+      ) {
         return false;
       }
 
@@ -213,7 +220,7 @@ export default function EvidencePage() {
 
   const paginatedData = filteredData.slice(
     (page - 1) * pageSize,
-    page * pageSize,
+    page * pageSize
   );
 
   return (
@@ -228,7 +235,10 @@ export default function EvidencePage() {
       <Sidebar
         sections={sections}
         evidenceData={documents}
-        onSelectItem={setActiveCategory}
+        onSelectItem={(value) => {
+          setActiveCategory(value);
+          setPage(1); // 🔥 FIX: reset pagination on filter
+        }}
       />
 
       <div
@@ -244,9 +254,15 @@ export default function EvidencePage() {
 
         <EvidenceFilters
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            setPage(1); // 🔥 FIX
+          }}
           search={search}
-          setSearch={setSearch}
+          setSearch={(value) => {
+            setSearch(value);
+            setPage(1); // 🔥 FIX
+          }}
           total={filteredData.length}
           setPage={setPage}
         />

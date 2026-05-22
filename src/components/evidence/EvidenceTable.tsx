@@ -52,8 +52,7 @@ export const EvidenceTable = ({ data }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleOpen = (id: number) => {
-    const txn =
-      transactionsData.find((t) => t.id === id) || null;
+    const txn = transactionsData.find((t) => t.id === id) || null;
 
     setSelectedTransaction(txn);
 
@@ -70,6 +69,7 @@ export const EvidenceTable = ({ data }: Props) => {
               <th style={th}>Document</th>
               <th style={th}>Category</th>
               <th style={th}>Amount</th>
+              <th style={th}>Counterparty</th>
               <th style={th}>Date</th>
               <th style={th}>Linked Transaction</th>
               <th style={th}>Verification</th>
@@ -80,10 +80,7 @@ export const EvidenceTable = ({ data }: Props) => {
           {/* 🔹 BODY */}
           <tbody>
             {data.map((e) => (
-              <EvidenceRow
-                key={e.id}
-                evidence={e}
-              />
+              <EvidenceRow key={e.id} evidence={e} />
             ))}
           </tbody>
         </table>
@@ -97,9 +94,7 @@ export const EvidenceTable = ({ data }: Props) => {
         evidences={
           selectedTransaction
             ? evidenceData.filter(
-                (e) =>
-                  e.transactionId ===
-                  selectedTransaction.id
+                (e) => e.transactionId === selectedTransaction.id,
               )
             : []
         }

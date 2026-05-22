@@ -15,10 +15,10 @@ export default function ReviewPagination({
 }: ReviewPaginationProps) {
   return (
     <div style={container}>
-      {/* 🔹 LEFT TEXT */}
-      <span style={text}>Page</span>
+      {/* LEFT INFO */}
+      <span style={text}>Page {page} of {totalPages}</span>
 
-      {/* 🔹 PAGE NUMBERS */}
+      {/* PAGE NUMBERS */}
       <div style={pages}>
         {Array.from({ length: totalPages }).map((_, i) => {
           const current = i + 1;
@@ -32,11 +32,15 @@ export default function ReviewPagination({
                 background:
                   page === current
                     ? theme.colors.primary
-                    : theme.colors.Surface,
+                    : "#fff",
                 color:
                   page === current
                     ? "#fff"
                     : theme.colors.textPrimary,
+                border:
+                  page === current
+                    ? `1px solid ${theme.colors.primary}`
+                    : `1px solid ${theme.colors.border}`,
               }}
             >
               {current}
@@ -44,13 +48,17 @@ export default function ReviewPagination({
           );
         })}
 
-        {/* 🔹 OPTIONAL DOTS */}
-        {totalPages > 5 && <span style={dots}>...</span>}
+        {/* DOTS */}
+        {totalPages > 5 && (
+          <span style={dots}>...</span>
+        )}
       </div>
 
-      {/* 🔹 NEXT BUTTON */}
+      {/* NEXT BUTTON */}
       <button
-        onClick={() => page < totalPages && setPage(page + 1)}
+        onClick={() =>
+          page < totalPages && setPage(page + 1)
+        }
         style={navBtn}
       >
         Next →
@@ -58,44 +66,59 @@ export default function ReviewPagination({
     </div>
   );
 }
-// 🎨 STYLES
+
+/* =========================
+   STYLES (UPGRADED)
+========================= */
 
 const container: React.CSSProperties = {
   marginTop: 16,
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
+  padding: "12px 16px",
+  background: "#fff",
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
 };
 
 const text: React.CSSProperties = {
-  fontSize: theme.typography.sm,
-  color: theme.colors.textMuted,
+  fontSize: 13,
+  color: "#6b7280",
+  fontWeight: 500,
 };
 
 const pages: React.CSSProperties = {
   display: "flex",
   gap: 6,
   alignItems: "center",
+  flexWrap: "wrap",
+  justifyContent: "center",
 };
 
 const dots: React.CSSProperties = {
   padding: "0 6px",
-  color: theme.colors.textMuted,
+  color: "#9ca3af",
+  fontSize: 14,
 };
 
 const button: React.CSSProperties = {
   padding: "6px 10px",
-  borderRadius: theme.radius.sm,
-  border: `1px solid ${theme.colors.border}`,
+  borderRadius: 8,
+  border: "1px solid #e5e7eb",
   cursor: "pointer",
-  background: theme.colors.Surface,
-  fontSize: theme.typography.sm,
+  background: "#fff",
+  fontSize: 13,
+  transition: "all 0.2s ease",
 };
 
 const navBtn: React.CSSProperties = {
   padding: "6px 12px",
-  borderRadius: theme.radius.sm,
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.Surface,
+  borderRadius: 8,
+  border: "1px solid #e5e7eb",
+  background: "#fff",
   cursor: "pointer",
+  fontSize: 13,
+  fontWeight: 500,
 };

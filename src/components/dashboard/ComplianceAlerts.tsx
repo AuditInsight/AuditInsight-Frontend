@@ -1,3 +1,5 @@
+"use client";
+
 import { Card } from "@/components/ui/card/card";
 import { Badge } from "@/components/ui/badge/badge";
 
@@ -13,7 +15,7 @@ type Transaction = {
 type AlertItem = {
   id: string;
   message: string;
-  severity: "warning" | "critical" | "info";
+  severity: "critical" | "warning";
 };
 
 type Props = {
@@ -24,7 +26,6 @@ type Props = {
 // COMPONENT
 // =========================
 export default function ComplianceAlerts({ transactions }: Props) {
-  // 🚨 REAL ALERT GENERATION
   const alerts: AlertItem[] = transactions
     .filter((t) => t.riskScore >= 85)
     .slice(0, 5)

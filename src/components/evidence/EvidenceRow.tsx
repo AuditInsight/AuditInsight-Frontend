@@ -42,21 +42,35 @@ export const EvidenceRow = ({ evidence }: Props) => {
               style={attachmentLink}
               onClick={(e) => e.stopPropagation()}
             >
-              {evidence.name}
+              {evidence.name|| "Untitled"}
             </a>
           ) : (
-            <span>{evidence.name}</span>
+            <span>{evidence.name || "Untitled"}</span>
           )}
         </div>
       </td>
 
-      <td style={td}>{evidence.category}</td>
-
+      {/* CATEGORY */}
       <td style={td}>
-        {evidence.amount ? `$${evidence.amount}` : "-"}
+        {evidence.category || "-"}
       </td>
 
-      <td style={td}>{evidence.date}</td>
+      {/* AMOUNT */}
+      <td style={td}>
+        {evidence.amount
+          ? `$${evidence.amount}`
+          : "-"}
+      </td>
+
+      {/* COUNTERPARTY */}
+      <td style={td}>
+        {evidence.counterpartyName || "-"}
+      </td>
+
+      {/* DATE */}
+      <td style={td}>
+        {evidence.date || "-"}
+      </td>
 
       {/* LINKED TRANSACTION */}
       <td style={td}>
@@ -64,15 +78,22 @@ export const EvidenceRow = ({ evidence }: Props) => {
           style={link}
           onClick={(e) => {
             e.stopPropagation();
-            goToTransaction(evidence.transactionId);
+
+            goToTransaction(
+              evidence.transactionId
+            );
           }}
         >
           {evidence.transactionId ?? "—"}
         </span>
       </td>
 
-      <td style={td}>{evidence.status}</td>
+      {/* STATUS */}
+      <td style={td}>
+        {evidence.status || "-"}
+      </td>
 
+      {/* AI FLAGS */}
       <td style={td}></td>
     </tr>
   );

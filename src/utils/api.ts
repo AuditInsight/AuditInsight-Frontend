@@ -44,6 +44,10 @@ export const createTransaction = (
    EVIDENCE API
 ========================= */
 
+/* =========================
+   EVIDENCE API
+========================= */
+
 // GET all evidence
 export const getEvidence = () =>
   API.get<Evidence[]>("/evidence");
@@ -61,4 +65,68 @@ export const createEvidence = (
   data: Omit<Evidence, "id" | "uploadedAt">
 ) => API.post<Evidence>("/evidence", data);
 
+/* =========================
+   UPLOAD FILE EVIDENCE
+========================= */
+
+export const uploadEvidence = async (
+  file: File,
+  data: {
+    transactionId: number;
+    name: string;
+    category: string;
+    subCategory: string;
+    notes: string;
+    amount?: number;
+    counterpartyName?: string;
+  }
+) => {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  formData.append(
+    "transactionId",
+    String(data.transactionId)
+  );
+
+  formData.append("name", data.name);
+
+  formData.append(
+    "category",
+    data.category
+  );
+
+  formData.append(
+    "subCategory",
+    data.subCategory
+  );
+
+  formData.append("notes", data.notes);
+
+  if (data.amount) {
+    formData.append(
+      "amount",
+      String(data.amount)
+    );
+  }
+
+  if (data.counterpartyName) {
+    formData.append(
+      "counterpartyName",
+      data.counterpartyName
+    );
+  }
+
+  return API.post(
+    "/evidence/upload",
+    formData,
+    {
+      headers: {
+        "Content-Type":
+          "multipart/form-data",
+      },
+    }
+  );
+};
 export default API;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
+import { uploadEvidence } from "@/utils/api";
 
 interface Props {
   isOpen: boolean;
@@ -34,14 +35,10 @@ export const EvidenceUploadModal = ({
 
   if (!isOpen) return null;
 
-  const selectedSection = sections.find(
-    (s) => s.title === category
-  );
+  const selectedSection = sections.find((s) => s.title === category);
 
   // ✅ FILE VALIDATION
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
 
     if (!selectedFile) return;
@@ -65,39 +62,52 @@ export const EvidenceUploadModal = ({
   // =========================
   // SAVE HANDLER
   // =========================
-  const handleSave = () => {
-    const newEvidence: Evidence = {
-      id: Date.now(),
-      name,
-      category,
-      subCategory,
-      type: file?.type || "Document",
+  const handleSave = async () => {
+    try {
+      if (!file) {
+        alert("Please select a file");
+        return;
+      }
 
-      // ✅ safer object URL
-      url: file ? URL.createObjectURL(file) : "#",
+      if (!transactionId) {
+        alert("Transaction ID is required");
+        return;
+      }
 
-      // ✅ store original uploaded file
-      fileObject: file || undefined,
+      // ✅ UPLOAD TO BACKEND
+      const response = await uploadEvidence(file, {
+        transactionId: Number(transactionId),
+        name,
+        category,
+        subCategory,
+        notes,
+        amount: amount ? Number(amount) : undefined,
+        counterpartyName: counterpartyName || undefined,
+      });
 
-      date: new Date().toISOString().split("T")[0],
-      uploadedBy: "Current User",
-      uploadedAt: new Date().toISOString(),
-      status: "Pending",
-      notes,
+      // ✅ BACKEND RETURNS SAVED EVIDENCE
+      const savedEvidence: Evidence = response.data;
 
-      transactionId: transactionId
-        ? Number(transactionId)
-        : undefined,
-      amount: amount ? Number(amount) : undefined,
-      counterpartyName: counterpartyName || undefined,
-    };
+      // ✅ SAVE TO UI STATE
+      onSave(savedEvidence);
 
-    onSave(newEvidence);
+      // ✅ RESET FORM
+      setName("");
+      setCategory("");
+      setSubCategory("");
+      setNotes("");
+      setTransactionId("");
+      setAmount("");
+      setCounterpartyName("");
+      setFile(null);
+      setFileType("");
 
-    // 🔥 CLEANUP FIX
-    setFile(null);
+      onClose();
+    } catch (error) {
+      console.error(error);
 
-    onClose();
+      alert("Upload failed");
+    }
   };
 
   return (
@@ -130,9 +140,7 @@ export const EvidenceUploadModal = ({
         <input
           placeholder="Counterparty Name"
           value={counterpartyName}
-          onChange={(e) =>
-            setCounterpartyName(e.target.value)
-          }
+          onChange={(e) => setCounterpartyName(e.target.value)}
           style={input}
         />
 
@@ -145,11 +153,9 @@ export const EvidenceUploadModal = ({
           style={input}
         >
           <option value="">Select category</option>
+
           {sections.map((section) => (
-            <option
-              key={section.title}
-              value={section.title}
-            >
+            <option key={section.title} value={section.title}>
               {section.title}
             </option>
           ))}
@@ -161,8 +167,11 @@ export const EvidenceUploadModal = ({
           style={input}
         >
           <option value="">Select subcategory</option>
+
           {selectedSection?.items.map((item) => (
-            <option key={item}>{item}</option>
+            <option key={item} value={item}>
+              {item}
+            </option>
           ))}
         </select>
 
@@ -180,6 +189,7 @@ export const EvidenceUploadModal = ({
           style={input}
         >
           <option value="">Choose file type</option>
+
           <option value="image">Image</option>
           <option value="pdf">PDF</option>
           <option value="excel">Excel</option>
@@ -193,23 +203,19 @@ export const EvidenceUploadModal = ({
             fileType === "image"
               ? ".png,.jpg,.jpeg"
               : fileType === "pdf"
-              ? ".pdf"
-              : fileType === "excel"
-              ? ".xlsx"
-              : fileType === "word"
-              ? ".docx"
-              : ".pdf,.png,.jpg,.jpeg,.xlsx,.docx"
+                ? ".pdf"
+                : fileType === "excel"
+                  ? ".xlsx"
+                  : fileType === "word"
+                    ? ".docx"
+                    : ".pdf,.png,.jpg,.jpeg,.xlsx,.docx"
           }
           onChange={handleFileChange}
           style={input}
         />
 
         {/* FILE NAME */}
-        {file && (
-          <span style={fileName}>
-            Selected: {file.name}
-          </span>
-        )}
+        {file && <span style={fileName}>Selected: {file.name}</span>}
 
         <div style={actions}>
           <button style={cancelBtn} onClick={onClose}>

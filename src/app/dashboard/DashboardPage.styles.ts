@@ -1,22 +1,25 @@
-import { theme } from "@/styles/theme"
+// DashboardPage.styles.ts
+import { theme } from "@/styles/theme";
 
 export const dashboardLayoutStyles = {
   page: {
-    padding: theme.spacing.xl,
+    padding: theme.spacing.lg,
     background: theme.colors.appBackground,
     minHeight: "100vh",
   },
 
   mainGrid: {
     display: "grid",
-    gridTemplateColumns: "2fr 1fr",
-    gap: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    gridTemplateColumns: "1.6fr 1fr",
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    alignItems: "start",
   },
 
   secondaryGrid: {
     display: "grid",
-    gridTemplateColumns: "2fr 1fr",
-    gap: theme.spacing.lg,
+    gridTemplateColumns: "1.6fr 1fr",
+    gap: theme.spacing.md,
+    alignItems: "start",
   },
-}
+};
