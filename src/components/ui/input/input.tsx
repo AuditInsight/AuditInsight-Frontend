@@ -11,16 +11,50 @@ export const Input = ({
   success,
   icon: Icon,
   type = "text",
+  variant = "floating",
 }: InputProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
   const isActive = value.length > 0 || isFocused;
 
+  const inputStyle = {
+    ...inputStyles.input,
+    ...(Icon ? inputStyles.inputWithIcon : {}),
+    ...(isFocused ? inputStyles.focus : {}),
+    ...(error ? inputStyles.error : {}),
+    ...(success ? inputStyles.success : {}),
+  };
+
+  if (variant === "stacked") {
+    return (
+      <div style={inputStyles.container}>
+        {label && (
+          <label style={inputStyles.stackedLabel}>{label}</label>
+        )}
+
+        <div style={{ position: "relative" }}>
+          {Icon && <Icon size={16} style={inputStyles.icon} />}
+
+          <input
+            type={type}
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            style={inputStyle}
+          />
+        </div>
+
+        {error && (
+          <span style={inputStyles.errorText}>{error}</span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={inputStyles.container}>
-      {/* =========================
-          FLOATING LABEL
-      ========================= */}
       {label && (
         <label
           style={{
@@ -32,48 +66,21 @@ export const Input = ({
         </label>
       )}
 
-      {/* =========================
-          INPUT WRAPPER (for icon positioning)
-      ========================= */}
       <div style={{ position: "relative" }}>
-        {/* ICON INPUT */}
-        {Icon && (
-          <Icon size={16} style={inputStyles.icon} />
-        )}
+        {Icon && <Icon size={16} style={inputStyles.icon} />}
 
         <input
           type={type}
-          placeholder={isActive ? placeholder : ""} // hide placeholder when floating label is used
+          placeholder={isActive ? placeholder : ""}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          style={{
-            ...inputStyles.input,
-
-            // icon spacing
-            ...(Icon ? inputStyles.inputWithIcon : {}),
-
-            // focus state
-            ...(isFocused ? inputStyles.focus : {}),
-
-            // error state
-            ...(error ? inputStyles.error : {}),
-
-            // success state
-            ...(success ? inputStyles.success : {}),
-          }}
+          style={inputStyle}
         />
       </div>
 
-      {/* =========================
-          ERROR MESSAGE
-      ========================= */}
-      {error && (
-        <span style={inputStyles.errorText}>
-          {error}
-        </span>
-      )}
+      {error && <span style={inputStyles.errorText}>{error}</span>}
     </div>
   );
 };

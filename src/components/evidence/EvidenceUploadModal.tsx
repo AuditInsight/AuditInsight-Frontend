@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
-import { uploadEvidence } from "@/utils/api";
+import { Transaction } from "@/types/transaction.types";
+import {
+  getTransactions,
+  updateEvidence,
+  uploadEvidence,
+} from "@/utils/api";
 
 interface Props {
   isOpen: boolean;
@@ -13,6 +18,8 @@ interface Props {
     title: string;
     items: string[];
   }[];
+  mode?: "add" | "edit";
+  evidence?: Evidence | null;
 }
 
 export const EvidenceUploadModal = ({
@@ -20,6 +27,8 @@ export const EvidenceUploadModal = ({
   onClose,
   onSave,
   sections,
+  mode = "add",
+  evidence = null,
 }: Props) => {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -32,8 +41,77 @@ export const EvidenceUploadModal = ({
 
   const [file, setFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState("");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const loadTransactions = async () => {
+      setLoadingTransactions(true);
+      try {
+        const res = await getTransactions();
+        setTransactions(res.data);
+      } catch (error) {
+        console.error("Failed to load transactions:", error);
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+
+    loadTransactions();
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (mode === "edit" && evidence) {
+      setName(evidence.name);
+      setCategory(evidence.category);
+      setSubCategory(evidence.subCategory);
+      setNotes(evidence.notes || "");
+      setTransactionId(
+        evidence.transactionId ? String(evidence.transactionId) : ""
+      );
+      setAmount(evidence.amount != null ? String(evidence.amount) : "");
+      setCounterpartyName(evidence.counterpartyName || "");
+      setFile(null);
+      setFileType("");
+    } else if (mode === "add") {
+      setName("");
+      setCategory("");
+      setSubCategory("");
+      setNotes("");
+      setTransactionId("");
+      setAmount("");
+      setCounterpartyName("");
+      setFile(null);
+      setFileType("");
+    }
+  }, [isOpen, mode, evidence]);
 
   if (!isOpen) return null;
+
+  const isEdit = mode === "edit";
+
+  const handleTransactionChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const id = e.target.value;
+    setTransactionId(id);
+
+    const selected = transactions.find((t) => String(t.id) === id);
+    if (selected) {
+      setAmount(String(selected.amount));
+      setCounterpartyName(selected.counterparty);
+    } else {
+      setAmount("");
+      setCounterpartyName("");
+    }
+  };
+
+  const formatTransactionLabel = (t: Transaction) =>
+    `${t.id} — ${t.counterparty}`;
 
   const selectedSection = sections.find((s) => s.title === category);
 
@@ -62,19 +140,46 @@ export const EvidenceUploadModal = ({
   // =========================
   // SAVE HANDLER
   // =========================
+  const resetForm = () => {
+    setName("");
+    setCategory("");
+    setSubCategory("");
+    setNotes("");
+    setTransactionId("");
+    setAmount("");
+    setCounterpartyName("");
+    setFile(null);
+    setFileType("");
+  };
+
   const handleSave = async () => {
     try {
+      if (!transactionId) {
+        alert("Please select a transaction");
+        return;
+      }
+
+      if (isEdit && evidence) {
+        const response = await updateEvidence(evidence.id, {
+          name,
+          category,
+          subCategory,
+          notes,
+          transactionId: Number(transactionId),
+          amount: amount ? Number(amount) : undefined,
+          counterpartyName: counterpartyName || undefined,
+        });
+        onSave(response.data);
+        resetForm();
+        onClose();
+        return;
+      }
+
       if (!file) {
         alert("Please select a file");
         return;
       }
 
-      if (!transactionId) {
-        alert("Transaction ID is required");
-        return;
-      }
-
-      // ✅ UPLOAD TO BACKEND
       const response = await uploadEvidence(file, {
         transactionId: Number(transactionId),
         name,
@@ -85,35 +190,19 @@ export const EvidenceUploadModal = ({
         counterpartyName: counterpartyName || undefined,
       });
 
-      // ✅ BACKEND RETURNS SAVED EVIDENCE
-      const savedEvidence: Evidence = response.data;
-
-      // ✅ SAVE TO UI STATE
-      onSave(savedEvidence);
-
-      // ✅ RESET FORM
-      setName("");
-      setCategory("");
-      setSubCategory("");
-      setNotes("");
-      setTransactionId("");
-      setAmount("");
-      setCounterpartyName("");
-      setFile(null);
-      setFileType("");
-
+      onSave(response.data);
+      resetForm();
       onClose();
     } catch (error) {
       console.error(error);
-
-      alert("Upload failed");
+      alert(isEdit ? "Update failed" : "Upload failed");
     }
   };
 
   return (
     <div style={overlay}>
       <div style={modal}>
-        <h3>Add Evidence</h3>
+        <h3>{isEdit ? "Update Evidence" : "Add Evidence"}</h3>
 
         <input
           placeholder="Document name"
@@ -122,12 +211,24 @@ export const EvidenceUploadModal = ({
           style={input}
         />
 
-        <input
-          placeholder="Transaction ID"
+        <select
           value={transactionId}
-          onChange={(e) => setTransactionId(e.target.value)}
+          onChange={handleTransactionChange}
           style={input}
-        />
+          disabled={loadingTransactions}
+        >
+          <option value="">
+            {loadingTransactions
+              ? "Loading transactions…"
+              : "Select transaction"}
+          </option>
+
+          {transactions.map((t) => (
+            <option key={t.id} value={t.id}>
+              {formatTransactionLabel(t)}
+            </option>
+          ))}
+        </select>
 
         <input
           placeholder="Amount"
@@ -182,40 +283,40 @@ export const EvidenceUploadModal = ({
           style={textarea}
         />
 
-        {/* FILE TYPE */}
-        <select
-          value={fileType}
-          onChange={(e) => setFileType(e.target.value)}
-          style={input}
-        >
-          <option value="">Choose file type</option>
+        {!isEdit && (
+          <>
+            <select
+              value={fileType}
+              onChange={(e) => setFileType(e.target.value)}
+              style={input}
+            >
+              <option value="">Choose file type</option>
+              <option value="image">Image</option>
+              <option value="pdf">PDF</option>
+              <option value="excel">Excel</option>
+              <option value="word">Word</option>
+            </select>
 
-          <option value="image">Image</option>
-          <option value="pdf">PDF</option>
-          <option value="excel">Excel</option>
-          <option value="word">Word</option>
-        </select>
+            <input
+              type="file"
+              accept={
+                fileType === "image"
+                  ? ".png,.jpg,.jpeg"
+                  : fileType === "pdf"
+                    ? ".pdf"
+                    : fileType === "excel"
+                      ? ".xlsx"
+                      : fileType === "word"
+                        ? ".docx"
+                        : ".pdf,.png,.jpg,.jpeg,.xlsx,.docx"
+              }
+              onChange={handleFileChange}
+              style={input}
+            />
 
-        {/* FILE UPLOAD */}
-        <input
-          type="file"
-          accept={
-            fileType === "image"
-              ? ".png,.jpg,.jpeg"
-              : fileType === "pdf"
-                ? ".pdf"
-                : fileType === "excel"
-                  ? ".xlsx"
-                  : fileType === "word"
-                    ? ".docx"
-                    : ".pdf,.png,.jpg,.jpeg,.xlsx,.docx"
-          }
-          onChange={handleFileChange}
-          style={input}
-        />
-
-        {/* FILE NAME */}
-        {file && <span style={fileName}>Selected: {file.name}</span>}
+            {file && <span style={fileName}>Selected: {file.name}</span>}
+          </>
+        )}
 
         <div style={actions}>
           <button style={cancelBtn} onClick={onClose}>
@@ -223,7 +324,7 @@ export const EvidenceUploadModal = ({
           </button>
 
           <button style={saveBtn} onClick={handleSave}>
-            Save
+            {isEdit ? "Update" : "Save"}
           </button>
         </div>
       </div>

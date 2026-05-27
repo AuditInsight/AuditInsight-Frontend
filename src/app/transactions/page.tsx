@@ -8,12 +8,19 @@ import { TransactionsTable } from "@/components/transactions/TransactionsTable";
 import { TransactionsPagination } from "@/components/transactions/TransactionsPagination";
 import { TransactionDetailsModal } from "@/components/transactions/modals/TransactionDetailsModal";
 import { AddTransactionModal } from "@/components/transactions/modals/AddTransactionModal";
+import { ConfirmDeleteModal } from "@/components/transactions/modals/ConfirmDeleteModal";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
 
 import { theme } from "@/styles/theme";
-import { evidenceData } from "@/data/evidence.data";
 import { Transaction } from "@/types/transaction.types";
-import { createTransaction, getTransactions } from "@/utils/api";
+import { Evidence } from "@/types/evidence.types";
+import {
+  createTransaction,
+  deleteTransaction,
+  getEvidence,
+  getTransactions,
+  updateTransaction,
+} from "@/utils/api";
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -22,6 +29,7 @@ export default function TransactionsPage() {
   const transactionId = searchParams.get("transactionId");
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [evidences, setEvidences] = useState<Evidence[]>([]);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -31,23 +39,32 @@ export default function TransactionsPage() {
     useState<Transaction | null>(null);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
+  const [transactionToDelete, setTransactionToDelete] =
+    useState<Transaction | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const pageSize = 25;
 
   /* =========================
      LOAD DATA
   ========================= */
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await getTransactions();
-        setTransactions(res.data);
-      } catch (error) {
-        console.error("Failed to load transactions:", error);
-      }
-    };
+  const reloadData = async () => {
+    try {
+      const [txRes, evRes] = await Promise.all([
+        getTransactions(),
+        getEvidence(),
+      ]);
+      setTransactions(txRes.data);
+      setEvidences(evRes.data);
+    } catch (error) {
+      console.error("Failed to load transactions:", error);
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    reloadData();
   }, []);
 
   /* =========================
@@ -107,12 +124,49 @@ export default function TransactionsPage() {
   const handleCreateTransaction = async (data: Omit<Transaction, "id">) => {
     try {
       await createTransaction(data);
-      const res = await getTransactions();
-      setTransactions(res.data);
+      await reloadData();
       setIsAddModalOpen(false);
     } catch (error) {
       console.error("Failed to create transaction:", error);
     }
+  };
+
+  const handleUpdateTransaction = async (data: Omit<Transaction, "id">) => {
+    if (!editingTransaction) return;
+
+    try {
+      await updateTransaction(editingTransaction.id, data);
+      await reloadData();
+      setEditingTransaction(null);
+    } catch (error) {
+      console.error("Failed to update transaction:", error);
+    }
+  };
+
+  const handleDeleteTransaction = (transaction: Transaction) => {
+    setTransactionToDelete(transaction);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!transactionToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteTransaction(transactionToDelete.id);
+      if (transactionId === String(transactionToDelete.id)) {
+        handleCloseModal();
+      }
+      setTransactionToDelete(null);
+      await reloadData();
+    } catch (error) {
+      console.error("Failed to delete transaction:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
   };
 
   const handleReset = () => {
@@ -146,7 +200,7 @@ export default function TransactionsPage() {
     <div style={pageStyles}>
       <TransactionsStats
         transactions={transactions}
-        evidences={evidenceData}
+        evidences={evidences}
       />
 
       <section style={section}>
@@ -167,7 +221,10 @@ export default function TransactionsPage() {
 
         <TransactionsTable
           data={paginatedData}
+          evidences={evidences}
           onRowClick={handleOpen}
+          onEdit={handleEdit}
+          onDelete={handleDeleteTransaction}
           highlightId={
             transactionId ? Number(transactionId) : undefined
           }
@@ -198,7 +255,7 @@ export default function TransactionsPage() {
   transaction={selectedTransaction}
   evidences={
     selectedTransaction
-      ? evidenceData.filter(
+      ? evidences.filter(
           (e) =>
             Number(e.transactionId) === Number(selectedTransaction.id)
         )
@@ -210,6 +267,23 @@ export default function TransactionsPage() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleCreateTransaction}
+        mode="add"
+      />
+
+      <AddTransactionModal
+        isOpen={!!editingTransaction}
+        onClose={() => setEditingTransaction(null)}
+        onSubmit={handleUpdateTransaction}
+        transaction={editingTransaction}
+        mode="edit"
+      />
+
+      <ConfirmDeleteModal
+        isOpen={!!transactionToDelete}
+        transaction={transactionToDelete}
+        onClose={() => setTransactionToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
       />
     </div>
   );

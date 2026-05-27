@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Transaction } from "@/types/transaction.types";
 import { theme } from "@/styles/theme";
 
@@ -8,22 +8,46 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: Omit<Transaction, "id">) => void;
+  transaction?: Transaction | null;
+  mode?: "add" | "edit";
 }
+
+const emptyForm = (): Omit<Transaction, "id"> => ({
+  date: "",
+  amount: 0,
+  counterparty: "",
+  type: "EXPENSE",
+  source: "MOBILE_MONEY",
+  status: "COMPLETED",
+  riskScore: 0,
+});
 
 export function AddTransactionModal({
   isOpen,
   onClose,
   onSubmit,
+  transaction = null,
+  mode = "add",
 }: Props) {
-  const [form, setForm] = useState<Omit<Transaction, "id">>({
-    date: "",
-    amount: 0,
-    counterparty: "",
-    type: "EXPENSE",
-    source: "MOBILE_MONEY",
-    status: "COMPLETED",
-    riskScore: 0,
-  });
+  const [form, setForm] = useState<Omit<Transaction, "id">>(emptyForm());
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (mode === "edit" && transaction) {
+      setForm({
+        date: transaction.date,
+        amount: transaction.amount,
+        counterparty: transaction.counterparty,
+        type: transaction.type,
+        source: transaction.source,
+        status: transaction.status,
+        riskScore: transaction.riskScore,
+      });
+    } else {
+      setForm(emptyForm());
+    }
+  }, [isOpen, mode, transaction]);
 
   if (!isOpen) return null;
 
@@ -42,7 +66,7 @@ export function AddTransactionModal({
   };
 
   const handleSubmit = () => {
-    if (!form.date){
+    if (!form.date) {
       alert("Please select a date.");
       return;
     }
@@ -50,12 +74,13 @@ export function AddTransactionModal({
     onClose();
   };
 
+  const title = mode === "edit" ? "Edit Transaction" : "Add Transaction";
+
   return (
     <div style={overlay}>
       <div style={modal}>
-        <h3 style={title}>Add Transaction</h3>
+        <h3 style={titleStyle}>{title}</h3>
 
-        {/* DATE */}
         <input
           name="date"
           type="date"
@@ -64,48 +89,60 @@ export function AddTransactionModal({
           style={input}
         />
 
-        {/* AMOUNT */}
         <input
           name="amount"
           type="number"
           placeholder="Enter transaction amount (e.g. 5000)"
+          value={form.amount || ""}
           onChange={handleChange}
           style={input}
         />
 
-        {/* COUNTERPARTY */}
         <input
           name="counterparty"
           placeholder="Enter counterparty name (e.g. ABC Company)"
+          value={form.counterparty}
           onChange={handleChange}
           style={input}
         />
 
-        {/* TYPE */}
-        <select name="type" onChange={handleChange} style={input}>
+        <select
+          name="type"
+          value={form.type}
+          onChange={handleChange}
+          style={input}
+        >
           <option value="EXPENSE">EXPENSE</option>
           <option value="INCOME">INCOME</option>
         </select>
 
-        {/* SOURCE */}
-        <select name="source" onChange={handleChange} style={input}>
+        <select
+          name="source"
+          value={form.source}
+          onChange={handleChange}
+          style={input}
+        >
           <option value="MOBILE_MONEY">MOBILE_MONEY</option>
           <option value="BANK">BANK</option>
           <option value="CASH">CASH</option>
         </select>
 
-        {/* STATUS */}
-        <select name="status" onChange={handleChange} style={input}>
+        <select
+          name="status"
+          value={form.status}
+          onChange={handleChange}
+          style={input}
+        >
           <option value="COMPLETED">COMPLETED</option>
           <option value="PENDING">PENDING</option>
           <option value="FLAGGED">FLAGGED</option>
         </select>
 
-        {/* RISK */}
         <input
           name="riskScore"
           type="number"
           placeholder="Risk score (0–100)"
+          value={form.riskScore}
           onChange={handleChange}
           style={input}
         />
@@ -123,7 +160,6 @@ export function AddTransactionModal({
   );
 }
 
-/* styles unchanged */
 const overlay: React.CSSProperties = {
   position: "fixed",
   inset: 0,
@@ -144,7 +180,7 @@ const modal: React.CSSProperties = {
   gap: theme.spacing.sm,
 };
 
-const title: React.CSSProperties = {
+const titleStyle: React.CSSProperties = {
   marginBottom: theme.spacing.sm,
 };
 

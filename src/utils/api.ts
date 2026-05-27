@@ -40,6 +40,14 @@ export const createTransaction = (
   data: Omit<Transaction, "id">
 ) => API.post<Transaction>("/transactions", data);
 
+export const updateTransaction = (
+  id: number,
+  data: Omit<Transaction, "id">
+) => API.put<Transaction>(`/transactions/${id}`, data);
+
+export const deleteTransaction = (id: number) =>
+  API.delete(`/transactions/${id}`);
+
 /* =========================
    EVIDENCE API
 ========================= */
@@ -64,6 +72,14 @@ export const getEvidenceByTransaction = (transactionId: number) =>
 export const createEvidence = (
   data: Omit<Evidence, "id" | "uploadedAt">
 ) => API.post<Evidence>("/evidence", data);
+
+export const updateEvidence = (
+  id: number,
+  data: Partial<Evidence>
+) => API.put<Evidence>(`/evidence/${id}`, data);
+
+export const deleteEvidence = (id: number) =>
+  API.delete(`/evidence/${id}`);
 
 /* =========================
    UPLOAD FILE EVIDENCE

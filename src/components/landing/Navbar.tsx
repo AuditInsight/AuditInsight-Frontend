@@ -3,8 +3,18 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 export default function Navbar() {
+  const [active, setActive] = useState<string | null>(null);
+
+  const navLinks = [
+    { label: "Features", href: "#features" },
+    { label: "Pricing", href: "#pricing" },
+    { label: "Security", href: "#security" },
+    { label: "FAQ", href: "#faq" },
+  ];
+
   return (
     <header style={styles.header}>
       <div style={styles.logo}>
@@ -12,21 +22,34 @@ export default function Navbar() {
       </div>
 
       <nav style={styles.nav}>
-        <a href="#features">Features</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#security">Security</a>
-        <a href="#faq">FAQ</a>
+        {navLinks.map((l) => {
+          const isActive = active === l.href;
+          return (
+            <a
+              key={l.href}
+              href={l.href}
+              style={{
+                ...styles.navLink,
+                ...(isActive ? styles.navLinkActive : null),
+              }}
+              onMouseEnter={() => setActive(l.href)}
+              onMouseLeave={() => setActive(null)}
+            >
+              {l.label}
+            </a>
+          );
+        })}
       </nav>
 
       <div style={styles.actions}>
-        <Link href="/login">
-          <button style={styles.loginBtn}>
+        <Link href="/log-in">
+          <button type="button" style={styles.loginBtn}>
             Login
           </button>
         </Link>
 
-        <Link href="/signup">
-          <button style={styles.primaryBtn}>
+        <Link href="/sign-up">
+          <button type="button" style={styles.primaryBtn}>
             Start Free Trial
           </button>
         </Link>
@@ -63,6 +86,20 @@ const styles: Record<
     gap: 28,
     fontSize: 15,
     color: "#374151",
+  },
+
+  navLink: {
+    color: "#374151",
+    textDecoration: "none",
+    fontWeight: 600,
+    padding: "8px 4px",
+    borderRadius: 8,
+    transition: "color 0.18s ease, background 0.18s ease",
+  },
+
+  navLinkActive: {
+    color: "#1e3a8a",
+    background: "rgba(30,58,138,0.06)",
   },
 
   actions: {

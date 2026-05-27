@@ -13,6 +13,16 @@ interface EvidenceFiltersProps {
   search: string;
   setSearch: (value: string) => void;
 
+  categoryFilter: string;
+  setCategoryFilter: (value: string) => void;
+  statusFilter: string;
+  setStatusFilter: (value: string) => void;
+  yearFilter: string;
+  setYearFilter: (value: string) => void;
+
+  categoryOptions: string[];
+  yearOptions: string[];
+
   total: number;
 
   setPage: (page: number) => void;
@@ -23,6 +33,14 @@ export const EvidenceFilters = ({
   setActiveTab,
   search,
   setSearch,
+  categoryFilter,
+  setCategoryFilter,
+  statusFilter,
+  setStatusFilter,
+  yearFilter,
+  setYearFilter,
+  categoryOptions,
+  yearOptions,
   total,
   setPage,
 }: EvidenceFiltersProps) => {
@@ -50,25 +68,40 @@ export const EvidenceFilters = ({
         {/* LEFT: DROPDOWNS */}
         <div style={{ display: "flex", gap: 10 }}>
           <EvidenceDropdown
-            label="Category"
-            options={[
-              "Invoice",
-              "Contract",
-              "Receipt",
-              "Approval",
-              "Payroll",
-              "Tax",
-            ]}
+            label={
+              categoryFilter === "All"
+                ? "Category"
+                : `Category: ${categoryFilter}`
+            }
+            options={categoryOptions}
+            onChange={(opt) => {
+              setCategoryFilter(opt);
+              setPage(1);
+            }}
           />
 
           <EvidenceDropdown
-            label="Status"
-            options={["Verified", "Pending", "Missing"]}
+            label={
+              statusFilter === "All"
+                ? "Status"
+                : `Status: ${statusFilter}`
+            }
+            options={["All", "Verified", "Pending", "Missing"]}
+            onChange={(opt) => {
+              setStatusFilter(opt);
+              setPage(1);
+            }}
           />
 
           <EvidenceDropdown
-            label="Date"
-            options={["Today", "This Month", "This Year"]}
+            label={
+              yearFilter === "All" ? "Year" : `Year: ${yearFilter}`
+            }
+            options={yearOptions}
+            onChange={(opt) => {
+              setYearFilter(opt);
+              setPage(1);
+            }}
           />
         </div>
 

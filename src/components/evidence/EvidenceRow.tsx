@@ -2,36 +2,31 @@
 
 import { useRouter } from "next/navigation";
 import { Evidence } from "@/types/evidence.types";
-import { useState } from "react";
 import { theme } from "@/styles/theme";
+import { EvidenceActions } from "./EvidenceActions";
 
 interface Props {
   evidence: Evidence;
+  onView: (evidence: Evidence) => void;
+  onEdit: (evidence: Evidence) => void;
+  onDelete: (evidence: Evidence) => void;
 }
 
-export const EvidenceRow = ({ evidence }: Props) => {
+export const EvidenceRow = ({
+  evidence,
+  onView,
+  onEdit,
+  onDelete,
+}: Props) => {
   const router = useRouter();
-  const [hover, setHover] = useState(false);
 
   const goToTransaction = (id?: number) => {
     if (!id) return;
-
     router.push(`/transactions?transactionId=${id}`);
   };
 
   return (
-    <tr
-      style={{
-        ...row,
-        background: hover
-          ? theme.colors.appBackground
-          : "transparent",
-        cursor: "pointer",
-      }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      {/* DOCUMENT */}
+    <tr style={row}>
       <td style={td}>
         <div style={docCell}>
           {evidence.url && evidence.url !== "#" ? (
@@ -42,7 +37,7 @@ export const EvidenceRow = ({ evidence }: Props) => {
               style={attachmentLink}
               onClick={(e) => e.stopPropagation()}
             >
-              {evidence.name|| "Untitled"}
+              {evidence.name || "Untitled"}
             </a>
           ) : (
             <span>{evidence.name || "Untitled"}</span>
@@ -50,58 +45,41 @@ export const EvidenceRow = ({ evidence }: Props) => {
         </div>
       </td>
 
-      {/* CATEGORY */}
+      <td style={td}>{evidence.category || "—"}</td>
+
       <td style={td}>
-        {evidence.category || "-"}
+        {evidence.amount != null ? `$${evidence.amount}` : "—"}
       </td>
 
-      {/* AMOUNT */}
-      <td style={td}>
-        {evidence.amount
-          ? `$${evidence.amount}`
-          : "-"}
-      </td>
+      <td style={td}>{evidence.counterpartyName || "—"}</td>
 
-      {/* COUNTERPARTY */}
-      <td style={td}>
-        {evidence.counterpartyName || "-"}
-      </td>
+      <td style={td}>{evidence.date || "—"}</td>
 
-      {/* DATE */}
-      <td style={td}>
-        {evidence.date || "-"}
-      </td>
-
-      {/* LINKED TRANSACTION */}
       <td style={td}>
         <span
           style={link}
           onClick={(e) => {
             e.stopPropagation();
-
-            goToTransaction(
-              evidence.transactionId
-            );
+            goToTransaction(evidence.transactionId);
           }}
         >
           {evidence.transactionId ?? "—"}
         </span>
       </td>
 
-      {/* STATUS */}
-      <td style={td}>
-        {evidence.status || "-"}
-      </td>
+      <td style={td}>{evidence.status || "—"}</td>
 
-      {/* AI FLAGS */}
-      <td style={td}></td>
+      <td style={td}>
+        <EvidenceActions
+          evidence={evidence}
+          onView={onView}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      </td>
     </tr>
   );
 };
-
-/* =========================
-   STYLES
-========================= */
 
 const row: React.CSSProperties = {
   transition: "all 0.2s ease",

@@ -24,4 +24,7 @@ export interface Transaction {
   status: TransactionStatus;
 
   riskScore: number;
+
+  createdAt?: string;
+  updatedAt?: string;
 }

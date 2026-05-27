@@ -10,9 +10,12 @@ import {
 import { EvidenceTable } from "@/components/evidence/EvidenceTable";
 import { EvidencePagination } from "@/components/evidence/EvidencePagination";
 import { EvidenceUploadModal } from "@/components/evidence/EvidenceUploadModal";
+import { EvidenceDetailsModal } from "@/components/evidence/EvidenceDetailsModal";
+import { ConfirmDeleteEvidenceModal } from "@/components/evidence/ConfirmDeleteEvidenceModal";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
-import { getEvidence } from "@/utils/api";
+import { evidenceMatchesSearch } from "@/lib/evidenceSearch";
+import { deleteEvidence, getEvidence } from "@/utils/api";
 
 /* =========================
    TYPES
@@ -130,8 +133,22 @@ export default function EvidencePage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
+  const [categoryFilter, setCategoryFilter] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [yearFilter, setYearFilter] = useState<string>("All");
+
   const [documents, setDocuments] = useState<Evidence[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [viewingEvidence, setViewingEvidence] = useState<Evidence | null>(
+    null
+  );
+  const [editingEvidence, setEditingEvidence] = useState<Evidence | null>(
+    null
+  );
+  const [evidenceToDelete, setEvidenceToDelete] = useState<Evidence | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const pageSize = 25;
 
@@ -148,6 +165,9 @@ export default function EvidencePage() {
         // 🔥 FIX: reset filters so nothing "disappears" after refresh
         setActiveCategory(null);
         setActiveTab("All");
+        setCategoryFilter("All");
+        setStatusFilter("All");
+        setYearFilter("All");
         setPage(1);
       } catch (error) {
         console.error("Failed to load evidence:", error);
@@ -160,17 +180,40 @@ export default function EvidencePage() {
   /* =========================
      SAVE TO BACKEND (UI UPDATE ONLY)
   ========================= */
-  const handleAddEvidence = (savedEvidence: Evidence) => {
+  const handleSaveEvidence = (savedEvidence: Evidence) => {
     setDocuments((prev) => {
-      const exists = prev.some((e) => e.id === savedEvidence.id);
-      if (exists) return prev;
-
+      const index = prev.findIndex((e) => e.id === savedEvidence.id);
+      if (index >= 0) {
+        const next = [...prev];
+        next[index] = savedEvidence;
+        return next;
+      }
       return [savedEvidence, ...prev];
     });
 
-    // 🔥 FIX: optional UX improvement
     setUploadOpen(false);
+    setEditingEvidence(null);
     setPage(1);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!evidenceToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteEvidence(evidenceToDelete.id);
+      setDocuments((prev) =>
+        prev.filter((e) => e.id !== evidenceToDelete.id)
+      );
+      if (viewingEvidence?.id === evidenceToDelete.id) {
+        setViewingEvidence(null);
+      }
+      setEvidenceToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete evidence:", error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   /* =========================
@@ -178,6 +221,19 @@ export default function EvidencePage() {
   ========================= */
   const filteredData = useMemo(() => {
     return documents.filter((e) => {
+      if (categoryFilter !== "All" && e.category !== categoryFilter) {
+        return false;
+      }
+
+      if (statusFilter !== "All" && e.status !== statusFilter) {
+        return false;
+      }
+
+      if (yearFilter !== "All") {
+        const year = e.date ? String(e.date).slice(0, 4) : "";
+        if (year !== yearFilter) return false;
+      }
+
       if (
         activeCategory &&
         e.subCategory &&
@@ -202,16 +258,41 @@ export default function EvidencePage() {
         return false;
       }
 
-      if (
-        search &&
-        !e.name?.toLowerCase().includes(search.toLowerCase())
-      ) {
+      if (search && !evidenceMatchesSearch(e, search)) {
         return false;
       }
 
       return true;
     });
-  }, [documents, activeCategory, activeTab, search]);
+  }, [
+    documents,
+    activeCategory,
+    activeTab,
+    search,
+    categoryFilter,
+    statusFilter,
+    yearFilter,
+  ]);
+
+  const categoryOptions = useMemo(() => {
+    const values = Array.from(
+      new Set(documents.map((d) => d.category).filter(Boolean))
+    ) as string[];
+    values.sort((a, b) => a.localeCompare(b));
+    return ["All", ...values];
+  }, [documents]);
+
+  const yearOptions = useMemo(() => {
+    const years = Array.from(
+      new Set(
+        documents
+          .map((d) => (d.date ? String(d.date).slice(0, 4) : ""))
+          .filter((y) => /^\d{4}$/.test(y))
+      )
+    );
+    years.sort((a, b) => b.localeCompare(a)); // newest first
+    return ["All", ...years];
+  }, [documents]);
 
   /* =========================
      PAGINATION
@@ -263,11 +344,33 @@ export default function EvidencePage() {
             setSearch(value);
             setPage(1); // 🔥 FIX
           }}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={(value) => {
+            setCategoryFilter(value);
+            setPage(1);
+          }}
+          statusFilter={statusFilter}
+          setStatusFilter={(value) => {
+            setStatusFilter(value);
+            setPage(1);
+          }}
+          yearFilter={yearFilter}
+          setYearFilter={(value) => {
+            setYearFilter(value);
+            setPage(1);
+          }}
+          categoryOptions={categoryOptions}
+          yearOptions={yearOptions}
           total={filteredData.length}
           setPage={setPage}
         />
 
-        <EvidenceTable data={paginatedData} />
+        <EvidenceTable
+          data={paginatedData}
+          onView={setViewingEvidence}
+          onEdit={setEditingEvidence}
+          onDelete={setEvidenceToDelete}
+        />
 
         <EvidencePagination
           page={page}
@@ -279,8 +382,32 @@ export default function EvidencePage() {
       <EvidenceUploadModal
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        onSave={handleAddEvidence}
+        onSave={handleSaveEvidence}
         sections={sections}
+        mode="add"
+      />
+
+      <EvidenceUploadModal
+        isOpen={!!editingEvidence}
+        onClose={() => setEditingEvidence(null)}
+        onSave={handleSaveEvidence}
+        sections={sections}
+        mode="edit"
+        evidence={editingEvidence}
+      />
+
+      <EvidenceDetailsModal
+        isOpen={!!viewingEvidence}
+        evidence={viewingEvidence}
+        onClose={() => setViewingEvidence(null)}
+      />
+
+      <ConfirmDeleteEvidenceModal
+        isOpen={!!evidenceToDelete}
+        evidence={evidenceToDelete}
+        onClose={() => setEvidenceToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
       />
     </div>
   );

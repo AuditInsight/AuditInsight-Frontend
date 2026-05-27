@@ -3,6 +3,7 @@
 import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
+import { computeTransactionStats } from "@/lib/transactionStats";
 import {
   Receipt,
   ShieldCheck,
@@ -19,52 +20,45 @@ export const TransactionsStats = ({
   transactions,
   evidences,
 }: Props) => {
-  const total = transactions.length;
+  const stats = computeTransactionStats(transactions, evidences);
 
-  const verified = evidences.filter(
-    (e: Evidence) => e.status === "Verified"
-  ).length;
-
-  const missing = evidences.filter(
-    (e: Evidence) => e.status === "Missing"
-  ).length;
-
-  const flagged = transactions.filter(
-    (t: Transaction) => t.riskScore > 70
-  ).length;
-
-  const overdue = transactions.filter(
-    (t: Transaction) => t.status === "FLAGGED"
-  ).length;
+  const newSub =
+    stats.createdToday > 0
+      ? `+${stats.createdToday} New`
+      : "No new today";
 
   return (
     <div style={container}>
       <Card
         title="Transactions Today"
-        value={total}
-        sub="+219 New"
+        value={stats.transactionsToday}
+        sub={newSub}
         icon={<Receipt size={18} />}
       />
 
       <Card
         title="Verified Evidence"
-        value={`${verified}`}
-        sub={`${missing} Missing`}
+        value={stats.verified}
+        sub={`${stats.missing} Missing`}
         color="green"
         icon={<ShieldCheck size={18} />}
       />
 
       <Card
         title="Flagged Risks"
-        value={flagged}
-        sub="High Risk"
+        value={stats.flagged}
+        sub={
+          stats.highRisk > 0
+            ? `${stats.highRisk} High Risk`
+            : "High Risk"
+        }
         color="orange"
         icon={<AlertTriangle size={18} />}
       />
 
       <Card
         title="Past Due Approvals"
-        value={overdue}
+        value={stats.overdue}
         sub="> 3 Days"
         color="red"
         icon={<Clock3 size={18} />}

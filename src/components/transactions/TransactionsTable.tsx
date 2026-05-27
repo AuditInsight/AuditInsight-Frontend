@@ -3,11 +3,14 @@
 import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
+import { TransactionActions } from "./TransactionActions";
 
 interface Props {
   data: Transaction[];
   evidences?: Evidence[];
   onRowClick: (transaction: Transaction) => void;
+  onEdit: (transaction: Transaction) => void;
+  onDelete: (transaction: Transaction) => void;
   highlightId?: number;
 }
 
@@ -15,13 +18,12 @@ export const TransactionsTable = ({
   data,
   evidences = [],
   onRowClick,
+  onEdit,
+  onDelete,
   highlightId,
 }: Props) => {
   return (
     <table style={table}>
-      {/* =========================
-          HEADER ROW (FIXED)
-      ========================= */}
       <thead>
         <tr style={headerRow}>
           <th style={th}>Transaction ID</th>
@@ -30,20 +32,16 @@ export const TransactionsTable = ({
           <th style={th}>Counterparty</th>
           <th style={th}>Status</th>
           <th style={th}>Evidence</th>
+          <th style={th}>Actions</th>
         </tr>
       </thead>
 
-      {/* =========================
-          BODY
-      ========================= */}
       <tbody>
         {data.map((t) => {
           const isHighlighted = highlightId === t.id;
 
-          // ✅ FIXED SAFE LINK
           const transactionEvidence = evidences.filter(
-            (e) =>
-              Number(e.transactionId) === Number(t.id)
+            (e) => Number(e.transactionId) === Number(t.id)
           );
 
           return (
@@ -60,13 +58,17 @@ export const TransactionsTable = ({
             >
               <td style={td}>{t.id}</td>
               <td style={td}>{t.date}</td>
-              <td style={td}>{t.amount}</td>
+              <td style={td}>{t.amount.toLocaleString()}</td>
               <td style={td}>{t.counterparty}</td>
               <td style={td}>{t.status}</td>
-
-              {/* Evidence column */}
+              <td style={td}>{transactionEvidence.length} docs</td>
               <td style={td}>
-                {transactionEvidence.length} docs
+                <TransactionActions
+                  transaction={t}
+                  onView={onRowClick}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
               </td>
             </tr>
           );
@@ -75,10 +77,6 @@ export const TransactionsTable = ({
     </table>
   );
 };
-
-/* =========================
-   STYLES
-========================= */
 
 const table: React.CSSProperties = {
   width: "100%",

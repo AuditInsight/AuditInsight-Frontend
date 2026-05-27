@@ -11,6 +11,8 @@ export interface InputProps {
 
   type?: "text" | "password" | "email";
 
-  // ✅ FIXED for Lucide icons
+  /** `stacked` = label above field (best for auth forms). `floating` = label inside field. */
+  variant?: "floating" | "stacked";
+
   icon?: LucideIcon;
 }

@@ -22,7 +22,7 @@ export const EvidenceSearch = ({
           onChange(e.target.value);
           setPage(1); // 🔥 RESET PAGE
         }}
-        placeholder="Search documents..."
+        placeholder="Search by name, category, amount, status…"
         style={input}
       />
     </div>

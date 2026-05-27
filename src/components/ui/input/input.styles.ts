@@ -24,6 +24,14 @@ export const inputStyles = {
     transition: "all 0.2s ease",
   },
 
+  stackedLabel: {
+    display: "block",
+    fontSize: "13px",
+    fontWeight: 600,
+    color: Colors.textPrimary,
+    marginBottom: "6px",
+  },
+
   /* =========================
      FLOATING LABEL (NEW)
   ========================= */
@@ -62,6 +70,7 @@ export const inputStyles = {
     border: "1px solid rgba(15,23,42,0.08)",
 
     fontSize: "14px",
+    color: Colors.textPrimary,
 
     outline: "none",
 
