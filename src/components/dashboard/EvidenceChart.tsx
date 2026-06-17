@@ -14,8 +14,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-type Transaction = { id: number };
-type Evidence = { id: number };
+type Transaction = { id: string | number };
+type Evidence = { id: string | number };
 
 type Props = {
   transactions: Transaction[];

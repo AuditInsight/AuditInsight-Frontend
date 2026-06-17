@@ -20,7 +20,7 @@ export const EvidenceRow = ({
 }: Props) => {
   const router = useRouter();
 
-  const goToTransaction = (id?: number) => {
+  const goToTransaction = (id?: string | number) => {
     if (!id) return;
     router.push(`/transactions?transactionId=${id}`);
   };

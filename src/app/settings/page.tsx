@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import SettingsSidebar from "@/components/settings/SettingsSidebar";
 
@@ -37,370 +37,185 @@ import AuditLogsTable from "@/components/settings/audit-logs/AuditLogsTable";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
 
 import { theme } from "@/styles/theme";
+import { getOrganisationMembers, getOrganisation, type OrganisationMemberResponse, type OrganisationResponse } from "@/utils/api";
 
 export default function SettingsPage() {
-  const [active, setActive] =
-    useState<string>("Organization");
+  const [active, setActive] = useState<string>("Organization");
+  const [inviteOpen, setInviteOpen] = useState<boolean>(false);
+  const [dirty, setDirty] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const [inviteOpen, setInviteOpen] =
-    useState<boolean>(false);
+  const [users, setUsers] = useState<OrganisationMemberResponse[]>([]);
+  const [org, setOrg] = useState<OrganisationResponse | null>(null);
+  const [orgLoading, setOrgLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
 
-  const [dirty, setDirty] =
-    useState(false);
+  useEffect(() => {
+    const orgId = localStorage.getItem("organisationId") ?? "";
+    if (!orgId) { setOrgLoading(false); return; }
 
-  const [saved, setSaved] =
-    useState(false);
+    getOrganisation(orgId)
+      .then(({ data }) => setOrg(data))
+      .catch(() => {})
+      .finally(() => setOrgLoading(false));
+  }, []);
 
-  /* =========================
-     MOCK USERS
-  ========================= */
-  const users = [
-  {
-    id: 1,
-    name: "Diana Buyinza",
-    email: "diana@auditinsight.com",
-    role: "Admin",
-    status: "Active",
-    lastLogin: "2 mins ago",
-  },
-  {
-    id: 2,
-    name: "Samuel Kane",
-    email: "samuel@auditinsight.com",
-    role: "Auditor",
-    status: "Suspended",
-    lastLogin: "1 hour ago",
-  },
-  {
-    id: 3,
-    name: "Grace Uwase",
-    email: "grace@auditinsight.com",
-    role: "Reviewer",
-    status: "Pending",
-    lastLogin: "Yesterday",
-  },
-];
-
-  /* =========================
-     MOCK AUDIT LOGS
-  ========================= */
-  const logs = [
-    {
-      id: 1,
-      user: "Diana Buyinza",
-      action:
-        "Changed approval limit settings",
-      timestamp: "2026-05-11 09:42",
-    },
-    {
-      id: 2,
-      user: "Samuel Kane",
-      action:
-        "Resolved critical review issue",
-      timestamp: "2026-05-11 08:10",
-    },
-    {
-      id: 3,
-      user: "Grace Uwase",
-      action:
-        "Uploaded supporting evidence",
-      timestamp: "2026-05-10 18:32",
-    },
-  ];
+  useEffect(() => {
+    if (active !== "Users & Roles") return;
+    const orgId = localStorage.getItem("organisationId") ?? "";
+    if (!orgId) return;
+    setUsersLoading(true);
+    getOrganisationMembers(orgId)
+      .then(({ data }) => setUsers(data ?? []))
+      .catch(() => {})
+      .finally(() => setUsersLoading(false));
+  }, [active]);
 
   const handleSave = () => {
     setSaved(true);
     setDirty(false);
-
-    setTimeout(() => {
-      setSaved(false);
-    }, 2500);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
     <div style={styles.page}>
-      {/* =========================
-          TOOLBAR
-      ========================= */}
-
       <div style={styles.toolbarWrap}>
         <PageToolbar
           title="Settings"
-          filters={[
-            "System Settings",
-            "Audit Controls",
-          ]}
-          primaryActionLabel={
-            dirty
-              ? "Save Changes"
-              : "Saved"
-          }
+          filters={["System Settings", "Audit Controls"]}
+          primaryActionLabel={dirty ? "Save Changes" : "Saved"}
         />
-
         <div style={styles.toolbarActions}>
-          {dirty && (
-            <span style={styles.unsaved}>
-              Unsaved Changes
-            </span>
-          )}
-
-          {saved && (
-            <span style={styles.saved}>
-              Changes Saved
-            </span>
-          )}
-
+          {dirty && <span style={styles.unsaved}>Unsaved Changes</span>}
+          {saved && <span style={styles.saved}>Changes Saved</span>}
           <button
             disabled={!dirty}
             onClick={handleSave}
-            style={{
-              ...styles.saveBtn,
-
-              opacity: dirty ? 1 : 0.5,
-            }}
+            style={{ ...styles.saveBtn, opacity: dirty ? 1 : 0.5 }}
           >
             Save Settings
           </button>
         </div>
       </div>
 
-      {/* =========================
-          MAIN LAYOUT
-      ========================= */}
       <div style={styles.layout}>
-        {/* =========================
-            SIDEBAR
-        ========================= */}
-        <SettingsSidebar
-          active={active}
-          setActive={setActive}
-        />
+        <SettingsSidebar active={active} setActive={setActive} />
 
-        {/* =========================
-            CONTENT
-        ========================= */}
         <div style={styles.content}>
-          {/* =====================================
-              ORGANIZATION
-          ===================================== */}
+          {/* ORGANIZATION */}
           {active === "Organization" && (
-            <>
-              <div style={styles.grid3}>
-                <OrganizationProfileCard
-                  organization="AuditInsight"
-                  industry="Financial Technology"
-                  country="Rwanda"
-                />
-
-                <FiscalYearSettings />
-
-                <CurrencySettings />
-              </div>
-            </>
+            <div style={styles.grid3}>
+              <OrganizationProfileCard
+                organization={orgLoading ? "Loading…" : (org?.name ?? "—")}
+                industry={orgLoading ? "…" : (org?.industry ?? "—")}
+                country="—"
+              />
+              <FiscalYearSettings />
+              <CurrencySettings />
+            </div>
           )}
 
-          {/* =====================================
-              USERS & ROLES
-          ===================================== */}
+          {/* USERS & ROLES */}
           {active === "Users & Roles" && (
             <>
               <div style={styles.headerRow}>
                 <div>
-                  <h2 style={styles.sectionTitle}>
-                    Users & Roles
-                  </h2>
-
+                  <h2 style={styles.sectionTitle}>Users & Roles</h2>
                   <p style={styles.sectionText}>
-                    Manage auditors,
-                    reviewers, and access
-                    control.
+                    Manage auditors, reviewers, and access control.
                   </p>
                 </div>
-
-                <button
-                  style={styles.primaryBtn}
-                  onClick={() =>
-                    setInviteOpen(true)
-                  }
-                >
+                <button style={styles.primaryBtn} onClick={() => setInviteOpen(true)}>
                   Invite User
                 </button>
               </div>
-
-              <UsersTable users={users} />
+              {usersLoading ? (
+                <p style={{ color: "#6b7280", fontSize: 14 }}>Loading members…</p>
+              ) : (
+                <UsersTable users={users} />
+              )}
             </>
           )}
 
-          {/* =====================================
-              PERMISSIONS
-          ===================================== */}
-          {active === "Permissions" && (
-            <PermissionsMatrix />
-          )}
+          {active === "Permissions" && <PermissionsMatrix />}
 
-          {/* =====================================
-              WORKFLOW
-          ===================================== */}
           {active === "Workflow" && (
             <div style={styles.grid3}>
               <WorkflowStatusesCard />
-
               <EscalationRulesCard />
-
               <AutoAssignmentCard />
             </div>
           )}
 
-          {/* =====================================
-              COMPLIANCE
-          ===================================== */}
           {active === "Compliance" && (
             <div style={styles.grid3}>
               <ApprovalLimitsCard />
-
               <SegregationRulesCard />
-
               <EvidenceRequirementsCard />
             </div>
           )}
 
-          {/* =====================================
-              SECURITY
-          ===================================== */}
           {active === "Security" && (
             <div style={styles.grid3}>
               <SecuritySettingsCard />
-
               <PasswordPolicyCard />
-
               <SessionManagementCard />
             </div>
           )}
 
-          {/* =====================================
-              AUDIT LOGS
-          ===================================== */}
-          {active === "Audit Logs" && (
-            <AuditLogsTable logs={logs} />
-          )}
+          {active === "Audit Logs" && <AuditLogsTable logs={[]} />}
         </div>
       </div>
 
-      {/* =========================
-          INVITE MODAL
-      ========================= */}
-      <InviteUserModal
-        open={inviteOpen}
-        onClose={() =>
-          setInviteOpen(false)
-        }
-      />
+      <InviteUserModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
     </div>
   );
 }
 
-/* =========================
-   STYLES
-========================= */
-
-const styles: Record<
-  string,
-  React.CSSProperties
-> = {
+const styles: Record<string, React.CSSProperties> = {
   page: {
     padding: theme.spacing.lg,
-    background:
-      theme.colors.appBackground,
+    background: theme.colors.appBackground,
     minHeight: "100vh",
   },
-
   toolbarWrap: {
     display: "flex",
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
   },
-
-  toolbarActions: {
-    display: "flex",
-    alignItems: "center",
-    gap: 14,
-  },
-
-  unsaved: {
-    fontSize: 13,
-    color: "#b45309",
-    fontWeight: 600,
-  },
-
-  saved: {
-    fontSize: 13,
-    color: "#15803d",
-    fontWeight: 600,
-  },
-
+  toolbarActions: { display: "flex", alignItems: "center", gap: 14 },
+  unsaved: { fontSize: 13, color: "#b45309", fontWeight: 600 },
+  saved: { fontSize: 13, color: "#15803d", fontWeight: 600 },
   saveBtn: {
-    height: 40,
-    padding: "0 18px",
-    borderRadius: 10,
-    border: "none",
-    background: "#1e3a8a",
-    color: "#fff",
-    cursor: "pointer",
-    fontWeight: 600,
+    height: 40, padding: "0 18px", borderRadius: 10,
+    border: "none", background: "#1e3a8a", color: "#fff",
+    cursor: "pointer", fontWeight: 600,
   },
-
   layout: {
     display: "grid",
     gridTemplateColumns: "260px 1fr",
     gap: 20,
     alignItems: "start",
   },
-
-  content: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 20,
-  },
-
+  content: { display: "flex", flexDirection: "column", gap: 20 },
   grid3: {
     display: "grid",
-    gridTemplateColumns:
-      "repeat(3, 1fr)",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: 20,
     alignItems: "start",
   },
-
   headerRow: {
     display: "flex",
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
   },
-
-  sectionTitle: {
-    margin: 0,
-    fontSize: 22,
-    fontWeight: 700,
-    color: "#111827",
-  },
-
-  sectionText: {
-    marginTop: 4,
-    color: "#6b7280",
-    fontSize: 14,
-  },
-
+  sectionTitle: { margin: 0, fontSize: 22, fontWeight: 700, color: "#111827" },
+  sectionText: { marginTop: 4, color: "#6b7280", fontSize: 14 },
   primaryBtn: {
-    height: 42,
-    padding: "0 18px",
-    border: "none",
-    borderRadius: 10,
-    background: "#1e3a8a",
-    color: "#fff",
-    cursor: "pointer",
-    fontWeight: 600,
+    height: 42, padding: "0 18px", border: "none",
+    borderRadius: 10, background: "#1e3a8a", color: "#fff",
+    cursor: "pointer", fontWeight: 600,
   },
 };

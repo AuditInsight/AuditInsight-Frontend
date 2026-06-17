@@ -3,26 +3,67 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
-import Link from "next/dist/client/link";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { changePassword } from "@/utils/api";
+
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState("");
+  const router = useRouter();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChangePassword = async () => {
+    setError("");
+
+    if (!currentPassword) {
+      setError("Please enter your current password");
+      return;
+    }
+    if (!PASSWORD_PATTERN.test(newPassword)) {
+      setError(
+        "New password must be at least 8 characters and include uppercase, lowercase, a number, and a special character (@$!%*?&)"
+      );
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      router.replace("/dashboard");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "Failed to change password. Please check your current password.";
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div
       style={{
-        height: "100vh",
+        minHeight: "100vh",
         background: Colors.appBackground,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        padding: "24px",
       }}
     >
-      {/* MAIN CARD */}
       <div
         style={{
-          width: "460px",
+          width: "100%",
+          maxWidth: "460px",
           borderRadius: "16px",
           overflow: "hidden",
           background: Colors.Surface,
@@ -30,7 +71,6 @@ export default function ResetPasswordPage() {
           border: `1px solid ${Colors.border}`,
         }}
       >
-        {/* HEADER */}
         <div
           style={{
             background: Colors.gradientHeader,
@@ -38,33 +78,24 @@ export default function ResetPasswordPage() {
             textAlign: "center",
           }}
         >
-          <h2
-            style={{
-              color: "#fff",
-              fontSize: "20px",
-              fontWeight: 600,
-            }}
-          >
+          <h2 style={{ color: "#fff", fontSize: "20px", fontWeight: 600, margin: 0 }}>
             AuditInsight
           </h2>
         </div>
 
-        {/* BODY */}
         <div style={{ padding: "34px" }}>
-          {/* TITLE */}
           <h3
             style={{
               textAlign: "center",
-              marginBottom: "12px",
+              marginBottom: "8px",
               fontSize: "24px",
               fontWeight: 600,
               color: Colors.textPrimary,
             }}
           >
-            Reset Password
+            Change Password
           </h3>
 
-          {/* SUBTEXT */}
           <p
             style={{
               textAlign: "center",
@@ -73,10 +104,25 @@ export default function ResetPasswordPage() {
               color: Colors.textSecondary,
             }}
           >
-            Enter your new password below
+            You must set a new password before continuing
           </p>
 
-          {/* FORM BOX */}
+          {error && (
+            <p
+              style={{
+                background: "#fff0f0",
+                border: "1px solid #fca5a5",
+                color: "#dc2626",
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 13,
+                marginBottom: 16,
+              }}
+            >
+              {error}
+            </p>
+          )}
+
           <div
             style={{
               background: Colors.appBackground,
@@ -85,29 +131,38 @@ export default function ResetPasswordPage() {
               border: `1px solid ${Colors.divider}`,
             }}
           >
-            {/* NEW PASSWORD */}
             <Input
-              label="New Password"
-              placeholder="Enter new password"
-              value={password}
-              onChange={setPassword}
+              label="Current Password"
+              placeholder="Enter your current password"
+              value={currentPassword}
+              onChange={setCurrentPassword}
               type="password"
             />
 
-            {/* CONFIRM PASSWORD */}
             <div style={{ marginTop: "18px" }}>
               <Input
-                label="Confirm Password"
-                placeholder="Confirm new password"
+                label="New Password"
+                placeholder="Min 8 chars, upper, lower, number, symbol"
+                value={newPassword}
+                onChange={setNewPassword}
+                type="password"
+              />
+            </div>
+
+            <div style={{ marginTop: "18px" }}>
+              <Input
+                label="Confirm New Password"
+                placeholder="Confirm your new password"
                 value={confirmPassword}
                 onChange={setConfirmPassword}
                 type="password"
               />
             </div>
 
-            {/* BUTTON */}
             <div style={{ marginTop: "22px" }}>
               <button
+                onClick={handleChangePassword}
+                disabled={isSubmitting}
                 style={{
                   width: "100%",
                   padding: "13px",
@@ -117,39 +172,25 @@ export default function ResetPasswordPage() {
                   color: "#fff",
                   fontWeight: 600,
                   fontSize: "15px",
-                  cursor: "pointer",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  opacity: isSubmitting ? 0.7 : 1,
                 }}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.background = Colors.primaryDarker)
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.background = Colors.primaryDark)
-                }
               >
-                Reset Password
+                {isSubmitting ? "Saving…" : "Set New Password"}
               </button>
             </div>
 
-            {/* BACK TO LOGIN */}
             <p
               style={{
                 textAlign: "center",
                 marginTop: "16px",
                 fontSize: "13px",
                 color: Colors.textSecondary,
+                marginBottom: 0,
               }}
             >
-              Back to{" "}
-              <Link href="/log-in" style={{ textDecoration: "none" }}>
-                <span
-                  style={{
-                    color: Colors.primary,
-                    cursor: "pointer",
-                    fontWeight: 500,
-                  }}
-                >
-                  Login
-                </span>
+              <Link href="/log-in" style={{ color: Colors.primary, fontWeight: 500, textDecoration: "none" }}>
+                Back to Login
               </Link>
             </p>
           </div>

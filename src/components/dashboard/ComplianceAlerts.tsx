@@ -3,13 +3,12 @@
 import { Card } from "@/components/ui/card/card";
 import { Badge } from "@/components/ui/badge/badge";
 
-// =========================
-// TYPES
-// =========================
 type Transaction = {
-  id: number;
-  counterparty: string;
-  riskScore: number;
+  id: string | number;
+  counterparty?: string;
+  name?: string;
+  riskScore?: number;
+  evidenceStatus?: string;
 };
 
 type AlertItem = {
@@ -22,29 +21,35 @@ type Props = {
   transactions: Transaction[];
 };
 
-// =========================
-// COMPONENT
-// =========================
 export default function ComplianceAlerts({ transactions }: Props) {
   const alerts: AlertItem[] = transactions
-    .filter((t) => t.riskScore >= 85)
+    .filter(
+      (t) =>
+        t.evidenceStatus === "MISSING" ||
+        t.evidenceStatus === "PARTIAL" ||
+        (t.riskScore ?? 0) >= 85
+    )
     .slice(0, 5)
     .map((t) => ({
       id: String(t.id),
-      message: `High risk transaction ${t.id} (${t.counterparty})`,
-      severity: t.riskScore >= 90 ? "critical" : "warning",
+      message: `Transaction ${t.id} — ${t.counterparty ?? t.name ?? "Unknown"} (${t.evidenceStatus ?? "risk flagged"})`,
+      severity: t.evidenceStatus === "MISSING" || (t.riskScore ?? 0) >= 90
+        ? "critical"
+        : "warning",
     }));
 
   return (
     <Card>
       <h3>Compliance Alerts</h3>
 
-      {alerts.length === 0 && <div>No alerts 🎉</div>}
+      {alerts.length === 0 && (
+        <div style={{ color: "#6b7280", fontSize: 14 }}>No alerts 🎉</div>
+      )}
 
       {alerts.map((alert) => (
         <div key={alert.id} style={{ marginBottom: 10 }}>
           <Badge label={alert.severity} />
-          <span style={{ marginLeft: 8 }}>{alert.message}</span>
+          <span style={{ marginLeft: 8, fontSize: 14 }}>{alert.message}</span>
         </div>
       ))}
     </Card>

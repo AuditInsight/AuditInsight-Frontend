@@ -1,32 +1,34 @@
 "use client";
 
-import { evidenceData } from "@/data/evidence.data";
 import { Transaction } from "@/types/transaction.types";
 
 interface Props {
   transaction: Transaction;
 }
 
-export const TransactionRow = ({ transaction }: Props) => {
-  
-  const evidences = evidenceData.filter(
-    (e) => e.transactionId === transaction.id
-  );
+const evidenceStatusWidth: Record<string, number> = {
+  COMPLETE: 100,
+  PARTIAL: 50,
+  MISSING: 5,
+};
 
-  const evidenceScore =
-    evidences.length === 0
-      ? 0
-      : Math.round(
-          (evidences.filter(e => e.status === "Verified").length /
-            evidences.length) * 100
-        );
+const evidenceStatusColor: Record<string, string> = {
+  COMPLETE: "#22c55e",
+  PARTIAL: "#f59e0b",
+  MISSING: "#ef4444",
+};
+
+export const TransactionRow = ({ transaction }: Props) => {
+  const evWidth = evidenceStatusWidth[transaction.evidenceStatus ?? "MISSING"] ?? 5;
+  const evColor = evidenceStatusColor[transaction.evidenceStatus ?? "MISSING"] ?? "#ef4444";
+  const riskWidth = transaction.riskScore ?? 0;
 
   return (
     <tr style={row}>
       <td>#{transaction.id}</td>
       <td>{transaction.date}</td>
       <td>${transaction.amount}</td>
-      <td>{transaction.counterparty}</td>
+      <td>{transaction.counterparty ?? transaction.name ?? "—"}</td>
       <td>{transaction.type}</td>
 
       {/* RISK */}
@@ -34,7 +36,7 @@ export const TransactionRow = ({ transaction }: Props) => {
         <div style={bar}>
           <div
             style={{
-              width: `${transaction.riskScore}%`,
+              width: `${riskWidth}%`,
               background: "#f59e0b",
               height: "100%",
               borderRadius: 4,
@@ -48,8 +50,8 @@ export const TransactionRow = ({ transaction }: Props) => {
         <div style={bar}>
           <div
             style={{
-              width: `${evidenceScore}%`,
-              background: "#22c55e",
+              width: `${evWidth}%`,
+              background: evColor,
               height: "100%",
               borderRadius: 4,
             }}
@@ -62,8 +64,6 @@ export const TransactionRow = ({ transaction }: Props) => {
     </tr>
   );
 };
-
-/* 🎨 STYLES */
 
 const row: React.CSSProperties = {
   borderBottom: "1px solid #e5e7eb",

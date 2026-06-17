@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import { TransactionsStats } from "@/components/transactions/TransactionsStats";
@@ -22,7 +22,7 @@ import {
   updateTransaction,
 } from "@/utils/api";
 
-export default function TransactionsPage() {
+function TransactionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -91,7 +91,7 @@ export default function TransactionsPage() {
     return transactions.filter((t) => {
       if (
         search &&
-        !t.counterparty.toLowerCase().includes(search.toLowerCase())
+        !(t.counterparty ?? t.name ?? "").toLowerCase().includes(search.toLowerCase())
       )
         return false;
 
@@ -123,7 +123,8 @@ export default function TransactionsPage() {
 
   const handleCreateTransaction = async (data: Omit<Transaction, "id">) => {
     try {
-      await createTransaction(data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await createTransaction(data as any);
       await reloadData();
       setIsAddModalOpen(false);
     } catch (error) {
@@ -286,6 +287,14 @@ export default function TransactionsPage() {
         isDeleting={isDeleting}
       />
     </div>
+  );
+}
+
+export default function TransactionsPage() {
+  return (
+    <Suspense>
+      <TransactionsContent />
+    </Suspense>
   );
 }
 

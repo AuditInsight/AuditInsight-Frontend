@@ -100,7 +100,7 @@ export function buildReports(
 
   const highRiskTransactions =
     transactions.filter(
-      (tx) => tx.riskScore >= 80
+      (tx) => (tx.riskScore ?? 0) >= 80
     );
 
   // =========================

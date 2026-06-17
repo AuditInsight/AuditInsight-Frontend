@@ -31,7 +31,7 @@ export function isPastDueApproval(t: Transaction): boolean {
 }
 
 export function isHighRisk(t: Transaction): boolean {
-  return t.riskScore >= 80;
+  return (t.riskScore ?? 0) >= 80;
 }
 
 export function computeTransactionStats(
@@ -51,7 +51,7 @@ export function computeTransactionStats(
   const verified = evidences.filter((e) => e.status === "Verified").length;
   const missing = evidences.filter((e) => e.status === "Missing").length;
 
-  const flagged = transactions.filter((t) => t.riskScore > 70).length;
+  const flagged = transactions.filter((t) => (t.riskScore ?? 0) > 70).length;
   const highRisk = transactions.filter(isHighRisk).length;
 
   const overdue = transactions.filter(isPastDueApproval).length;

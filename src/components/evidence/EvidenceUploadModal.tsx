@@ -66,9 +66,9 @@ export const EvidenceUploadModal = ({
     if (!isOpen) return;
 
     if (mode === "edit" && evidence) {
-      setName(evidence.name);
-      setCategory(evidence.category);
-      setSubCategory(evidence.subCategory);
+      setName(evidence.name ?? evidence.documentName ?? "");
+      setCategory(evidence.category ?? evidence.folder ?? "");
+      setSubCategory(evidence.subCategory ?? evidence.subfolder ?? "");
       setNotes(evidence.notes || "");
       setTransactionId(
         evidence.transactionId ? String(evidence.transactionId) : ""
@@ -103,7 +103,7 @@ export const EvidenceUploadModal = ({
     const selected = transactions.find((t) => String(t.id) === id);
     if (selected) {
       setAmount(String(selected.amount));
-      setCounterpartyName(selected.counterparty);
+      setCounterpartyName(selected.counterparty ?? selected.name ?? "");
     } else {
       setAmount("");
       setCounterpartyName("");
@@ -111,7 +111,7 @@ export const EvidenceUploadModal = ({
   };
 
   const formatTransactionLabel = (t: Transaction) =>
-    `${t.id} — ${t.counterparty}`;
+    `${t.id} — ${t.counterparty ?? t.name ?? ""}`;
 
   const selectedSection = sections.find((s) => s.title === category);
 
@@ -180,15 +180,15 @@ export const EvidenceUploadModal = ({
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await uploadEvidence(file, {
-        transactionId: Number(transactionId),
-        name,
-        category,
-        subCategory,
-        notes,
-        amount: amount ? Number(amount) : undefined,
-        counterpartyName: counterpartyName || undefined,
-      });
+        transactionId,
+        documentName: name,
+        folder: category,
+        subfolder: subCategory,
+        organisationId: "",
+        notes: notes || undefined,
+      } as any);
 
       onSave(response.data);
       resetForm();

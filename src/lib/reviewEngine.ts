@@ -12,9 +12,9 @@ export interface ReviewItem {
     | "AI / Risk Flags"
     | "System Errors";
 
-  transactionId: number;
+  transactionId: string | number;
 
-  counterparty: string;
+  counterparty?: string;
 
   amount: string;
 
@@ -99,7 +99,7 @@ export function buildReviewQueue(
     /* =========================
        AI / RISK FLAGS
     ========================= */
-    if (tx.riskScore >= 80) {
+    if ((tx.riskScore ?? 0) >= 80) {
       const risk: ReviewItem["risk"] = "Critical";
 
       reviews.push({

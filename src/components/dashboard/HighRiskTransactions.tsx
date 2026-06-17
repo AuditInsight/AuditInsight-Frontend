@@ -7,21 +7,20 @@ import { CardHeader } from "@/components/ui/cardHeader/CardHeader";
 import { CardContent } from "@/components/ui/cardHeader/CardContent";
 import { Badge } from "@/components/ui/badge/badge";
 
-// =========================
-// TYPES
-// =========================
 type Transaction = {
-  id: number;
-  riskScore: number;
-  counterparty: string;
+  id: string | number;
+  riskScore?: number;
+  evidenceStatus?: string;
+  counterparty?: string;
+  name?: string;
   date?: string;
 };
 
 type HighRiskRow = {
   id: string;
   date: string;
-  counterparty: string;
-  riskScore: number;
+  label: string;
+  evidenceStatus: string;
   status: "Observed" | "Flagged" | "Reviewed" | "Approved";
 };
 
@@ -29,9 +28,6 @@ type Props = {
   transactions: Transaction[];
 };
 
-// =========================
-// STATUS
-// =========================
 const statusVariant: Record<
   HighRiskRow["status"],
   "success" | "warning" | "danger"
@@ -42,23 +38,27 @@ const statusVariant: Record<
   Approved: "success",
 };
 
-export default function HighRiskTransactions({
-  transactions,
-}: Props) {
+export default function HighRiskTransactions({ transactions }: Props) {
   const highRiskData: HighRiskRow[] = transactions
-    .filter((t) => t.riskScore >= 80)
+    .filter(
+      (t) =>
+        t.evidenceStatus === "MISSING" ||
+        t.evidenceStatus === "PARTIAL" ||
+        (t.riskScore ?? 0) >= 80
+    )
+    .slice(0, 10)
     .map((t) => ({
-      id: `TXN${t.id}`,
-      date: "N/A",
-      counterparty: t.counterparty,
-      riskScore: t.riskScore,
-      status: t.riskScore >= 90 ? "Flagged" : "Observed",
+      id: `TXN-${t.id}`,
+      date: t.date ?? "—",
+      label: t.counterparty ?? t.name ?? `Transaction ${t.id}`,
+      evidenceStatus: t.evidenceStatus ?? "—",
+      status: t.evidenceStatus === "MISSING" ? "Flagged" : "Observed",
     }));
 
   const columns = [
     { header: "ID", accessor: "id" as const },
-    { header: "Counterparty", accessor: "counterparty" as const },
-    { header: "Risk", accessor: "riskScore" as const },
+    { header: "Transaction", accessor: "label" as const },
+    { header: "Evidence", accessor: "evidenceStatus" as const },
     {
       header: "Status",
       accessor: "status" as const,
@@ -71,20 +71,16 @@ export default function HighRiskTransactions({
 
   return (
     <Card padding="sm">
-      <CardHeader title="High-Risk Transactions" />
-
+      <CardHeader title="Attention Required" />
       <CardContent>
-        <div
-          style={{
-            width: "100%",
-            overflowX: "auto",
-            maxHeight: 260, // 🔥 KEY: keeps it compact
-          }}
-        >
-          <Table
-            columns={columns}
-            data={highRiskData}
-          />
+        <div style={{ width: "100%", overflowX: "auto", maxHeight: 260 }}>
+          {highRiskData.length === 0 ? (
+            <p style={{ color: "#6b7280", fontSize: 14, padding: "16px 0" }}>
+              No transactions need attention.
+            </p>
+          ) : (
+            <Table columns={columns} data={highRiskData} />
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,62 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-
-  // ✅ ADDED: handleForgotPassword function
-  const handleForgotPassword = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/auth/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.text();
-
-      if (!res.ok) {
-        throw new Error(data);
-      }
-
-      alert("OTP sent to your email ✅");
-
-      // 👉 move to reset page AFTER success
-      router.push(`/reset-password?email=${email}`);
-
-    } catch (err: unknown) {
-      let message = "Something went wrong ❌";
-      if (err instanceof Error) {
-        message = err.message;
-      } else if (typeof err === "string") {
-        message = err;
-      }
-      alert(message);
-    }
-  };
-
   return (
     <div
       style={{
-        height: "100vh",
+        minHeight: "100vh",
         background: Colors.appBackground,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        padding: "24px",
       }}
     >
-      {/* MAIN CARD */}
       <div
         style={{
-          width: "460px",
+          width: "100%",
+          maxWidth: "460px",
           borderRadius: "16px",
           overflow: "hidden",
           background: Colors.Surface,
@@ -64,7 +26,6 @@ export default function ForgotPasswordPage() {
           border: `1px solid ${Colors.border}`,
         }}
       >
-        {/* HEADER */}
         <div
           style={{
             background: Colors.gradientHeader,
@@ -72,110 +33,54 @@ export default function ForgotPasswordPage() {
             textAlign: "center",
           }}
         >
-          <h2
-            style={{
-              color: "#fff",
-              fontSize: "20px",
-              fontWeight: 600,
-            }}
-          >
+          <h2 style={{ color: "#fff", fontSize: "20px", fontWeight: 600, margin: 0 }}>
             AuditInsight
           </h2>
         </div>
 
-        {/* BODY */}
-        <div style={{ padding: "34px" }}>
-          {/* TITLE */}
+        <div style={{ padding: "34px", textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
+
           <h3
             style={{
-              textAlign: "center",
               marginBottom: "12px",
-              fontSize: "24px",
+              fontSize: "22px",
               fontWeight: 600,
               color: Colors.textPrimary,
             }}
           >
-            Forgot Password
+            Password Reset
           </h3>
 
-          {/* SUBTEXT */}
-          <p
-            style={{
-              textAlign: "center",
-              marginBottom: "24px",
-              fontSize: "14px",
-              color: Colors.textSecondary,
-            }}
-          >
-            Enter your email and we’ll send you a reset link
+          <p style={{ fontSize: "14px", color: Colors.textSecondary, marginBottom: 24, lineHeight: 1.6 }}>
+            Self-service password reset is not available. Please contact your administrator to have your
+            password reset.
           </p>
 
-          {/* FORM BOX */}
-          <div
-            style={{
-              background: Colors.appBackground,
-              padding: "24px",
-              borderRadius: "12px",
-              border: `1px solid ${Colors.divider}`,
-            }}
-          >
-            {/* EMAIL */}
-            <Input
-              label="Email Address"
-              placeholder="Enter your email"
-              value={email}
-              onChange={setEmail}
-              type="email"
-            />
+          <p style={{ fontSize: "13px", color: Colors.textSecondary, marginBottom: 0 }}>
+            If you are an invited member and were given a temporary password, you can{" "}
+            <Link href="/log-in" style={{ color: Colors.primary, fontWeight: 500, textDecoration: "none" }}>
+              log in
+            </Link>{" "}
+            and you will be prompted to set a new password.
+          </p>
 
-            {/* BUTTON */}
-            <div style={{ marginTop: "22px" }}>
-              <button
-                onClick={handleForgotPassword}
-                style={{
-                  width: "100%",
-                  padding: "13px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: Colors.primaryDark,
-                  color: "#fff",
-                  fontWeight: 600,
-                  fontSize: "15px",
-                  cursor: "pointer",
-                }}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.background = Colors.primaryDarker)
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.background = Colors.primaryDark)
-                }
-              >
-                Send Reset Link
-              </button>
-            </div>
-
-            {/* BACK TO LOGIN */}
-            <p
+          <div style={{ marginTop: 28 }}>
+            <Link
+              href="/log-in"
               style={{
-                textAlign: "center",
-                marginTop: "16px",
-                fontSize: "13px",
-                color: Colors.textSecondary,
+                display: "inline-block",
+                padding: "12px 32px",
+                borderRadius: 8,
+                background: Colors.primaryDark,
+                color: "#fff",
+                fontWeight: 600,
+                fontSize: 14,
+                textDecoration: "none",
               }}
             >
-              Remember your password?{" "}
-              <Link href="/log-in" style={{ textDecoration: "none" }}>
-                <span
-                  style={{
-                    color: Colors.primary,
-                    cursor: "pointer",
-                    fontWeight: 500,
-                  }}
-                >
-                  Login
-                </span>
-              </Link>
-            </p>
+              Back to Login
+            </Link>
           </div>
         </div>
       </div>
