@@ -5,8 +5,8 @@ import { UserRole } from "@/types/user";
 import { useRouter } from "next/navigation";
 
 const ROLES: { value: UserRole; label: string }[] = [
-  { value: "CLIENT",  label: "Admin (CEO)"  },
-  { value: "MEMBER",  label: "Accountant"   },
+  { value: "CLIENT",  label: "Org Admin"      },
+  { value: "MEMBER",  label: "Accountant"     },
   { value: "AUDITOR", label: "Auditor"      },
   { value: "ADMIN",   label: "Super Admin"  },
 ];

@@ -80,7 +80,7 @@ const ROLE_CONTENT: Record<"CLIENT" | "AUDITOR", { heading: string; desc: string
     desc: "AuditInsight gives your team a single workspace to upload evidence, track transactions, and stay audit-ready.",
     bullets: [
       "Upload & organise financial evidence",
-      "Invite team members with defined roles",
+      "Invite auditors & accountants directly",
       "Track transaction status in real time",
       "Respond to auditor review requests",
     ],
@@ -140,7 +140,8 @@ export default function SignupPage() {
     // ── MOCK: simulate signup ──
     await new Promise((r) => setTimeout(r, 600));
     if (role === "CLIENT") {
-      router.push(`/verify-otp?email=${encodeURIComponent(email.trim())}`);
+      // After OTP verify → onboarding for org setup + plan selection
+      router.push(`/verify-otp?email=${encodeURIComponent(email.trim())}&next=/onboarding`);
     } else {
       router.push("/log-in?registered=auditor");
     }
@@ -211,9 +212,9 @@ export default function SignupPage() {
                     {r === "CLIENT" ? <BuildingIcon /> : <AuditorIcon />}
                   </span>
                   <span style={roleTabContent}>
-                    <span style={roleTabTitle}>{r === "CLIENT" ? "Client" : "Auditor"}</span>
+                    <span style={roleTabTitle}>{r === "CLIENT" ? "Organisation Admin" : "Auditor"}</span>
                     <span style={roleTabDesc}>
-                      {r === "CLIENT" ? "Manage my organisation" : "Conduct audits"}
+                      {r === "CLIENT" ? "Register & manage my organisation" : "Conduct audits"}
                     </span>
                   </span>
                   {role === r && (

@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/verify-otp",
+  "/onboarding",
 ];
 
 export default function PageLayout({
@@ -20,6 +21,7 @@ export default function PageLayout({
 }) {
   const pathname = usePathname();
   const isPublicPage = PUBLIC_PATHS.includes(pathname);
+  const isDashboard = pathname === "/dashboard";
 
   if (isPublicPage) {
     return <>{children}</>;
@@ -50,9 +52,9 @@ export default function PageLayout({
 
       <main
         style={{
-          padding: theme.spacing.xl,
-          maxWidth: 1500,
-          margin: "0 auto",
+          padding: isDashboard ? 0 : theme.spacing.xl,
+          maxWidth: isDashboard ? "100%" : 1500,
+          margin: isDashboard ? 0 : "0 auto",
           position: "relative",
           zIndex: 2,
         }}

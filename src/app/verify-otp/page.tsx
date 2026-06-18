@@ -9,6 +9,7 @@ function VerifyOtpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";
+  const nextPath = searchParams.get("next") ?? "/log-in";
 
   const [otp, setOtp] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,7 +32,7 @@ function VerifyOtpForm() {
     // ── MOCK: any 6-digit code is accepted ──
     await new Promise((r) => setTimeout(r, 600));
     if (otp.trim().length === 6 && /^\d+$/.test(otp.trim())) {
-      router.push("/log-in");
+      router.push(nextPath);
     } else {
       setError("Invalid OTP. Use any 6-digit number for mock.");
     }

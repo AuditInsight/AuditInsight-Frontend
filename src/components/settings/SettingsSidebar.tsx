@@ -15,6 +15,7 @@ const items = [
   "Workflow",
   "Compliance",
   "Security",
+  "Billing & Plans",
   "Audit Logs",
 ];
 

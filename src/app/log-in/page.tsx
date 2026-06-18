@@ -56,7 +56,7 @@ const FEATURES = [
 /* ── main form ────────────────────────────────────────────────────── */
 /* ── dev accounts ────────────────────────────────────────────────── */
 const DEV_ACCOUNTS = [
-  { role: "CLIENT",  label: "Admin (CEO)",   email: "ceo@insightai.rw",          password: "demo1234", color: "#1e3a8a", bg: "#eff6ff", icon: "🏢" },
+  { role: "CLIENT",  label: "Org Admin",     email: "ceo@insightai.rw",          password: "demo1234", color: "#1e3a8a", bg: "#eff6ff", icon: "🏢" },
   { role: "MEMBER",  label: "Accountant",    email: "accountant@insightai.rw",   password: "demo1234", color: "#15803d", bg: "#f0fdf4", icon: "📒" },
   { role: "AUDITOR", label: "Auditor",       email: "auditor@audit.rw",          password: "demo1234", color: "#b45309", bg: "#fffbeb", icon: "🔍" },
   { role: "ADMIN",   label: "Super Admin",   email: "admin@auditinsight.com",    password: "demo1234", color: "#7c3aed", bg: "#faf5ff", icon: "🌐" },
@@ -257,6 +257,13 @@ function LoginForm() {
               ))}
             </div>
             <p style={devHint}>Password for all accounts: <code style={devCode}>demo1234</code></p>
+            <button
+              type="button"
+              style={onboardingPreviewBtn}
+              onClick={() => router.push("/onboarding")}
+            >
+              🚀 Preview Onboarding Flow
+            </button>
           </div>
         </div>
       </div>
@@ -623,4 +630,22 @@ const devCode: React.CSSProperties = {
   fontSize: 11,
   fontFamily: "monospace",
   color: "#1e3a8a",
+};
+
+const onboardingPreviewBtn: React.CSSProperties = {
+  width: "100%",
+  marginTop: 10,
+  padding: "9px",
+  borderRadius: 10,
+  border: "1.5px solid #7c3aed",
+  background: "#faf5ff",
+  color: "#7c3aed",
+  fontWeight: 600,
+  fontSize: 13,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
 };

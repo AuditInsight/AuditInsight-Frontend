@@ -19,6 +19,7 @@ import SecuritySettingsCard from "@/components/settings/security/SecuritySetting
 import PasswordPolicyCard from "@/components/settings/security/PasswordPolicyCard";
 import SessionManagementCard from "@/components/settings/security/SessionManagmentCard";
 import AuditLogsTable from "@/components/settings/audit-logs/AuditLogsTable";
+import BillingSettingsCard from "@/components/settings/billing/BillingSettingsCard";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
 
 import { theme } from "@/styles/theme";
@@ -133,6 +134,7 @@ export default function SettingsPage() {
               <SessionManagementCard />
             </div>
           )}
+          {active === "Billing & Plans" && <BillingSettingsCard />}
           {active === "Audit Logs" && <AuditLogsTable logs={[]} />}
         </div>
       </div>
