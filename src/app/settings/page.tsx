@@ -135,7 +135,7 @@ export default function SettingsPage() {
             </div>
           )}
           {active === "Billing & Plans" && <BillingSettingsCard />}
-          {active === "Audit Logs" && <AuditLogsTable logs={[]} />}
+          {active === "Audit Logs" && <AuditLogsTable />}
         </div>
       </div>
 

@@ -9,41 +9,82 @@ import ReviewFilters from "@/components/review-queue/ReviewFilters";
 import ReviewSidebar from "@/components/review-queue/ReviewSidebar";
 import ReviewTable from "@/components/review-queue/ReviewTable";
 import ReviewPagination from "@/components/review-queue/ReviewPagination";
+import FlagIssueModal from "@/components/review-queue/FlagIssueModal";
+import ResolveIssueModal from "@/components/review-queue/ResolveIssueModal";
 
 import { theme } from "@/styles/theme";
-
-/*
- * ── REAL API (commented for RBAC UI testing) ──────────────────
- * Previously: import { getReviewQueue } from "@/utils/api";
- * Now managed by useReviewQueue hook.
- * ──────────────────────────────────────────────────────────────
- */
 import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { usePermissions } from "@/security/access-control";
+import { useAuth } from "@/context/AuthContext";
+import { appendAuditLog } from "@/security/audit-logger";
+import { ReviewItem } from "@/lib/reviewEngine";
 
 export default function ReviewQueuePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { items, loading, flagIssue, resolveIssue } = useReviewQueue();
   const { canFlagIssue, canResolveIssue } = usePermissions();
 
-  const [page, setPage] = useState(1);
+  const [page, setPage]               = useState(1);
   const [activeIssue, setActiveIssue] = useState("All");
-  const [severity, setSeverity] = useState("All");
+  const [severity, setSeverity]       = useState("All");
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const [resolveTarget, setResolveTarget] = useState<{ id: string; transactionId: string } | null>(null);
 
   const filteredReviews = useMemo(() => {
-    return items.filter((r) => {
-      const matchesIssue = activeIssue === "All" || r.type === activeIssue;
-      const matchesSeverity = severity === "All" || r.severity === severity;
+    return items.filter(r => {
+      const matchesIssue    = activeIssue === "All" || r.type === activeIssue;
+      const matchesSeverity = severity === "All"    || r.severity === severity;
       return matchesIssue && matchesSeverity;
     });
   }, [items, activeIssue, severity]);
 
-  const pageSize = 10;
+  const pageSize   = 10;
   const totalPages = Math.max(1, Math.ceil(filteredReviews.length / pageSize));
-  const paginated = useMemo(() => {
+  const paginated  = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredReviews.slice(start, start + pageSize);
   }, [page, filteredReviews]);
+
+  const handleFlagSubmit = (flag: { transactionId: string; type: string; severity: string; notes: string }) => {
+    flagIssue({
+      type: flag.type as ReviewItem["type"],
+      transactionId: flag.transactionId,
+      amount: "—",
+      risk: flag.severity as "Critical" | "Medium" | "Low",
+      severity: flag.severity as "Critical" | "Medium" | "Low",
+      due: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString().split("T")[0],
+      status: "Open",
+    }, user?.fullName ?? "Auditor");
+    appendAuditLog({
+      userId:           user?.id ?? 0,
+      userEmail:        user?.email ?? "",
+      userRole:         user?.role ?? "AUDITOR",
+      action:           "FLAG_CREATED",
+      targetResourceId: flag.transactionId,
+      detail:           `Flagged: ${flag.type} — ${flag.severity}${flag.notes ? ` — ${flag.notes}` : ""}`,
+    });
+    setFlagModalOpen(false);
+  };
+
+  const handleResolve = (id: string) => {
+    const item = items.find(i => i.id === id);
+    setResolveTarget({ id, transactionId: String(item?.transactionId ?? id) });
+  };
+
+  const handleResolveSubmit = (id: string, note: string, fileName?: string) => {
+    const item = items.find(i => i.id === id);
+    resolveIssue(id, note, user?.fullName ?? "Accountant");
+    appendAuditLog({
+      userId:           user?.id ?? 0,
+      userEmail:        user?.email ?? "",
+      userRole:         user?.role ?? "MEMBER",
+      action:           "FLAG_RESOLVED",
+      targetResourceId: id,
+      detail:           `Resolved flag for ${item?.transactionId ?? id}${fileName ? ` — attachment: ${fileName}` : ""}. Note: ${note}`,
+    });
+    setResolveTarget(null);
+  };
 
   if (loading) {
     return (
@@ -58,19 +99,8 @@ export default function ReviewQueuePage() {
       <PageToolbar
         title="Review Queue"
         filters={["All Issues", "My Issues"]}
-        // ── Role guard: Auditor gets "Flag Issue", Accountant gets "Export" ──
         primaryActionLabel={canFlagIssue ? "Flag Issue" : "Export"}
-        onAdd={canFlagIssue ? () => {
-          flagIssue({
-            type: "Compliance Issues",
-            transactionId: "TXN-0001",
-            amount: "—",
-            risk: "Medium",
-            severity: "Medium",
-            due: new Date().toISOString().split("T")[0],
-            status: "Open",
-          });
-        } : undefined}
+        onAdd={canFlagIssue ? () => setFlagModalOpen(true) : undefined}
       />
 
       <ReviewStats data={items} />
@@ -80,28 +110,31 @@ export default function ReviewQueuePage() {
         <ReviewSidebar data={items} active={activeIssue} setActive={setActiveIssue} />
         <ReviewTable
           data={paginated}
-          onRowClick={(row) => router.push(`/transactions?transactionId=${row.transactionId}`)}
-          // ── Role guard: Accountant can resolve, Auditor cannot ──
-          onResolve={canResolveIssue ? (id) => resolveIssue(id, "Resolved via UI") : undefined}
+          onRowClick={row => router.push(`/transactions?transactionId=${row.transactionId}`)}
+          onResolve={canResolveIssue ? handleResolve : undefined}
         />
       </div>
 
       <ReviewPagination page={page} setPage={setPage} totalPages={totalPages} />
+
+      <FlagIssueModal
+        open={flagModalOpen}
+        onClose={() => setFlagModalOpen(false)}
+        onSubmit={handleFlagSubmit}
+      />
+
+      <ResolveIssueModal
+        open={!!resolveTarget}
+        issueId={resolveTarget?.id ?? ""}
+        transactionId={resolveTarget?.transactionId ?? ""}
+        onClose={() => setResolveTarget(null)}
+        onSubmit={handleResolveSubmit}
+      />
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    padding: theme.spacing.lg,
-    background: theme.colors.appBackground,
-    minHeight: "100vh",
-  },
-  layout: {
-    display: "grid",
-    gridTemplateColumns: "260px 1fr",
-    gap: theme.spacing.lg,
-    marginTop: theme.spacing.md,
-    alignItems: "start",
-  },
+  page:   { padding: theme.spacing.lg, background: theme.colors.appBackground, minHeight: "100vh" },
+  layout: { display: "grid", gridTemplateColumns: "260px 1fr", gap: theme.spacing.lg, marginTop: theme.spacing.md, alignItems: "start" },
 };

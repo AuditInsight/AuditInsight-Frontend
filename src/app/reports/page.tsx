@@ -23,6 +23,8 @@ import { usePermissions } from "@/security/access-control";
 export default function ReportsPage() {
   const { canViewReports } = usePermissions();
   const [severity, setSeverity] = useState("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [activeReport, setActiveReport] = useState("Audit Readiness");
 
   const {
@@ -51,7 +53,11 @@ export default function ReportsPage() {
 
   return (
     <div style={styles.page}>
-      <ReportsToolbar severity={severity} setSeverity={setSeverity} />
+      <ReportsToolbar
+        severity={severity} setSeverity={setSeverity}
+        dateFrom={dateFrom} setDateFrom={setDateFrom}
+        dateTo={dateTo} setDateTo={setDateTo}
+      />
 
       <div style={styles.layout}>
         <ReportsSidebar active={activeReport} setActive={setActiveReport} />

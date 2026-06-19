@@ -4,6 +4,7 @@ import { usePermissions } from "@/security/access-control";
 import TenantsTable from "@/components/admin/TenantsTable";
 import { MOCK_TENANTS } from "@/mock/admin.mock";
 import { theme } from "@/styles/theme";
+import { Shield } from "lucide-react";
 
 export default function OrganizationsPage() {
   const { canViewAdminPanel } = usePermissions();
@@ -11,10 +12,10 @@ export default function OrganizationsPage() {
   if (!canViewAdminPanel) {
     return (
       <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", color: "#6b7280" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
-          <p style={{ fontWeight: 600, fontSize: 16, margin: 0 }}>Access Restricted</p>
-          <p style={{ fontSize: 14, marginTop: 6 }}>Only the Super Admin can view this page.</p>
+        <div style={{ textAlign: "center" }}>
+          <Shield size={40} color="#94a3b8" strokeWidth={1.5} style={{ marginBottom: 12 }} />
+          <p style={{ fontWeight: 700, fontSize: 16, color: "#0f172a", margin: 0 }}>Access Restricted</p>
+          <p style={{ fontSize: 14, color: "#64748b", marginTop: 6 }}>Only the Super Admin can view this page.</p>
         </div>
       </div>
     );
