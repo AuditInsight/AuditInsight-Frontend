@@ -1,12 +1,20 @@
 import axios from "axios";
 
+/*
+ * ════════════════════════════════════════════════════════════════════
+ * API CONFIGURATION (CURRENTLY DISABLED FOR MOCK DATA TESTING)
+ * ════════════════════════════════════════════════════════════════════
+ * To re-enable API calls, uncomment the code below and remove MOCK data
+ * usage from hooks and components. The backend is hosted at:
+ * https://auditinsight-backend-springboot-production.up.railway.app/api
+ * ════════════════════════════════════════════════════════════════════
+ */
+
+/*
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "https://auditinsight-backend-springboot-production.up.railway.app/api";
 
-/* =========================
-   Axios instance
-========================= */
 const API = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -14,9 +22,6 @@ const API = axios.create({
   },
 });
 
-/* =========================
-   Attach JWT automatically
-========================= */
 API.interceptors.request.use((config) => {
   const isAuthEndpoint = config.url?.startsWith("/auth/");
   if (!isAuthEndpoint && typeof window !== "undefined") {
@@ -26,6 +31,12 @@ API.interceptors.request.use((config) => {
     }
   }
   return config;
+});
+*/
+
+// Temporary stub for development
+const API = axios.create({
+  baseURL: "http://localhost:3000/api",
 });
 
 /* =========================
@@ -47,9 +58,9 @@ export interface ResponseMessage {
 }
 
 /* =========================
-   AUTH API
+   AUTH API (COMMENTED - USING MOCK DATA)
 ========================= */
-
+/*
 export const loginUser = (username: string, password: string, inviteToken?: string) =>
   API.post<LoginResponse>("/auth/login", { username, password, ...(inviteToken ? { inviteToken } : {}) });
 
@@ -69,6 +80,28 @@ export const resendOtp = (email: string) =>
 
 export const changePassword = (currentPassword: string, newPassword: string) =>
   API.patch<ResponseMessage>("/auth/change-password", { currentPassword, newPassword });
+*/
+
+// Mock stubs for auth (using localStorage instead)
+export const loginUser = async (username: string, password: string, _inviteToken?: string) => {
+  return Promise.resolve({ data: { status: "success", message: "Mock login", token: "mock_token", role: "CLIENT" as const, mustChangePassword: false } });
+};
+
+export const signUpUser = async (_data: any) => {
+  return Promise.resolve({ data: { status: "success", message: "Mock signup" } });
+};
+
+export const verifyOtp = async (_email: string, _otp: string) => {
+  return Promise.resolve({ data: { status: "success", message: "Mock OTP verified" } });
+};
+
+export const resendOtp = async (_email: string) => {
+  return Promise.resolve({ data: { status: "success", message: "Mock OTP sent" } });
+};
+
+export const changePassword = async (_currentPassword: string, _newPassword: string) => {
+  return Promise.resolve({ data: { status: "success", message: "Mock password changed" } });
+};
 
 /* =========================
    TRANSACTION TYPES
@@ -103,8 +136,9 @@ export interface CreateTransactionRequest {
 }
 
 /* =========================
-   TRANSACTIONS API
+   TRANSACTIONS API (COMMENTED - USING MOCK DATA)
 ========================= */
+/*
 export const getTransactions = (organisationId?: string) =>
   API.get<TransactionResponse[]>("/transactions", { params: organisationId ? { organisationId } : {} });
 
@@ -116,6 +150,24 @@ export const createTransaction = (data: CreateTransactionRequest) =>
 
 export const updateTransactionStatus = (txnId: string, status: TransactionStatus) =>
   API.patch<TransactionResponse>(`/transactions/${txnId}`, { status });
+*/
+
+// Mock stubs
+export const getTransactions = async (_organisationId?: string) => {
+  return Promise.resolve({ data: [] });
+};
+
+export const getTransactionById = async (_txnId: string) => {
+  return Promise.resolve({ data: {} as TransactionResponse });
+};
+
+export const createTransaction = async (_data: CreateTransactionRequest) => {
+  return Promise.resolve({ data: {} as TransactionResponse });
+};
+
+export const updateTransactionStatus = async (_txnId: string, _status: TransactionStatus) => {
+  return Promise.resolve({ data: {} as TransactionResponse });
+};
 
 /* =========================
    EVIDENCE TYPES
@@ -135,8 +187,9 @@ export interface EvidenceResponse {
 }
 
 /* =========================
-   EVIDENCE API
+   EVIDENCE API (COMMENTED - USING MOCK DATA)
 ========================= */
+/*
 export const getEvidence = (organisationId?: string) =>
   API.get<EvidenceResponse[]>("/evidence", { params: organisationId ? { organisationId } : {} });
 
@@ -170,6 +223,34 @@ export const uploadEvidence = (
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
+*/
+
+// Mock stubs
+export const getEvidence = async (_organisationId?: string) => {
+  return Promise.resolve({ data: [] });
+};
+
+export const getEvidenceById = async (_evidenceId: string) => {
+  return Promise.resolve({ data: {} as EvidenceResponse });
+};
+
+export const getEvidenceByTransaction = async (_transactionId: string) => {
+  return Promise.resolve({ data: [] });
+};
+
+export const uploadEvidence = async (
+  _file: File,
+  _data: {
+    organisationId: string;
+    transactionId: string;
+    documentName: string;
+    folder: string;
+    subfolder: string;
+    notes?: string;
+  }
+) => {
+  return Promise.resolve({ data: {} as EvidenceResponse });
+};
 
 /* =========================
    ORGANISATION TYPES
@@ -192,8 +273,9 @@ export interface OrganisationResponse extends Organisation {
 }
 
 /* =========================
-   ORGANISATION API
+   ORGANISATION API (COMMENTED - USING MOCK DATA)
 ========================= */
+/*
 export const getMyOrganisations = () =>
   API.get<Organisation[]>("/organisations");
 
@@ -216,6 +298,45 @@ export const updateOrganisation = (orgId: string, data: {
   currencies?: string[];
 }) => API.put<OrganisationResponse>(`/organisations/${orgId}`, data);
 
+export const getOrganisationMembers = (orgId: string) =>
+  API.get<OrganisationMemberResponse[]>(`/organisations/${orgId}/members`);
+
+export const inviteMember = (orgId: string, email: string, role: UserRole) =>
+  API.post<ResponseMessage>(`/organisations/${orgId}/members/invite`, { email, role });
+
+export const removeMember = (orgId: string, userId: number) =>
+  API.delete<ResponseMessage>(`/organisations/${orgId}/members/${userId}`);
+*/
+
+// Mock stubs
+export const getMyOrganisations = async () => {
+  return Promise.resolve({ data: [] });
+};
+
+export const getOrganisation = async (_orgId: string) => {
+  return Promise.resolve({ data: {} as OrganisationResponse });
+};
+
+export const createOrganisation = async (_data: any) => {
+  return Promise.resolve({ data: {} as OrganisationResponse });
+};
+
+export const updateOrganisation = async (_orgId: string, _data: any) => {
+  return Promise.resolve({ data: {} as OrganisationResponse });
+};
+
+export const getOrganisationMembers = async (_orgId: string) => {
+  return Promise.resolve({ data: [] });
+};
+
+export const inviteMember = async (_orgId: string, _email: string, _role: UserRole) => {
+  return Promise.resolve({ data: { status: "success", message: "Mock invite sent" } });
+};
+
+export const removeMember = async (_orgId: string, _userId: number) => {
+  return Promise.resolve({ data: { status: "success", message: "Mock member removed" } });
+};
+
 export interface OrganisationMemberResponse {
   userId: number;
   firstName: string;
@@ -226,17 +347,8 @@ export interface OrganisationMemberResponse {
   joinedAt: string;
 }
 
-export const getOrganisationMembers = (orgId: string) =>
-  API.get<OrganisationMemberResponse[]>(`/organisations/${orgId}/members`);
-
-export const inviteMember = (orgId: string, email: string, role: UserRole) =>
-  API.post<ResponseMessage>(`/organisations/${orgId}/members/invite`, { email, role });
-
-export const removeMember = (orgId: string, userId: number) =>
-  API.delete<ResponseMessage>(`/organisations/${orgId}/members/${userId}`);
-
 /* =========================
-   REVIEW QUEUE API
+   REVIEW QUEUE API (COMMENTED - USING MOCK DATA)
 ========================= */
 export type IssueType = "MISSING_EVIDENCE" | "COMPLIANCE_ISSUE" | "RISK_FLAG" | "VERIFICATION_PROBLEM";
 export type ReviewStatus = "OPEN" | "RESOLVED" | "ESCALATED";
@@ -255,6 +367,7 @@ export interface ReviewQueueResponse {
   resolvedAt: string;
 }
 
+/*
 export const getReviewQueue = (organisationId: string) =>
   API.get<ReviewQueueResponse[]>("/review-queue", { params: { organisationId } });
 
@@ -267,12 +380,32 @@ export const flagIssue = (data: {
 
 export const resolveIssue = (itemId: string, resolutionNote: string) =>
   API.patch<ReviewQueueResponse>(`/review-queue/${itemId}/resolve`, { resolutionNote });
+*/
+
+// Mock stubs
+export const getReviewQueue = async (_organisationId: string) => {
+  return Promise.resolve({ data: [] });
+};
+
+export const flagIssue = async (_data: any) => {
+  return Promise.resolve({ data: {} as ReviewQueueResponse });
+};
+
+export const resolveIssue = async (_itemId: string, _resolutionNote: string) => {
+  return Promise.resolve({ data: {} as ReviewQueueResponse });
+};
 
 /* =========================
-   PROFILE API
+   PROFILE API (COMMENTED - USING MOCK DATA)
 ========================= */
+/*
 export const getClientProfile = () => API.get("/client/profile");
 export const getAuditorProfile = () => API.get("/auditor/profile");
+*/
+
+// Mock stubs
+export const getClientProfile = async () => Promise.resolve({ data: {} });
+export const getAuditorProfile = async () => Promise.resolve({ data: {} });
 
 /* =========================
    LEGACY STUBS (no-op — these endpoints don't exist in the API)

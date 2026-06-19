@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Building2, AlertCircle } from "lucide-react";
 
 interface OrgData {
   orgName: string;
@@ -40,11 +41,18 @@ export default function OrganisationSetupStep({ onNext }: Props) {
 
   return (
     <div style={s.wrap}>
-      <div style={s.iconWrap}>🏢</div>
+      <div style={s.iconWrap}>
+        <Building2 size={28} color="#1e3a8a" strokeWidth={1.5} />
+      </div>
       <h2 style={s.heading}>Set up your organisation</h2>
       <p style={s.sub}>Tell us about your company so we can personalise your experience.</p>
 
-      {error && <div style={s.errBanner}>{error}</div>}
+      {error && (
+        <div style={s.errBanner}>
+          <AlertCircle size={14} style={{ flexShrink: 0 }} />
+          {error}
+        </div>
+      )}
 
       <div style={s.fieldGroup}>
         <label style={s.label}>Organisation name <span style={s.req}>*</span></label>
@@ -96,10 +104,10 @@ export default function OrganisationSetupStep({ onNext }: Props) {
 
 const s: Record<string, React.CSSProperties> = {
   wrap: { display: "flex", flexDirection: "column", alignItems: "center", maxWidth: 520, margin: "0 auto", width: "100%" },
-  iconWrap: { fontSize: 44, marginBottom: 12 },
+  iconWrap: { width: 60, height: 60, borderRadius: "50%", background: "rgba(30,58,138,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 },
   heading: { fontSize: 26, fontWeight: 700, color: "#0F172A", margin: "0 0 8px", letterSpacing: "-0.4px", textAlign: "center" },
   sub: { fontSize: 14, color: "#64748B", margin: "0 0 28px", textAlign: "center", lineHeight: 1.6 },
-  errBanner: { background: "#FEF2F2", border: "1px solid #FECACA", color: "#B91C1C", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginBottom: 18, width: "100%", boxSizing: "border-box" },
+  errBanner: { background: "#FEF2F2", border: "1px solid #FECACA", color: "#B91C1C", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginBottom: 18, width: "100%", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8 },
   fieldGroup: { marginBottom: 16, width: "100%" },
   row: { display: "flex", gap: 12, width: "100%" },
   label: { display: "block", fontSize: 13.5, fontWeight: 600, color: "#374151", marginBottom: 6 },
