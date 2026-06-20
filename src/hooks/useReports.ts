@@ -33,6 +33,12 @@ export function useReports() {
     const completeEvidence = transactions.filter((tx) => tx.evidenceStatus === "COMPLETE").length;
     const pendingEvidence = transactions.filter((tx) => tx.evidenceStatus === "PARTIAL").length;
     const missingEvidence = transactions.filter((tx) => tx.evidenceStatus === "MISSING").length;
+    const incompleteTransactions = transactions.filter((tx) => tx.evidenceStatus !== "COMPLETE");
+
+    const totalTx = transactionsCount || 1;
+    const completeEvidencePct = Math.round((completeEvidence / totalTx) * 100);
+    const pendingEvidencePct = Math.round((pendingEvidence / totalTx) * 100);
+    const missingEvidencePct = Math.round((missingEvidence / totalTx) * 100);
 
     const verificationProblems = reviews.filter((r) => r.type === "Verification Problems").length;
     const complianceIssues = reviews.filter((r) => r.type === "Compliance Issues").length;
@@ -43,12 +49,17 @@ export function useReports() {
       (tx) => tx.evidenceStatus === "MISSING" || (tx.riskScore ?? 0) >= 80
     );
     const fraudAlerts = reviews.filter((r) => r.type === "AI / Risk Flags");
+    const complianceExposure = reviews.filter(
+      (r) => r.type === "Compliance Issues" || r.type === "Control Violations"
+    );
 
     return {
       transactionsCount, evidenceCount, linkedEvidencePercent, readiness,
       completeEvidence, pendingEvidence, missingEvidence,
+      completeEvidencePct, pendingEvidencePct, missingEvidencePct,
+      incompleteTransactions,
       verificationProblems, complianceIssues, fraudFlags, controlViolations,
-      highRiskTransactions, fraudAlerts, reviews,
+      highRiskTransactions, fraudAlerts, complianceExposure, reviews,
     };
   }, []);
 

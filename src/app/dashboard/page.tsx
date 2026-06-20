@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePermissions } from "@/security/access-control";
 import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { MOCK_REVIEW_QUEUE } from "@/mock/reviewQueue.mock";
 import {
   Calendar,
   ArrowUpRight,
@@ -672,11 +673,23 @@ function ClientDashboard({ transactions, evidence, user }: { transactions: any[]
 function MemberDashboard({ transactions, evidence, user }: { transactions: any[]; evidence: any[]; user: any }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  
-  const pending = transactions.filter((t) => t.status === "Pending" || t.status === "Under Review").length;
-  const missing = evidence.filter((e) => e.status === "Missing").length;
-  const verified = evidence.filter((e) => e.status === "Verified").length;
+
+  const openReviewItems = MOCK_REVIEW_QUEUE.filter(
+    (item) => item.status === "Open" || item.status === "In Review"
+  );
+  const missingEvidenceTxns = transactions.filter((t) => t.evidenceStatus === "MISSING");
+  const partialEvidenceTxns = transactions.filter((t) => t.evidenceStatus === "PARTIAL");
+  const needsEvidence = [...missingEvidenceTxns, ...partialEvidenceTxns];
+  const pendingEvidence = evidence.filter((e) => e.status === "Pending").length;
+  const verifiedEvidence = evidence.filter((e) => e.status === "Verified").length;
+  const draftsToComplete = transactions.filter(
+    (t) => t.status === "PENDING" || t.status === "PENDING_APPROVAL" || t.status === "FLAGGED"
+  ).length;
+  const coverage = transactions.length > 0
+    ? Math.round((transactions.filter((t) => t.evidenceStatus === "COMPLETE").length / transactions.length) * 100)
+    : 0;
   const COLOR = "#2563eb";
+  const uploadActivity = [35, 42, 28, 55, 48, 62, 58, 70, 45, 52, 68, 74, 60, 80];
 
   const handleExport = () => {
     console.log("Exporting data...");
@@ -687,156 +700,149 @@ function MemberDashboard({ transactions, evidence, user }: { transactions: any[]
     setTimeout(() => setIsLoading(false), 1000);
   };
 
-  const handleAddWidget = () => {
-    console.log("Add widget clicked");
-  };
-
   return (
     <div style={pageBg}>
-      <GreetingBanner 
-        color={COLOR} 
-        userName={user?.fullName ?? ""} 
-        userEmail={user?.email ?? ""} 
+      <GreetingBanner
+        color={COLOR}
+        userName={user?.fullName ?? ""}
+        userEmail={user?.email ?? ""}
         orgId={user?.organisationId}
         onExport={handleExport}
       />
 
       <div style={metricsRow}>
-        <MetricCard 
-          icon={<BookOpen size={20} />} 
-          value={transactions.length} 
-          label="Total Transactions" 
-          trend="15.2%" 
-          trendUp={true} 
+        <MetricCard
+          icon={<AlertOctagon size={20} />}
+          value={openReviewItems.length}
+          label="Open Review Items"
+          trend={`${openReviewItems.filter((i) => i.risk === "Critical").length} critical`}
+          trendUp={false}
+          color="#dc2626"
+          onClick={() => router.push("/review-queue")}
+        />
+        <MetricCard
+          icon={<XCircle size={20} />}
+          value={needsEvidence.length}
+          label="Needs Evidence"
+          trend={`${missingEvidenceTxns.length} missing`}
+          trendUp={false}
+          color="#0f172a"
+          onClick={() => router.push("/evidence")}
+        />
+        <MetricCard
+          icon={<BookOpen size={20} />}
+          value={draftsToComplete}
+          label="Transactions In Progress"
           color={COLOR}
           onClick={() => router.push("/transactions")}
         />
-        <MetricCard 
-          icon={<Clock size={20} />} 
-          value={pending} 
-          label="Pending Review" 
-          trend="5.1%" 
-          trendUp={false} 
-          color="#64748b"
-          onClick={() => router.push("/transactions?status=pending")}
+        <MetricCard
+          icon={<CheckCircle2 size={20} />}
+          value={`${coverage}%`}
+          label="Evidence Coverage"
+          trend={`${verifiedEvidence} verified`}
+          trendUp={true}
+          color="#16a34a"
+          onClick={() => router.push("/reports")}
         />
-        <MetricCard 
-          icon={<XCircle size={20} />} 
-          value={missing} 
-          label="Missing Evidence" 
-          trend="2.3%" 
-          trendUp={false} 
-          color="#0f172a"
-          onClick={() => router.push("/evidence?status=missing")}
-        />
-        <MetricCard 
-          icon={<CheckCircle2 size={20} />} 
-          value={verified} 
-          label="Verified Evidence" 
-          trend="18.7%" 
-          trendUp={true} 
-          color={COLOR}
-          onClick={() => router.push("/evidence?status=verified")}
-        />
-        <AddWidgetCard onClick={handleAddWidget} />
       </div>
 
       <div style={threeColGrid}>
-        <CardShell 
-          title="Pending Transactions" 
-          count={`${pending} Items`}
+        <CardShell
+          title="My Action Items"
+          count={`${openReviewItems.length} to resolve`}
           onRefresh={handleRefresh}
-          onMore={() => console.log("More options")}
+          onMore={() => router.push("/review-queue")}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {transactions.filter((t) => t.status === "Pending" || t.status === "Under Review").slice(0, 5).map((t, i) => (
-              <ListItem 
-                key={i} 
-                icon={<Clock size={16} />} 
-                iconBg="#fef3c7" 
-                iconColor="#d97706" 
-                title={`Transaction #${t.id || i + 1}`} 
-                subtitle={t.description || "No description"} 
-                rightLabel={t.status || "Pending"} 
-                rightColor="#d97706"
-                onClick={() => router.push(`/transactions/${t.id}`)}
+            {openReviewItems.slice(0, 5).map((item) => (
+              <ListItem
+                key={item.id}
+                icon={<AlertTriangle size={16} />}
+                iconBg={item.risk === "Critical" ? "#fef2f2" : "#fffbeb"}
+                iconColor={item.risk === "Critical" ? "#dc2626" : "#d97706"}
+                title={item.type}
+                subtitle={`${item.transactionId} · ${item.counterparty}`}
+                rightLabel={item.status}
+                rightColor={item.risk === "Critical" ? "#dc2626" : "#d97706"}
+                onClick={() => router.push("/review-queue")}
               />
             ))}
-            {pending === 0 && (
-              <EmptyState 
-                icon={<CheckCircle2 size={24} style={{ color: "#16a34a" }} />} 
-                message="All caught up"
+            {openReviewItems.length === 0 && (
+              <EmptyState
+                icon={<CheckCircle2 size={24} style={{ color: "#16a34a" }} />}
+                message="No open review items"
               />
             )}
           </div>
         </CardShell>
 
-        <CardShell 
-          title="Evidence Queue" 
-          count={`${evidence.length} Files`}
+        <CardShell
+          title="Transactions Needing Evidence"
+          count={`${needsEvidence.length} items`}
           onRefresh={handleRefresh}
-          onMore={() => console.log("More options")}
+          onMore={() => router.push("/transactions")}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {evidence.slice(0, 5).map((e, i) => (
-              <ListItem 
-                key={i} 
-                icon={<Paperclip size={16} />} 
-                iconBg="#dbeafe" 
-                iconColor="#2563eb" 
-                title={e.fileName || `Evidence #${i + 1}`} 
-                subtitle={e.uploadedBy || "Unknown"} 
-                rightLabel={e.status || "Pending"} 
-                rightColor={e.status === "Verified" ? "#16a34a" : "#d97706"}
-                onClick={() => router.push(`/evidence/${e.id}`)}
+            {needsEvidence.slice(0, 5).map((t) => (
+              <ListItem
+                key={t.id}
+                icon={<Paperclip size={16} />}
+                iconBg="#fef3c7"
+                iconColor="#d97706"
+                title={t.name || t.id}
+                subtitle={t.counterparty || "No counterparty"}
+                rightLabel={t.evidenceStatus}
+                rightColor={t.evidenceStatus === "MISSING" ? "#dc2626" : "#d97706"}
+                onClick={() => router.push("/evidence")}
               />
             ))}
-            {evidence.length === 0 && (
-              <EmptyState 
-                icon={<FolderOpen size={24} />} 
-                message="No evidence yet"
+            {needsEvidence.length === 0 && (
+              <EmptyState
+                icon={<CheckCircle2 size={24} style={{ color: "#16a34a" }} />}
+                message="All transactions have evidence"
               />
             )}
           </div>
         </CardShell>
 
-        <CardShell 
+        <CardShell
           title="Evidence Status"
           onRefresh={handleRefresh}
-          onMore={() => console.log("More options")}
+          onMore={() => router.push("/evidence")}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-            <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Total Evidence</span>
+            <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Uploaded Documents</span>
             <span style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{evidence.length}</span>
           </div>
           <SegmentedBar segments={[
-            { value: verified, color: "#2563eb" },
-            { value: evidence.filter((e) => e.status === "Pending").length, color: "#64748b" },
-            { value: missing, color: "#0f172a" },
+            { value: verifiedEvidence, color: "#16a34a" },
+            { value: pendingEvidence, color: "#64748b" },
+            { value: needsEvidence.length, color: "#dc2626" },
           ]} />
-          <CategoryRow dotColor="#2563eb" label="Verified" value={verified} />
-          <CategoryRow dotColor="#64748b" label="Pending" value={evidence.filter((e) => e.status === "Pending").length} />
-          <CategoryRow dotColor="#0f172a" label="Missing" value={missing} />
-          <CategoryRow dotColor="#1e3a8a" label="Total Transactions" value={transactions.length} />
-          <CategoryRow dotColor="#94a3b8" label="Coverage" value={`${transactions.length > 0 ? Math.round((evidence.length / transactions.length) * 100) : 0}%`} />
+          <CategoryRow dotColor="#16a34a" label="Verified" value={verifiedEvidence} />
+          <CategoryRow dotColor="#64748b" label="Pending Review" value={pendingEvidence} />
+          <CategoryRow dotColor="#dc2626" label="Transactions Missing Docs" value={missingEvidenceTxns.length} />
+          <CategoryRow dotColor="#2563eb" label="Partial Evidence" value={partialEvidenceTxns.length} />
+          <CategoryRow dotColor="#94a3b8" label="Coverage" value={`${coverage}%`} />
         </CardShell>
       </div>
 
       <div style={twoColGrid}>
-        <CardShell 
-          title="Verification KPI"
+        <CardShell
+          title="Evidence Coverage"
           onRefresh={handleRefresh}
         >
           <div style={{ fontSize: 48, fontWeight: 800, color: "#0f172a", letterSpacing: "-2px", marginBottom: 16 }}>
-            {evidence.length > 0 ? Math.round((verified / evidence.length) * 100) : 0}%
+            {coverage}%
           </div>
           <div style={{ height: 12, background: "#f1f5f9", borderRadius: 8, overflow: "hidden", marginBottom: 12 }}>
-            <div style={{ 
-              height: "100%", 
-              width: `${evidence.length > 0 ? (verified / evidence.length) * 100 : 0}%`, 
-              background: `linear-gradient(90deg, ${COLOR} 0%, ${COLOR}cc 100%)`, 
+            <div style={{
+              height: "100%",
+              width: `${coverage}%`,
+              background: `linear-gradient(90deg, ${COLOR} 0%, ${COLOR}cc 100%)`,
               borderRadius: 8,
-              transition: "width 0.8s ease"
+              transition: "width 0.8s ease",
             }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>
@@ -844,39 +850,26 @@ function MemberDashboard({ transactions, evidence, user }: { transactions: any[]
           </div>
         </CardShell>
 
-        <CardShell 
-          title="Monthly Activity"
+        <CardShell
+          title="Upload Activity"
           onRefresh={handleRefresh}
         >
           <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 120, padding: "12px 0" }}>
-            {Array.from({ length: 14 }).map((_, i) => {
-              const h = 20 + Math.random() * 70;
-              return (
-                <div 
-                  key={i} 
-                  style={{ 
-                    flex: 1, 
-                    background: `linear-gradient(180deg, ${COLOR} 0%, ${COLOR}88 100%)`, 
-                    borderRadius: "6px 6px 0 0", 
-                    height: `${h}%`, 
-                    minHeight: 8,
-                    transition: "all 0.3s ease",
-                    cursor: "pointer"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "scaleY(1.05)";
-                    e.currentTarget.style.opacity = "0.8";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "scaleY(1)";
-                    e.currentTarget.style.opacity = "1";
-                  }}
-                />
-              );
-            })}
+            {uploadActivity.map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  background: `linear-gradient(180deg, ${COLOR} 0%, ${COLOR}88 100%)`,
+                  borderRadius: "6px 6px 0 0",
+                  height: `${h}%`,
+                  minHeight: 8,
+                }}
+              />
+            ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#94a3b8", marginTop: 8 }}>
-            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+            <span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span>
           </div>
         </CardShell>
       </div>
@@ -892,7 +885,7 @@ function MemberDashboard({ transactions, evidence, user }: { transactions: any[]
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          zIndex: 1000
+          zIndex: 1000,
         }}>
           <Loader2 size={48} style={{ color: COLOR, animation: "spin 1s linear infinite" }} />
         </div>

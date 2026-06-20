@@ -11,6 +11,7 @@ const MEMBER_NAV: NavItem[] = [
   { label: "Transactions", path: "/transactions", icon: "💳" },
   { label: "Evidence",     path: "/evidence",     icon: "📁" },
   { label: "Review Queue", path: "/review-queue", icon: "🔔" },
+  { label: "Reports",      path: "/reports",      icon: "📈" },
 ];
 
 const CLIENT_NAV: NavItem[] = [

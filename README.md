@@ -37,13 +37,39 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 
 
-Demo accounts (password: demo1234 for all):
+## Demo accounts
 
-ceo@insightai.rw → CLIENT
+Password for all accounts below: `demo1234`
 
-accountant@insightai.rw → MEMBER
+| Email | Role |
+|-------|------|
+| `ceo@insightai.rw` | CLIENT (Organisation Admin) |
+| `accountant@insightai.rw` | MEMBER (Accountant) |
+| `auditor@audit.rw` | AUDITOR |
+| `admin@auditinsight.com` | ADMIN |
 
-auditor@audit.rw → AUDITOR
+## Mock OTP (registration)
 
-admin@auditinsight.com → ADMIN
+The backend API is not wired up yet. Organisation Admin sign-up uses a **fixed demo OTP** stored in the browser (`localStorage`) so you can test the full registration flow locally.
+
+**Demo OTP code:** `123456`
+
+Defined in `src/mock/auth.mock.ts` as `DUMMY_OTP_CODE`.
+
+### Sign-up flow (CLIENT only)
+
+1. Go to `/sign-up` and choose **Organisation Admin**
+2. Fill in the form and submit
+3. You are redirected to `/verify-otp`
+4. Enter **`123456`** (or click **Use demo code** on that page)
+5. Click **Verify Code** → you are sent to `/onboarding`
+6. Complete organisation setup and choose a plan → `/dashboard`
+
+Auditor sign-up skips OTP and goes to login pending admin approval.
+
+### Notes
+
+- No real email is sent; OTP metadata is saved in `localStorage` under `signup_otp_meta`
+- OTP verification is marked with `otp_verified` in `localStorage` before onboarding
+- When the real backend is connected, replace the mock helpers in `src/mock/auth.mock.ts` and the verify logic in `src/app/verify-otp/page.tsx`
 

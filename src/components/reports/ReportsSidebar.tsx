@@ -1,28 +1,17 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import { REPORT_TABS, type ReportTabId } from "./reportTabs";
 
 interface Props {
-  active: string;
-  setActive: (value: string) => void;
+  active: ReportTabId;
+  setActive: (value: ReportTabId) => void;
 }
 
-const reportItems = [
-  "Audit Readiness Report",
-  "Evidence Completeness Report",
-  "High-Risk Transactions",
-  "Compliance Exposure",
-  "Fraud & Duplicate Alerts",
-  "Internal Audit Findings",
-];
-
-export default function ReportsSidebar({
-  active,
-  setActive,
-}: Props) {
+export default function ReportsSidebar({ active, setActive }: Props) {
   return (
     <div style={styles.container}>
-      {reportItems.map((item) => {
+      {REPORT_TABS.map((item) => {
         const isActive = active === item;
 
         return (
@@ -41,6 +30,8 @@ export default function ReportsSidebar({
     </div>
   );
 }
+
+export { DEFAULT_REPORT_TAB, REPORT_TABS, type ReportTabId } from "./reportTabs";
 
 const styles: Record<string, CSSProperties> = {
   container: {
