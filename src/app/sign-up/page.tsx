@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Shield, Building2, ClipboardCheck, Check, Loader2 } from "lucide-react";
+import { buildSignupOtpMeta } from "@/mock/auth.mock";
 
 type UserRole = "CLIENT" | "AUDITOR";
 
@@ -64,8 +65,7 @@ export default function SignupPage() {
     localStorage.setItem("signup_name", `${firstName.trim()} ${lastName.trim()}`);
     localStorage.setItem("signup_password", password);
     if (role === "CLIENT") {
-      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-      localStorage.setItem("signup_otp_meta", JSON.stringify({ email: trimmedEmail, code: otpCode, sentAt: new Date().toISOString() }));
+      localStorage.setItem("signup_otp_meta", JSON.stringify(buildSignupOtpMeta(trimmedEmail)));
     }
     await new Promise((r) => setTimeout(r, 600));
     if (role === "CLIENT") {

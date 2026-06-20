@@ -1,5 +1,26 @@
 import { AuthUser } from "@/types/user";
 
+/** Fixed OTP for frontend mock registration — always use this on /verify-otp */
+export const DUMMY_OTP_CODE = "123456";
+
+export interface SignupOtpMeta {
+  email: string;
+  code: string;
+  sentAt: string;
+}
+
+export function buildSignupOtpMeta(email: string): SignupOtpMeta {
+  return {
+    email: email.trim().toLowerCase(),
+    code: DUMMY_OTP_CODE,
+    sentAt: new Date().toISOString(),
+  };
+}
+
+export function isSignupOtpValid(code: string, meta?: Pick<SignupOtpMeta, "code"> | null): boolean {
+  return code === DUMMY_OTP_CODE || code === meta?.code;
+}
+
 export const MOCK_USERS: Record<string, AuthUser> = {
   CLIENT: {
     id: 1,

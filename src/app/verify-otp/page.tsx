@@ -4,6 +4,12 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, MailCheck, RefreshCw, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import {
+  DUMMY_OTP_CODE,
+  buildSignupOtpMeta,
+  isSignupOtpValid,
+  type SignupOtpMeta,
+} from "@/mock/auth.mock";
 
 function VerifyOtpForm() {
   const router = useRouter();
@@ -16,7 +22,6 @@ function VerifyOtpForm() {
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-  const [resendCount, setResendCount] = useState(0);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleChange = (index: number, value: string) => {
@@ -42,6 +47,12 @@ function VerifyOtpForm() {
     }
   };
 
+  const fillDemoCode = () => {
+    setDigits(DUMMY_OTP_CODE.split(""));
+    setError("");
+    refs.current[5]?.focus();
+  };
+
   const handleVerify = async () => {
     setError("");
     const code = digits.join("");
@@ -50,28 +61,37 @@ function VerifyOtpForm() {
     await new Promise((r) => setTimeout(r, 700));
     // Enforce 10-minute expiry using stored OTP metadata
     const otpMetaRaw = localStorage.getItem("signup_otp_meta");
+    const targetEmail = email || localStorage.getItem("signup_email") || "";
+
     if (!otpMetaRaw) {
+      if (isSignupOtpValid(code)) {
+        localStorage.setItem("signup_otp_meta", JSON.stringify(buildSignupOtpMeta(targetEmail)));
+        localStorage.setItem("otp_verified", "true");
+        localStorage.setItem("verified_email", targetEmail);
+        router.push(nextPath);
+        setIsSubmitting(false);
+        return;
+      }
       setError("No OTP was sent. Please request a new code.");
       setIsSubmitting(false);
       return;
     }
     try {
-      const meta = JSON.parse(otpMetaRaw) as { email: string; code: string; sentAt: string };
+      const meta = JSON.parse(otpMetaRaw) as SignupOtpMeta;
       const sentAt = new Date(meta.sentAt);
       const now = new Date();
       const minutes = (now.getTime() - sentAt.getTime()) / 60000;
-      if (minutes > 10) {
+      if (minutes > 10 && code !== DUMMY_OTP_CODE) {
         setError("The code has expired. Please resend a new code.");
         setIsSubmitting(false);
         return;
       }
-      if (code === meta.code) {
+      if (isSignupOtpValid(code, meta)) {
         localStorage.setItem("otp_verified", "true");
-        // preserve which email was verified
-        localStorage.setItem("verified_email", meta.email);
+        localStorage.setItem("verified_email", meta.email || email || localStorage.getItem("signup_email") || "");
         router.push(nextPath);
       } else {
-        setError("Invalid OTP. Please try again.");
+        setError(`Invalid OTP. Use the demo code ${DUMMY_OTP_CODE} to continue.`);
       }
     } catch (err) {
       setError("Invalid OTP metadata. Please resend.");
@@ -83,9 +103,7 @@ function VerifyOtpForm() {
     const targetEmail = email || localStorage.getItem("signup_email") || "";
     const existingMeta = localStorage.getItem("signup_otp_meta");
     if (!existingMeta && targetEmail) {
-      const code = String(Math.floor(100000 + Math.random() * 900000));
-      const meta = { email: targetEmail, code, sentAt: new Date().toISOString() };
-      localStorage.setItem("signup_otp_meta", JSON.stringify(meta));
+      localStorage.setItem("signup_otp_meta", JSON.stringify(buildSignupOtpMeta(targetEmail)));
       setSuccessMsg(`A verification code has been sent to ${targetEmail}.`);
     }
   }, [email]);
@@ -95,12 +113,9 @@ function VerifyOtpForm() {
     setSuccessMsg("");
     setIsResending(true);
     await new Promise((r) => setTimeout(r, 600));
-    // generate secure 6-digit code (mock email send)
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const meta = { email: email || localStorage.getItem("signup_email") || "", code, sentAt: new Date().toISOString() };
-    localStorage.setItem("signup_otp_meta", JSON.stringify(meta));
-    setResendCount((c) => c + 1);
-    setSuccessMsg(`A new code has been sent to ${meta.email || "your email"}.`);
+    const targetEmail = email || localStorage.getItem("signup_email") || "";
+    localStorage.setItem("signup_otp_meta", JSON.stringify(buildSignupOtpMeta(targetEmail)));
+    setSuccessMsg(`A new code has been sent to ${targetEmail || "your email"}.`);
     setDigits(["", "", "", "", "", ""]);
     refs.current[0]?.focus();
     setIsResending(false);
@@ -127,6 +142,15 @@ function VerifyOtpForm() {
 
           {error && <div style={s.errorBox}>{error}</div>}
           {successMsg && <div style={s.successBox}>{successMsg}</div>}
+
+          <div style={s.demoHint}>
+            <span style={s.demoHintText}>
+              Demo verification code: <strong style={{ color: "#0f172a", letterSpacing: "0.08em" }}>{DUMMY_OTP_CODE}</strong>
+            </span>
+            <button type="button" onClick={fillDemoCode} style={s.demoBtn}>
+              Use demo code
+            </button>
+          </div>
 
           {/* 6-box OTP input */}
           <div style={s.otpRow} onPaste={handlePaste}>
@@ -165,12 +189,6 @@ function VerifyOtpForm() {
             </button>
           </div>
 
-          {resendCount > 0 && (
-            <p style={{ fontSize: 11.5, color: "#94a3b8", textAlign: "center", margin: "4px 0 0" }}>
-              Hint: use any 6-digit number (e.g. 123456)
-            </p>
-          )}
-
           <div style={{ marginTop: 24, textAlign: "center" }}>
             <Link href="/sign-up" style={s.backLink}>
               <ArrowLeft size={14} /> Back to sign up
@@ -199,6 +217,29 @@ const s: Record<string, React.CSSProperties> = {
   subtitle: { textAlign: "center", fontSize: 14, color: "#64748b", margin: "0 0 24px", lineHeight: 1.6 },
   errorBox: { background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 18, textAlign: "center" },
   successBox: { background: "#f0fdf4", border: "1px solid #86efac", color: "#15803d", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 18, textAlign: "center" },
+  demoHint: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 20,
+    padding: "12px 14px",
+    borderRadius: 12,
+    background: "#eff6ff",
+    border: "1px solid #bfdbfe",
+  },
+  demoHintText: { fontSize: 13, color: "#475569", textAlign: "center" },
+  demoBtn: {
+    background: "#fff",
+    border: "1px solid #93c5fd",
+    color: "#1e3a8a",
+    fontSize: 12,
+    fontWeight: 700,
+    padding: "6px 12px",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
   otpRow: { display: "flex", gap: 10, justifyContent: "center", marginBottom: 24 },
   otpBox: { width: 52, height: 60, borderRadius: 12, border: "2px solid #e2e8f0", background: "#f8fafc", fontSize: 24, fontWeight: 700, textAlign: "center", color: "#0f172a", outline: "none", fontFamily: "inherit", transition: "all 0.15s", cursor: "text" },
   otpBoxFilled: { border: "2px solid #1e3a8a", background: "#eff6ff" },

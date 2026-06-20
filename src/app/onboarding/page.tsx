@@ -54,6 +54,24 @@ export default function OnboardingPage() {
   const [displayEmail, setDisplayEmail] = useState(user?.email ?? "");
 
   useEffect(() => {
+    if (user) return;
+
+    const signupRole = localStorage.getItem("signup_role");
+    const signupEmail = localStorage.getItem("signup_email");
+
+    if (!signupEmail || signupRole !== "CLIENT") {
+      router.replace("/sign-up");
+      return;
+    }
+
+    const otpVerified = localStorage.getItem("otp_verified") === "true";
+    const verifiedEmail = localStorage.getItem("verified_email");
+    if (!otpVerified || verifiedEmail !== signupEmail) {
+      router.replace(`/verify-otp?email=${encodeURIComponent(signupEmail)}&next=/onboarding`);
+    }
+  }, [user, router]);
+
+  useEffect(() => {
     if (!user) {
       const storedName = typeof window !== "undefined" ? localStorage.getItem("signup_name") : null;
       const storedEmail = typeof window !== "undefined" ? localStorage.getItem("signup_email") : null;
