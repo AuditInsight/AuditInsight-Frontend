@@ -6,6 +6,7 @@ import { usePermissions } from "@/security/access-control";
 import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { MOCK_REVIEW_QUEUE } from "@/mock/reviewQueue.mock";
+import { exportDashboardCSV } from "@/utils/export";
 import {
   ArrowUpRight,
   RefreshCw,
@@ -377,7 +378,24 @@ function ClientDashboard({ transactions, evidence, user }: { transactions: any[]
   const activityBars = [42, 55, 38, 62, 48, 70, 58, 65, 52, 74, 60, 68, 55, 72];
 
   const handleExport = () => {
-    console.log("Exporting data...");
+    exportDashboardCSV({
+      role: "Organisation Admin",
+      userName: user?.fullName ?? "",
+      orgName: user?.organisationName,
+      metrics: [
+        { label: "Total Transactions", value: transactions.length },
+        { label: "High Risk Items", value: highRisk },
+        { label: "Evidence Coverage", value: `${coverage}%` },
+        { label: "Evidence Files", value: evidence.length },
+      ],
+      tables: [{
+        title: "High Risk Transactions",
+        headers: ["ID", "Name", "Counterparty", "Evidence Status", "Risk Score"],
+        rows: transactions
+          .filter((t) => (t.riskScore ?? 0) >= 80 || t.evidenceStatus === "MISSING")
+          .map((t) => [t.id, t.name, t.counterparty, t.evidenceStatus, t.riskScore ?? ""]),
+      }],
+    });
   };
 
   const handleRefresh = () => {
@@ -595,7 +613,35 @@ function MemberDashboard({ transactions, evidence, user }: { transactions: any[]
   const uploadActivity = [35, 42, 28, 55, 48, 62, 58, 70, 45, 52, 68, 74, 60, 80];
 
   const handleExport = () => {
-    console.log("Exporting data...");
+    exportDashboardCSV({
+      role: "Accountant",
+      userName: user?.fullName ?? "",
+      orgName: user?.organisationName,
+      metrics: [
+        { label: "Open Review Items", value: openReviewItems.length },
+        { label: "Needs Evidence", value: needsEvidence.length },
+        { label: "Transactions In Progress", value: draftsToComplete },
+        { label: "Evidence Coverage", value: `${coverage}%` },
+      ],
+      tables: [
+        {
+          title: "My Action Items",
+          headers: ["Type", "Transaction", "Counterparty", "Status", "Risk"],
+          rows: openReviewItems.map((item) => [
+            item.type,
+            item.transactionId,
+            item.counterparty,
+            item.status,
+            item.risk,
+          ]),
+        },
+        {
+          title: "Transactions Needing Evidence",
+          headers: ["ID", "Name", "Counterparty", "Evidence Status"],
+          rows: needsEvidence.map((t) => [t.id, t.name, t.counterparty, t.evidenceStatus]),
+        },
+      ],
+    });
   };
 
   const handleRefresh = () => {
@@ -803,7 +849,33 @@ function AuditorDashboard({ transactions, evidence, user }: { transactions: any[
   const auditActivity = [48, 52, 44, 58, 62, 55, 68, 72, 60, 75, 65, 70, 58, 78];
 
   const handleExport = () => {
-    console.log("Exporting data...");
+    exportDashboardCSV({
+      role: "Auditor",
+      userName: user?.fullName ?? "",
+      orgName: user?.organisationName,
+      metrics: [
+        { label: "Transactions Reviewed", value: transactions.length },
+        { label: "High Risk", value: highRisk },
+        { label: "Missing Evidence", value: missingEvidence },
+        { label: "Evidence Coverage", value: `${coverage}%` },
+      ],
+      tables: [
+        {
+          title: "High Risk Items",
+          headers: ["ID", "Name", "Counterparty", "Risk Score"],
+          rows: transactions
+            .filter((t) => (t.riskScore ?? 0) >= 80)
+            .map((t) => [t.id, t.name, t.counterparty, t.riskScore ?? ""]),
+        },
+        {
+          title: "Open Audit Flags",
+          headers: ["Type", "Transaction", "Counterparty", "Status", "Due"],
+          rows: MOCK_REVIEW_QUEUE
+            .filter((i) => i.status === "Open" || i.status === "Escalated")
+            .map((i) => [i.type, i.transactionId, i.counterparty, i.status, i.due]),
+        },
+      ],
+    });
   };
 
   const handleRefresh = () => {

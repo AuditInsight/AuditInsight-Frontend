@@ -21,6 +21,7 @@ import { evidenceMatchesSearch } from "@/lib/evidenceSearch";
  */
 import { useEvidence } from "@/hooks/useEvidence";
 import { usePermissions } from "@/security/access-control";
+import { exportEvidenceCSV } from "@/utils/export";
 
 type EvidenceSection = { title: string; items: string[] };
 
@@ -100,13 +101,20 @@ export default function EvidencePage() {
     setIsDeleting(false);
   };
 
+  const handleExport = () => {
+    exportEvidenceCSV(filteredData);
+  };
+
   return (
     <div style={{ display: "flex", background: theme.colors.appBackground, minHeight: "100vh", fontFamily: theme.typography.fontFamily }}>
       <Sidebar sections={sections} evidenceData={documents} onSelectItem={(v) => { setActiveCategory(v); setPage(1); }} />
 
       <div style={{ flex: 1, padding: theme.spacing.lg, display: "flex", flexDirection: "column", gap: theme.spacing.md }}>
         {/* ── Role guard: only MEMBER sees the "Upload Evidence" button ── */}
-        <EvidenceHeader onAdd={canUploadEvidence ? () => setUploadOpen(true) : undefined} />
+        <EvidenceHeader
+          onAdd={canUploadEvidence ? () => setUploadOpen(true) : undefined}
+          onExport={handleExport}
+        />
 
         <EvidenceFilters
           activeTab={activeTab}

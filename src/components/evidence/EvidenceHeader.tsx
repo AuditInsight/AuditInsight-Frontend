@@ -4,10 +4,12 @@ import { theme } from "@/styles/theme";
 
 interface EvidenceHeaderProps {
   onAdd?: () => void;
+  onExport?: () => void;
 }
 
 export const EvidenceHeader = ({
   onAdd,
+  onExport,
 }: EvidenceHeaderProps) => {
   return (
     <div style={wrapper}>
@@ -15,8 +17,8 @@ export const EvidenceHeader = ({
         <h2 style={title}>Document Control Center</h2>
 
         <div style={actions}>
-          <button style={secondaryBtn}>
-            📤 Export
+          <button type="button" style={secondaryBtn} onClick={onExport}>
+            Export
           </button>
 
           {onAdd && (

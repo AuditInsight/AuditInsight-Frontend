@@ -15,6 +15,7 @@ import { theme } from "@/styles/theme";
 import { Transaction } from "@/types/transaction.types";
 import { useTransactions } from "@/hooks/useTransactions";
 import { usePermissions } from "@/security/access-control";
+import { exportTransactionsCSV } from "@/utils/export";
 
 function TransactionsContent() {
   const router = useRouter();
@@ -83,13 +84,7 @@ function TransactionsContent() {
   };
 
   const handleExport = () => {
-    const csv = filteredData.map((t) => `${t.id},${t.date},${t.amount},${t.counterparty},${t.status}`);
-    const blob = new Blob([csv.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "transactions.csv";
-    a.click();
+    exportTransactionsCSV(filteredData);
   };
 
   return (

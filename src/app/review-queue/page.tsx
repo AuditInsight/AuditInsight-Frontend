@@ -18,6 +18,7 @@ import { usePermissions } from "@/security/access-control";
 import { useAuth } from "@/context/AuthContext";
 import { appendAuditLog } from "@/security/audit-logger";
 import { ReviewItem } from "@/lib/reviewEngine";
+import { exportReviewQueueCSV } from "@/utils/export";
 
 export default function ReviewQueuePage() {
   const router = useRouter();
@@ -86,6 +87,10 @@ export default function ReviewQueuePage() {
     setResolveTarget(null);
   };
 
+  const handleExport = () => {
+    exportReviewQueueCSV(filteredReviews);
+  };
+
   if (loading) {
     return (
       <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
@@ -98,8 +103,8 @@ export default function ReviewQueuePage() {
     <div style={styles.page}>
       <PageToolbar
         title="Review Queue"
-        filters={["All Issues", "My Issues"]}
-        primaryActionLabel={canFlagIssue ? "Flag Issue" : "Export"}
+        onExport={handleExport}
+        primaryActionLabel={canFlagIssue ? "Flag Issue" : undefined}
         onAdd={canFlagIssue ? () => setFlagModalOpen(true) : undefined}
       />
 
