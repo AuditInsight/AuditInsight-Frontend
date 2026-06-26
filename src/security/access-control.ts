@@ -16,7 +16,6 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
     canFlagIssue: false,
     canResolveIssue: false,
     canApproveTransaction: true,
-    canViewReports: true,
     canViewAuditLogs: true,
     canManageOrganisation: true,
     canInviteMembers: true,
@@ -36,7 +35,6 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
     canFlagIssue: false,
     canResolveIssue: true,
     canApproveTransaction: false,
-    canViewReports: true,
     canViewAuditLogs: false,
     canManageOrganisation: false,
     canInviteMembers: false,
@@ -56,7 +54,6 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
     canFlagIssue: true,
     canResolveIssue: false,
     canApproveTransaction: false,
-    canViewReports: true,
     canViewAuditLogs: true,
     canManageOrganisation: false,
     canInviteMembers: false,
@@ -76,7 +73,6 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
     canFlagIssue: false,
     canResolveIssue: false,
     canApproveTransaction: false,
-    canViewReports: false,
     canViewAuditLogs: false,
     canManageOrganisation: false,
     canInviteMembers: false,
@@ -98,7 +94,6 @@ export interface Permissions {
   canFlagIssue: boolean;
   canResolveIssue: boolean;
   canApproveTransaction: boolean;
-  canViewReports: boolean;
   canViewAuditLogs: boolean;
   canManageOrganisation: boolean;
   canInviteMembers: boolean;
