@@ -28,14 +28,14 @@ export default function ReviewQueuePage() {
   const { transactions, evidences } = useTransactions();
   const { canFlagIssue, canResolveIssue } = usePermissions();
 
-  const [page, setPage]               = useState(1);
-  const [activeIssue, setActiveIssue] = useState("All");
-  const [severity, setSeverity]       = useState("All");
+  const [page, setPage]                   = useState(1);
+  const [activeIssue, setActiveIssue]     = useState("All");
+  const [severity, setSeverity]           = useState("All");
   const [flagModalOpen, setFlagModalOpen] = useState(false);
   const [resolveTarget, setResolveTarget] = useState<{ id: string; transactionId: string } | null>(null);
 
   const filteredReviews = useMemo(() => {
-    return items.filter(r => {
+    return items.filter((r) => {
       const matchesIssue    = activeIssue === "All" || r.type === activeIssue;
       const matchesSeverity = severity === "All"    || r.severity === severity;
       return matchesIssue && matchesSeverity;
@@ -60,49 +60,53 @@ export default function ReviewQueuePage() {
       status: "Open",
     }, user?.fullName ?? "Auditor");
     appendAuditLog({
-      userId:           user?.id ?? 0,
-      userEmail:        user?.email ?? "",
-      userRole:         user?.role ?? "AUDITOR",
-      action:           "FLAG_CREATED",
+      userId: user?.id ?? 0, userEmail: user?.email ?? "",
+      userRole: user?.role ?? "AUDITOR", action: "FLAG_CREATED",
       targetResourceId: flag.transactionId,
-      detail:           `Flagged: ${flag.type} — ${flag.severity}${flag.notes ? ` — ${flag.notes}` : ""}`,
+      detail: `Flagged: ${flag.type} — ${flag.severity}${flag.notes ? ` — ${flag.notes}` : ""}`,
     });
     setFlagModalOpen(false);
   };
 
   const handleResolve = (id: string) => {
-    const item = items.find(i => i.id === id);
+    const item = items.find((i) => i.id === id);
     setResolveTarget({ id, transactionId: String(item?.transactionId ?? id) });
   };
 
   const handleResolveSubmit = (id: string, note: string, fileName?: string) => {
-    const item = items.find(i => i.id === id);
+    const item = items.find((i) => i.id === id);
     resolveIssue(id, note, user?.fullName ?? "Accountant");
     appendAuditLog({
-      userId:           user?.id ?? 0,
-      userEmail:        user?.email ?? "",
-      userRole:         user?.role ?? "MEMBER",
-      action:           "FLAG_RESOLVED",
+      userId: user?.id ?? 0, userEmail: user?.email ?? "",
+      userRole: user?.role ?? "MEMBER", action: "FLAG_RESOLVED",
       targetResourceId: id,
-      detail:           `Resolved flag for ${item?.transactionId ?? id}${fileName ? ` — attachment: ${fileName}` : ""}. Note: ${note}`,
+      detail: `Resolved flag for ${item?.transactionId ?? id}${fileName ? ` — attachment: ${fileName}` : ""}. Note: ${note}`,
     });
     setResolveTarget(null);
   };
 
-  const handleExport = () => {
-    exportReviewQueueCSV(filteredReviews);
-  };
+  const handleExport = () => exportReviewQueueCSV(filteredReviews);
 
   if (loading) {
     return (
-      <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+      <div style={{ ...s.page, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
         <p style={{ color: "#64748b", fontSize: 14 }}>Loading review queue…</p>
       </div>
     );
   }
 
   return (
-    <div style={styles.page}>
+    <div style={s.page}>
+      <style>{`
+        .rq-stats { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 16px; }
+        .rq-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; margin-top: 16px; align-items: start; }
+        .rq-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
+        @media (max-width: 1024px) { .rq-stats { grid-template-columns: repeat(3,1fr); } }
+        @media (max-width: 900px)  { .rq-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 600px)  { .rq-stats { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width: 400px)  { .rq-stats { grid-template-columns: 1fr; } }
+      `}</style>
+
       <PageToolbar
         title="Review Queue"
         onExport={handleExport}
@@ -113,14 +117,14 @@ export default function ReviewQueuePage() {
       <ReviewStats transactions={transactions} evidence={evidences} />
       <ReviewFilters severity={severity} setSeverity={setSeverity} />
 
-      <div style={styles.layout} className="review-queue-layout">
+      <div className="rq-layout">
         <ReviewSidebar data={items} active={activeIssue} setActive={setActiveIssue} />
-        <div className="review-queue-table">
-        <ReviewTable
-          data={paginated}
-          onRowClick={row => router.push(`/transactions?transactionId=${row.transactionId}`)}
-          onResolve={canResolveIssue ? handleResolve : undefined}
-        />
+        <div className="rq-table-wrap">
+          <ReviewTable
+            data={paginated}
+            onRowClick={(row) => router.push(`/transactions?transactionId=${row.transactionId}`)}
+            onResolve={canResolveIssue ? handleResolve : undefined}
+          />
         </div>
       </div>
 
@@ -131,7 +135,6 @@ export default function ReviewQueuePage() {
         onClose={() => setFlagModalOpen(false)}
         onSubmit={handleFlagSubmit}
       />
-
       <ResolveIssueModal
         open={!!resolveTarget}
         issueId={resolveTarget?.id ?? ""}
@@ -143,7 +146,6 @@ export default function ReviewQueuePage() {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  page:   { padding: theme.spacing.lg, background: theme.colors.appBackground, minHeight: "100vh" },
-  layout: { display: "grid", gridTemplateColumns: "260px 1fr", gap: theme.spacing.lg, marginTop: theme.spacing.md, alignItems: "start" },
+const s: Record<string, React.CSSProperties> = {
+  page: { padding: theme.spacing.lg, background: theme.colors.appBackground, minHeight: "100vh" },
 };

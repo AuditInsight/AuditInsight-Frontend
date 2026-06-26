@@ -83,6 +83,11 @@ function TransactionsContent() {
 
   return (
     <div style={pageStyles}>
+      <style>{`
+        .txn-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .txn-footer { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; color: ${theme.colors.textMuted}; font-size: ${theme.typography.sm}; }
+      `}</style>
+
       <TransactionsStats transactions={transactions} evidences={evidences} />
 
       <section style={section}>
@@ -101,7 +106,7 @@ function TransactionsContent() {
           onAdd={canAddTransaction ? () => setIsAddModalOpen(true) : undefined}
         />
 
-        <div className="transactions-table-container">
+        <div className="txn-table-wrap">
         <TransactionsTable
           data={paginatedData}
           evidences={evidences}
@@ -112,7 +117,7 @@ function TransactionsContent() {
         />
         </div>
 
-        <div style={footer}>
+        <div className="txn-footer">
           <span>
             Showing {filteredData.length === 0 ? 0 : (page - 1) * pageSize + 1}–
             {Math.min(page * pageSize, filteredData.length)} of {filteredData.length.toLocaleString()} transactions
