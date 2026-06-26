@@ -101,6 +101,7 @@ function TransactionsContent() {
           onAdd={canAddTransaction ? () => setIsAddModalOpen(true) : undefined}
         />
 
+        <div className="transactions-table-container">
         <TransactionsTable
           data={paginatedData}
           evidences={evidences}
@@ -109,6 +110,7 @@ function TransactionsContent() {
           onDelete={canDeleteTransaction ? (t) => setTransactionToDelete(t) : undefined}
           highlightId={transactionId ?? undefined}
         />
+        </div>
 
         <div style={footer}>
           <span>

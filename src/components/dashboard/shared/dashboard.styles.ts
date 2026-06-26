@@ -4,30 +4,6 @@ export const pageBg: React.CSSProperties = {
   fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
 };
 
-export const metricsRow: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(5, 1fr)",
-  gap: 20,
-  padding: "0 32px",
-  marginTop: -24,
-  marginBottom: 24,
-};
-
-export const threeColGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gap: 20,
-  padding: "0 32px",
-  marginBottom: 20,
-};
-
-export const twoColGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, 1fr)",
-  gap: 20,
-  padding: "0 32px 32px",
-};
-
 export const metricCard: React.CSSProperties = {
   background: "#fff",
   borderRadius: 16,

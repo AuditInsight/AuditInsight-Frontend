@@ -77,14 +77,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div style={s.shell}>
+    <div style={s.shell} className="auth-shell">
       {/* LEFT */}
-      <div style={s.left}>
+      <div style={s.left} className="auth-left">
         <div style={s.logoRow}>
           <div style={s.logoMark}><Shield size={18} strokeWidth={2} /></div>
           <span style={s.logoText}>AuditInsight</span>
         </div>
-        <div style={s.leftBody}>
+        <div style={s.leftBody} className="auth-left-body">
           <h2 style={s.leftHeading}>{content.heading}</h2>
           <p style={s.leftDesc}>{content.desc}</p>
           <ul style={s.bullets}>
@@ -104,7 +104,7 @@ export default function SignupPage() {
       </div>
 
       {/* RIGHT */}
-      <div style={s.right}>
+      <div style={s.right} className="auth-right">
         <div style={s.formBox}>
           <div style={s.formHeader}>
             <h2 style={s.formTitle}>Create your account</h2>

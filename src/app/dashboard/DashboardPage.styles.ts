@@ -8,6 +8,7 @@ export const dashboardLayoutStyles = {
     minHeight: "100vh",
   },
 
+  // Grids are now handled by responsive CSS classes in TransactionIntegrityDashboard
   mainGrid: {
     display: "grid",
     gridTemplateColumns: "1.6fr 1fr",

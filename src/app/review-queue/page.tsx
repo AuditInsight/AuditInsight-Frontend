@@ -113,13 +113,15 @@ export default function ReviewQueuePage() {
       <ReviewStats transactions={transactions} evidence={evidences} />
       <ReviewFilters severity={severity} setSeverity={setSeverity} />
 
-      <div style={styles.layout}>
+      <div style={styles.layout} className="review-queue-layout">
         <ReviewSidebar data={items} active={activeIssue} setActive={setActiveIssue} />
+        <div className="review-queue-table">
         <ReviewTable
           data={paginated}
           onRowClick={row => router.push(`/transactions?transactionId=${row.transactionId}`)}
           onResolve={canResolveIssue ? handleResolve : undefined}
         />
+        </div>
       </div>
 
       <ReviewPagination page={page} setPage={setPage} totalPages={totalPages} />
