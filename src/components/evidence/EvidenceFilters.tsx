@@ -162,6 +162,8 @@ const row: React.CSSProperties = {
   justifyContent: "space-between",
   alignItems: "center",
   marginBottom: 12,
+  flexWrap: "wrap",
+  gap: 10,
 };
 
 const pill: React.CSSProperties = {
