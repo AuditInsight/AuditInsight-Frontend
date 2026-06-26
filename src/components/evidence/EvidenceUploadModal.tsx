@@ -5,6 +5,7 @@ import { Evidence } from "@/types/evidence.types";
 import { Transaction } from "@/types/transaction.types";
 import { MOCK_TRANSACTIONS } from "@/mock/transactions.mock";
 import { X, Paperclip, AlertCircle, CheckCircle2, Upload } from "lucide-react";
+import { modalOverlayStyle } from "@/lib/modalOverlay";
 
 interface Props {
   isOpen: boolean;
@@ -55,13 +56,13 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
   useEffect(() => {
     if (!isOpen) return;
     if (isEdit && evidence) {
-      setName(evidence.name ?? evidence.documentName ?? "");
-      setCategory(evidence.category ?? evidence.folder ?? "");
-      setSubCategory(evidence.subCategory ?? evidence.subfolder ?? "");
+      setName(evidence.documentName ?? "");
+      setCategory(evidence.folder ?? "");
+      setSubCategory(evidence.subfolder ?? "");
       setNotes(evidence.notes ?? "");
       setTransactionId(evidence.transactionId ? String(evidence.transactionId) : "");
       setAmount(evidence.amount != null ? String(evidence.amount) : "");
-      setCounterparty(evidence.counterpartyName ?? "");
+      setCounterparty(evidence.counterparty ?? "");
       setFile(null);
     } else {
       setName(""); setCategory(""); setSubCategory(""); setNotes("");
@@ -122,25 +123,37 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
     setSaving(true);
     await new Promise((r) => setTimeout(r, 500));
 
+    const tx = MOCK_TRANSACTIONS.find((t) => String(t.id) === transactionId);
+    const inheritedAmount = tx?.amount ?? (amount ? Number(amount) : undefined);
+    const inheritedCounterparty = tx?.counterparty ?? counterparty;
+
     const saved: Evidence = isEdit && evidence
-      ? { ...evidence, name, documentName: name, category, folder: category, subCategory, subfolder: subCategory, notes }
+      ? {
+          ...evidence,
+          documentName: name,
+          folder: category,
+          subfolder: subCategory,
+          notes,
+          transactionId,
+          amount: inheritedAmount,
+          counterparty: inheritedCounterparty,
+        }
       : {
           id: `ev-${Date.now()}`,
           organisationId: "org-001",
           transactionId,
           documentName: name,
-          name,
           folder: category,
           subfolder: subCategory,
-          category,
-          subCategory,
           fileUpload: file ? URL.createObjectURL(file) : "",
           fileType: file ? (ALLOWED_TYPES[file.type] ?? "pdf") : "pdf",
           status: "Pending",
-          uploadedBy: 2,
+          uploadedBy: "Eric Bizimana",
           uploadedAt: new Date().toISOString(),
           notes: notes || undefined,
-        } as Evidence;
+          amount: inheritedAmount,
+          counterparty: inheritedCounterparty,
+        };
 
     onSave(saved);
     setSaving(false);
@@ -156,7 +169,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
   });
 
   return (
-    <div style={s.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div style={modalOverlayStyle} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div style={s.modal}>
         {/* Header */}
         <div style={s.header}>
@@ -278,7 +291,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
 };
 
 const s: Record<string, React.CSSProperties> = {
-  overlay: { position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20 },
+  overlay: { display: "none" },
   modal: { width: "100%", maxWidth: 560, background: "#fff", borderRadius: 20, boxShadow: "0 32px 80px rgba(0,0,0,0.2)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" },
   header: { padding: "18px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexShrink: 0 },
   title: { margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a" },

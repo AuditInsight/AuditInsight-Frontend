@@ -10,10 +10,10 @@ export interface ReviewMessage {
 }
 
 export interface EnrichedReviewItem extends ReviewItem {
-  slaHours: number;           // total SLA window in hours
-  createdAt: string;          // when flagged — used to compute time remaining
-  messages: ReviewMessage[];  // two-way communication thread
-  rejectedCount: number;      // how many times the accountant's upload was rejected
+  slaHours: number;
+  createdAt: string;
+  messages: ReviewMessage[];
+  rejectedCount: number;
 }
 
 export const MOCK_REVIEW_QUEUE: EnrichedReviewItem[] = [
@@ -44,7 +44,7 @@ export const MOCK_REVIEW_QUEUE: EnrichedReviewItem[] = [
     createdAt: "2024-06-10T08:00:00",
     rejectedCount: 0,
     messages: [
-      { id: "m2", author: "Grace Uwimana", role: "AUDITOR", message: "Consulting revenue of RWF 2M with no contract or invoice attached. High risk. Please provide the signed contract and invoice.", timestamp: "2024-06-10T09:00:00" },
+      { id: "m2", author: "Grace Uwimana", role: "AUDITOR", message: "Consulting revenue of RWF 2M with no contract or invoice attached. Please provide the signed contract and invoice.", timestamp: "2024-06-10T09:00:00" },
     ],
   },
   {
@@ -66,7 +66,7 @@ export const MOCK_REVIEW_QUEUE: EnrichedReviewItem[] = [
   },
   {
     id: "rq-004",
-    type: "AI / Risk Flags",
+    type: "Duplicate Transaction",
     transactionId: "TXN-0012",
     counterparty: "Unknown",
     amount: "RWF 980,000",
@@ -76,13 +76,13 @@ export const MOCK_REVIEW_QUEUE: EnrichedReviewItem[] = [
     createdAt: "2024-06-17T23:55:00",
     rejectedCount: 0,
     messages: [
-      { id: "m6", author: "System", role: "AUDITOR", message: "Auto-flagged: Round number, posted after midnight, no counterparty name. Risk score: 97/100.", timestamp: "2024-06-17T23:56:00" },
-      { id: "m7", author: "Grace Uwimana", role: "AUDITOR", message: "Escalated to CEO — this requires immediate explanation.", timestamp: "2024-06-18T08:00:00" },
+      { id: "m6", author: "Grace Uwimana", role: "AUDITOR", message: "Possible duplicate of TXN-0016 — same amount and counterparty. Please confirm whether this is a duplicate entry.", timestamp: "2024-06-17T23:56:00" },
+      { id: "m7", author: "Grace Uwimana", role: "AUDITOR", message: "Escalated — requires immediate explanation.", timestamp: "2024-06-18T08:00:00" },
     ],
   },
   {
     id: "rq-005",
-    type: "Compliance Issues",
+    type: "Missing Evidence",
     transactionId: "TXN-0005",
     counterparty: "Local Shop",
     amount: "RWF 5,000",
@@ -92,12 +92,12 @@ export const MOCK_REVIEW_QUEUE: EnrichedReviewItem[] = [
     createdAt: "2024-06-08T11:00:00",
     rejectedCount: 0,
     messages: [
-      { id: "m8", author: "Grace Uwimana", role: "AUDITOR", message: "Cash transaction posted at 23:47 on a Saturday. This violates the organisation's cash handling policy. Explanation required.", timestamp: "2024-06-08T11:05:00" },
+      { id: "m8", author: "Grace Uwimana", role: "AUDITOR", message: "Weekend cash purchase with no receipt attached. Please upload supporting evidence.", timestamp: "2024-06-08T11:05:00" },
     ],
   },
   {
     id: "rq-006",
-    type: "Control Violations",
+    type: "Missing Evidence",
     transactionId: "TXN-0008",
     counterparty: "Royal Catering Co",
     amount: "RWF 750,000",
@@ -107,7 +107,7 @@ export const MOCK_REVIEW_QUEUE: EnrichedReviewItem[] = [
     createdAt: "2024-06-13T14:30:00",
     rejectedCount: 0,
     messages: [
-      { id: "m9", author: "Grace Uwimana", role: "AUDITOR", message: "Amount is RWF 50,000 below CEO approval limit. This pattern is a known split-payment fraud indicator. Was this intentional?", timestamp: "2024-06-13T15:00:00" },
+      { id: "m9", author: "Grace Uwimana", role: "AUDITOR", message: "Vendor payment with no invoice or receipt attached. Please upload evidence.", timestamp: "2024-06-13T15:00:00" },
     ],
   },
 ];

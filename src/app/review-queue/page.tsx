@@ -14,6 +14,7 @@ import ResolveIssueModal from "@/components/review-queue/ResolveIssueModal";
 
 import { theme } from "@/styles/theme";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
+import { useTransactions } from "@/hooks/useTransactions";
 import { usePermissions } from "@/security/access-control";
 import { useAuth } from "@/context/AuthContext";
 import { appendAuditLog } from "@/security/audit-logger";
@@ -24,6 +25,7 @@ export default function ReviewQueuePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { items, loading, flagIssue, resolveIssue } = useReviewQueue();
+  const { transactions, evidences } = useTransactions();
   const { canFlagIssue, canResolveIssue } = usePermissions();
 
   const [page, setPage]               = useState(1);
@@ -108,7 +110,7 @@ export default function ReviewQueuePage() {
         onAdd={canFlagIssue ? () => setFlagModalOpen(true) : undefined}
       />
 
-      <ReviewStats data={items} />
+      <ReviewStats transactions={transactions} evidence={evidences} />
       <ReviewFilters severity={severity} setSeverity={setSeverity} />
 
       <div style={styles.layout}>

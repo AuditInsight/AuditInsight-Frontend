@@ -9,18 +9,18 @@ export function evidenceMatchesSearch(
 
   const searchable = [
     evidence.id,
-    evidence.name,
-    evidence.category,
-    evidence.subCategory,
+    evidence.documentName,
+    evidence.folder,
+    evidence.subfolder,
     evidence.status,
-    evidence.type,
+    evidence.fileType,
     evidence.notes,
-    evidence.counterpartyName,
+    evidence.counterparty,
     evidence.uploadedBy,
-    evidence.date,
+    evidence.uploadedAt,
     evidence.transactionId,
     evidence.amount,
-    evidence.url,
+    evidence.fileUpload,
   ];
 
   return searchable.some((value) =>

@@ -3,7 +3,6 @@ import { UserRole } from "@/types/user";
 
 // ─── Permission matrix per role ────────────────────────────────────
 const PERMISSIONS: Record<UserRole, Permissions> = {
-  // CEO / Organisation Owner — read-only on financials, full team admin
   CLIENT: {
     canViewTransactions: true,
     canAddTransaction: false,
@@ -17,6 +16,7 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
     canResolveIssue: false,
     canApproveTransaction: true,
     canViewAuditLogs: true,
+    canViewSettings: true,
     canManageOrganisation: true,
     canInviteMembers: true,
     canSuspendMembers: true,
@@ -36,6 +36,7 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
     canResolveIssue: true,
     canApproveTransaction: false,
     canViewAuditLogs: false,
+    canViewSettings: true,
     canManageOrganisation: false,
     canInviteMembers: false,
     canSuspendMembers: false,
@@ -55,6 +56,7 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
     canResolveIssue: false,
     canApproveTransaction: false,
     canViewAuditLogs: true,
+    canViewSettings: true,
     canManageOrganisation: false,
     canInviteMembers: false,
     canSuspendMembers: false,
@@ -74,6 +76,7 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
     canResolveIssue: false,
     canApproveTransaction: false,
     canViewAuditLogs: false,
+    canViewSettings: true,
     canManageOrganisation: false,
     canInviteMembers: false,
     canSuspendMembers: false,
@@ -81,7 +84,6 @@ const PERMISSIONS: Record<UserRole, Permissions> = {
   },
 };
 
-// ─── Permissions type ──────────────────────────────────────────────
 export interface Permissions {
   canViewTransactions: boolean;
   canAddTransaction: boolean;
@@ -95,13 +97,13 @@ export interface Permissions {
   canResolveIssue: boolean;
   canApproveTransaction: boolean;
   canViewAuditLogs: boolean;
+  canViewSettings: boolean;
   canManageOrganisation: boolean;
   canInviteMembers: boolean;
   canSuspendMembers: boolean;
   canViewAdminPanel: boolean;
 }
 
-// ─── Hook ──────────────────────────────────────────────────────────
 export function usePermissions(): Permissions {
   const { role } = useAuth();
   return PERMISSIONS[role ?? "CLIENT"];

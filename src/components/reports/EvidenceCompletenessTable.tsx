@@ -20,8 +20,8 @@ export default function EvidenceCompletenessTable({ data }: Props) {
               <th style={styles.th}>Transaction</th>
               <th style={styles.th}>Counterparty</th>
               <th style={styles.th}>Amount (RWF)</th>
-              <th style={styles.th}>Evidence Status</th>
-              <th style={styles.th}>Risk</th>
+              <th style={styles.th}>Status</th>
+              <th style={styles.th}>Evidence Files</th>
             </tr>
           </thead>
           <tbody>
@@ -33,13 +33,13 @@ export default function EvidenceCompletenessTable({ data }: Props) {
                 <td style={styles.td}>
                   <span style={{
                     ...styles.badge,
-                    background: tx.evidenceStatus === "MISSING" ? "#fef2f2" : "#fffbeb",
-                    color: tx.evidenceStatus === "MISSING" ? "#b91c1c" : "#b45309",
+                    background: tx.status === "PENDING" ? "#fef2f2" : "#dcfce7",
+                    color: tx.status === "PENDING" ? "#b91c1c" : "#15803d",
                   }}>
-                    {tx.evidenceStatus}
+                    {tx.status}
                   </span>
                 </td>
-                <td style={styles.td}>{tx.riskScore ?? "—"}</td>
+                <td style={styles.td}>{tx.evidenceCount ?? 0}</td>
               </tr>
             ))}
           </tbody>

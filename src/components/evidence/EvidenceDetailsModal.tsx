@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
 import { statusStyles } from "./EvidenceTable";
+import { modalOverlayStyle } from "@/lib/modalOverlay";
+import { Download, Eye, X } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -11,13 +13,7 @@ interface Props {
   onClose: () => void;
 }
 
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={row}>
       <span style={labelStyle}>{label}</span>
@@ -35,70 +31,68 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
     statusStyles[evidence.status as keyof typeof statusStyles] ??
     statusStyles.Pending;
 
+  const handlePreview = () => {
+    if (evidence.fileUpload) window.open(evidence.fileUpload, "_blank");
+  };
+
+  const handleDownload = () => {
+    if (!evidence.fileUpload) return;
+    const a = document.createElement("a");
+    a.href = evidence.fileUpload;
+    a.download = evidence.documentName;
+    a.target = "_blank";
+    a.click();
+  };
+
+  const uploadDate = evidence.uploadedAt
+    ? evidence.uploadedAt.split("T")[0]
+    : "—";
+
   return (
-    <div style={overlay} onClick={onClose}>
+    <div style={modalOverlayStyle} onClick={onClose}>
       <div style={modal} onClick={(e) => e.stopPropagation()}>
         <div style={header}>
-          <h3 style={title}>Evidence details</h3>
-          <button type="button" onClick={onClose} style={closeBtn}>
-            ✕
+          <h3 style={title}>Evidence Details</h3>
+          <button type="button" onClick={onClose} style={closeBtn} aria-label="Close">
+            <X size={18} />
           </button>
         </div>
 
         <div style={body}>
-          <DetailRow
-            label="Document"
-            value={
-              evidence.url && evidence.url !== "#" ? (
-                <a
-                  href={evidence.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={link}
-                >
-                  {evidence.name}
-                </a>
-              ) : (
-                evidence.name
-              )
-            }
-          />
+          <DetailRow label="Evidence ID" value={evidence.id} />
+          <DetailRow label="Document" value={evidence.documentName} />
           <DetailRow
             label="Verification"
             value={
               <span style={{ ...badge, ...statusStyle }}>
-                {evidence.status}
+                {evidence.status ?? "Pending"}
               </span>
             }
           />
-          <DetailRow label="Category" value={evidence.category} />
-          <DetailRow label="Subcategory" value={evidence.subCategory} />
+          <DetailRow label="Category" value={evidence.folder} />
+          <DetailRow label="Subcategory" value={evidence.subfolder} />
           <DetailRow
             label="Amount"
             value={
               evidence.amount != null
-                ? `$${evidence.amount.toLocaleString()}`
+                ? `RWF ${evidence.amount.toLocaleString()}`
                 : "—"
             }
           />
+          <DetailRow label="Counterparty" value={evidence.counterparty} />
+          <DetailRow label="Upload Date" value={uploadDate} />
+          <DetailRow label="File Type" value={evidence.fileType?.toUpperCase()} />
           <DetailRow
-            label="Counterparty"
-            value={evidence.counterpartyName}
-          />
-          <DetailRow label="Date" value={evidence.date} />
-          <DetailRow label="File type" value={evidence.type} />
-          <DetailRow
-            label="Linked transaction"
+            label="Linked Transaction"
             value={
               evidence.transactionId ? (
                 <button
                   type="button"
                   style={linkBtn}
-                  onClick={() =>
-                    router.push(
-                      `/transactions?transactionId=${evidence.transactionId}`
-                    )
-                  }
+                  onClick={() => {
+                    onClose();
+                    router.push(`/transactions?transactionId=${evidence.transactionId}`);
+                  }}
                 >
                   {evidence.transactionId}
                 </button>
@@ -107,12 +101,17 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
               )
             }
           />
-          <DetailRow label="Uploaded by" value={evidence.uploadedBy} />
-          <DetailRow label="Uploaded at" value={evidence.uploadedAt} />
+          <DetailRow label="Uploaded By" value={evidence.uploadedBy} />
           <DetailRow label="Notes" value={evidence.notes || "—"} />
         </div>
 
         <div style={footer}>
+          <button type="button" onClick={handlePreview} style={previewBtn}>
+            <Eye size={14} /> Preview
+          </button>
+          <button type="button" onClick={handleDownload} style={downloadBtn}>
+            <Download size={14} /> Download
+          </button>
           <button type="button" onClick={onClose} style={closeButton}>
             Close
           </button>
@@ -122,18 +121,8 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
   );
 }
 
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(15, 23, 42, 0.5)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: theme.zIndex?.modal ?? 1000,
-};
-
 const modal: React.CSSProperties = {
-  width: 480,
+  width: 520,
   maxWidth: "92%",
   maxHeight: "90vh",
   overflowY: "auto",
@@ -151,77 +140,41 @@ const header: React.CSSProperties = {
   marginBottom: theme.spacing.md,
 };
 
-const title: React.CSSProperties = {
-  margin: 0,
-  fontSize: theme.typography.lg,
-  fontWeight: 600,
-};
-
+const title: React.CSSProperties = { margin: 0, fontSize: theme.typography.lg, fontWeight: 600 };
 const closeBtn: React.CSSProperties = {
-  border: "none",
-  background: "transparent",
-  cursor: "pointer",
-  fontSize: 18,
+  border: "none", background: "#f1f5f9", borderRadius: 8, width: 32, height: 32,
+  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
   color: theme.colors.textSecondary,
 };
 
-const body: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: theme.spacing.sm,
-};
-
+const body: React.CSSProperties = { display: "flex", flexDirection: "column", gap: theme.spacing.sm };
 const row: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "140px 1fr",
-  gap: theme.spacing.sm,
-  alignItems: "start",
+  display: "grid", gridTemplateColumns: "140px 1fr", gap: theme.spacing.sm, alignItems: "start",
 };
-
-const labelStyle: React.CSSProperties = {
-  fontSize: theme.typography.sm,
-  color: theme.colors.textMuted,
-  fontWeight: 500,
-};
-
-const valueStyle: React.CSSProperties = {
-  fontSize: theme.typography.sm,
-  color: theme.colors.textPrimary,
-};
-
+const labelStyle: React.CSSProperties = { fontSize: theme.typography.sm, color: theme.colors.textMuted, fontWeight: 500 };
+const valueStyle: React.CSSProperties = { fontSize: theme.typography.sm, color: theme.colors.textPrimary };
 const badge: React.CSSProperties = {
-  display: "inline-block",
-  padding: "4px 10px",
-  borderRadius: theme.radius.sm,
-  fontSize: 12,
-  fontWeight: 600,
+  display: "inline-block", padding: "4px 10px", borderRadius: theme.radius.sm, fontSize: 12, fontWeight: 600,
 };
-
-const link: React.CSSProperties = {
-  color: theme.colors.primary,
-  textDecoration: "underline",
-};
-
 const linkBtn: React.CSSProperties = {
-  border: "none",
-  background: "none",
-  padding: 0,
-  color: theme.colors.primary,
-  textDecoration: "underline",
-  cursor: "pointer",
-  fontSize: theme.typography.sm,
+  border: "none", background: "none", padding: 0, color: theme.colors.primary,
+  textDecoration: "underline", cursor: "pointer", fontSize: theme.typography.sm,
 };
 
 const footer: React.CSSProperties = {
-  marginTop: theme.spacing.lg,
-  display: "flex",
-  justifyContent: "flex-end",
+  marginTop: theme.spacing.lg, display: "flex", justifyContent: "flex-end", gap: 8,
 };
-
+const previewBtn: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px",
+  borderRadius: theme.radius.md, border: `1px solid ${theme.colors.border}`,
+  background: theme.colors.Surface, cursor: "pointer", fontSize: 13, fontWeight: 600,
+};
+const downloadBtn: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px",
+  borderRadius: theme.radius.md, border: "none", background: "#1e3a8a",
+  color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600,
+};
 const closeButton: React.CSSProperties = {
-  padding: "8px 16px",
-  borderRadius: theme.radius.md,
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.Surface,
-  cursor: "pointer",
+  padding: "8px 16px", borderRadius: theme.radius.md,
+  border: `1px solid ${theme.colors.border}`, background: theme.colors.Surface, cursor: "pointer",
 };

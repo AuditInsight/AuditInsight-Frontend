@@ -22,7 +22,8 @@ export default function HighRiskTransactionsTable({
             <th>ID</th>
             <th>Counterparty</th>
             <th>Amount</th>
-            <th>Risk</th>
+            <th>Status</th>
+            <th>Evidence</th>
           </tr>
         </thead>
 
@@ -32,7 +33,8 @@ export default function HighRiskTransactionsTable({
               <td>{tx.id}</td>
               <td>{tx.counterparty}</td>
               <td>{tx.amount}</td>
-              <td>{tx.riskScore}</td>
+              <td>{tx.status}</td>
+              <td>{tx.evidenceCount ?? 0}</td>
             </tr>
           ))}
         </tbody>

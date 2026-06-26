@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
 import { EvidenceActions } from "./EvidenceActions";
+import { Paperclip } from "lucide-react";
 
 interface Props {
   evidence: Evidence;
@@ -20,40 +21,38 @@ export const EvidenceRow = ({
 }: Props) => {
   const router = useRouter();
 
-  const goToTransaction = (id?: string | number) => {
+  const goToTransaction = (id?: string) => {
     if (!id) return;
     router.push(`/transactions?transactionId=${id}`);
   };
+
+  const uploadDate = evidence.uploadedAt
+    ? evidence.uploadedAt.split("T")[0]
+    : "—";
 
   return (
     <tr style={row}>
       <td style={td}>
         <div style={docCell}>
-          {evidence.url && evidence.url !== "#" ? (
-            <a
-              href={evidence.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={attachmentLink}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {evidence.name || "Untitled"}
-            </a>
-          ) : (
-            <span>{evidence.name || "Untitled"}</span>
-          )}
+          <button
+            type="button"
+            style={attachmentLink}
+            onClick={(e) => { e.stopPropagation(); onView(evidence); }}
+          >
+            {evidence.documentName}
+          </button>
         </div>
       </td>
 
-      <td style={td}>{evidence.category || "—"}</td>
+      <td style={td}>{evidence.folder || "—"}</td>
 
       <td style={td}>
-        {evidence.amount != null ? `$${evidence.amount}` : "—"}
+        {evidence.amount != null ? `RWF ${evidence.amount.toLocaleString()}` : "—"}
       </td>
 
-      <td style={td}>{evidence.counterpartyName || "—"}</td>
+      <td style={td}>{evidence.counterparty || "—"}</td>
 
-      <td style={td}>{evidence.date || "—"}</td>
+      <td style={td}>{uploadDate}</td>
 
       <td style={td}>
         <span
@@ -63,11 +62,19 @@ export const EvidenceRow = ({
             goToTransaction(evidence.transactionId);
           }}
         >
-          {evidence.transactionId ?? "—"}
+          {evidence.transactionId}
         </span>
       </td>
 
-      <td style={td}>{evidence.status || "—"}</td>
+      <td style={td}>
+        <span style={{
+          padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+          background: evidence.status === "Verified" ? "#dcfce7" : "#fef3c7",
+          color: evidence.status === "Verified" ? "#15803d" : "#d97706",
+        }}>
+          {evidence.status ?? "Pending"}
+        </span>
+      </td>
 
       <td style={td}>
         <EvidenceActions
@@ -81,33 +88,19 @@ export const EvidenceRow = ({
   );
 };
 
-const row: React.CSSProperties = {
-  transition: "all 0.2s ease",
-};
-
+const row: React.CSSProperties = { transition: "all 0.2s ease" };
 const td: React.CSSProperties = {
   padding: "12px 16px",
   fontSize: theme.typography.sm,
   color: theme.colors.textPrimary,
   borderBottom: `1px solid ${theme.colors.border}`,
 };
-
-const docCell: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-};
-
+const docCell: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 4 };
 const link: React.CSSProperties = {
-  color: theme.colors.primary,
-  cursor: "pointer",
-  fontWeight: 600,
-  textDecoration: "underline",
+  color: theme.colors.primary, cursor: "pointer", fontWeight: 600, textDecoration: "underline",
 };
-
 const attachmentLink: React.CSSProperties = {
-  color: theme.colors.primary,
-  cursor: "pointer",
-  fontWeight: 600,
-  textDecoration: "underline",
+  border: "none", background: "none", padding: 0,
+  color: theme.colors.primary, cursor: "pointer", fontWeight: 600, textDecoration: "underline",
+  fontSize: theme.typography.sm, textAlign: "left",
 };

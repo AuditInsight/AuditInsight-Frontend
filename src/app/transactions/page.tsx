@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { TransactionsStats } from "@/components/transactions/TransactionsStats";
 import { TransactionsTable } from "@/components/transactions/TransactionsTable";
 import { TransactionsPagination } from "@/components/transactions/TransactionsPagination";
-import { TransactionDetailsModal } from "@/components/transactions/modals/TransactionDetailsModal";
+import ViewTransactionModal from "@/components/transactions/modals/ViewTransactionModal";
 import { AddTransactionModal } from "@/components/transactions/modals/AddTransactionModal";
 import { ConfirmDeleteModal } from "@/components/transactions/modals/ConfirmDeleteModal";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
@@ -22,12 +22,6 @@ function TransactionsContent() {
   const searchParams = useSearchParams();
   const transactionId = searchParams.get("transactionId");
 
-  /*
-   * ── REAL API (commented for RBAC UI testing) ──────────────────
-   * Data was previously fetched via getTransactions() / getEvidence()
-   * directly in this page. Now managed by useTransactions hook.
-   * ──────────────────────────────────────────────────────────────
-   */
   const { transactions, evidences, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { canAddTransaction, canEditTransaction, canDeleteTransaction } = usePermissions();
 
@@ -63,14 +57,14 @@ function TransactionsContent() {
     router.replace("/transactions");
   };
 
-  const handleCreateTransaction = async (data: Omit<Transaction, "id">) => {
-    await addTransaction(data);
+  const handleCreateTransaction = async (data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
+    addTransaction(data);
     setIsAddModalOpen(false);
   };
 
-  const handleUpdateTransaction = async (data: Omit<Transaction, "id">) => {
+  const handleUpdateTransaction = async (data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
     if (!editingTransaction) return;
-    await updateTransaction(editingTransaction.id, data);
+    updateTransaction(editingTransaction.id, data);
     setEditingTransaction(null);
   };
 
@@ -95,7 +89,6 @@ function TransactionsContent() {
         <PageToolbar
           title="Transactions"
           showSearch
-          // ── Role guard: only MEMBER sees "Add Transaction" button ──
           primaryActionLabel={canAddTransaction ? "Add Transaction" : undefined}
           search={search}
           setSearch={setSearch}
@@ -112,10 +105,9 @@ function TransactionsContent() {
           data={paginatedData}
           evidences={evidences}
           onRowClick={(t) => router.push(`/transactions?transactionId=${t.id}`)}
-          // ── Role guards: edit/delete only for MEMBER ──
           onEdit={canEditTransaction ? (t) => setEditingTransaction(t) : undefined}
           onDelete={canDeleteTransaction ? (t) => setTransactionToDelete(t) : undefined}
-          highlightId={transactionId ? Number(transactionId) : undefined}
+          highlightId={transactionId ?? undefined}
         />
 
         <div style={footer}>
@@ -127,14 +119,14 @@ function TransactionsContent() {
         </div>
       </section>
 
-      <TransactionDetailsModal
-        isOpen={!!selectedTransaction}
-        onClose={handleCloseModal}
-        transaction={selectedTransaction}
-        evidences={selectedTransaction ? evidences.filter((e) => Number(e.transactionId) === Number(selectedTransaction.id)) : []}
-      />
+      {selectedTransaction && (
+        <ViewTransactionModal
+          transaction={selectedTransaction}
+          evidence={evidences}
+          onClose={handleCloseModal}
+        />
+      )}
 
-      {/* ── Only render modals if role permits ── */}
       {canAddTransaction && (
         <AddTransactionModal
           isOpen={isAddModalOpen}

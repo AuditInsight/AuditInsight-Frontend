@@ -5,6 +5,10 @@ import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
 import { MOCK_TRANSACTIONS } from "@/mock/transactions.mock";
 import { MOCK_EVIDENCE } from "@/mock/evidence.mock";
+import {
+  enrichTransactions,
+  findDuplicateIds,
+} from "@/lib/transactionMetrics";
 
 /*
  * ── REAL API (commented for UI refinement phase) ──────────────────
@@ -12,44 +16,22 @@ import { MOCK_EVIDENCE } from "@/mock/evidence.mock";
  * ─────────────────────────────────────────────────────────────────
  */
 
-// Derive status from evidence count:
-// COMPLETED if evidenceCount >= 1, PENDING otherwise
-function deriveStatus(txId: string, evidence: Evidence[]): Transaction["status"] {
-  return evidence.filter((e) => e.transactionId === txId).length >= 1
-    ? "COMPLETED"
-    : "PENDING";
-}
-
-// Enrich each transaction with its evidence count and derived status
-function enrichTransactions(
-  transactions: Transaction[],
-  evidence: Evidence[]
-): Transaction[] {
-  return transactions.map((t) => {
-    const evidenceCount = evidence.filter((e) => e.transactionId === t.id).length;
-    return { ...t, evidenceCount, status: deriveStatus(t.id, evidence) };
-  });
-}
-
-// Detect duplicates — same amount + same counterparty within the dataset
-function findDuplicateIds(transactions: Transaction[]): Set<string> {
-  const seen = new Map<string, string>();
-  const dupes = new Set<string>();
-  for (const t of transactions) {
-    const key = `${t.amount}-${t.counterparty.toLowerCase()}`;
-    if (seen.has(key)) {
-      dupes.add(t.id);
-      dupes.add(seen.get(key)!);
-    } else {
-      seen.set(key, t.id);
-    }
-  }
-  return dupes;
-}
-
 export interface TransactionWithMeta extends Transaction {
   evidenceCount: number;
   isDuplicate: boolean;
+}
+
+function withMeta(
+  transactions: Transaction[],
+  evidence: Evidence[]
+): TransactionWithMeta[] {
+  const enriched = enrichTransactions(transactions, evidence);
+  const dupes = findDuplicateIds(enriched);
+  return enriched.map((t) => ({
+    ...t,
+    evidenceCount: t.evidenceCount ?? 0,
+    isDuplicate: dupes.has(t.id),
+  }));
 }
 
 export function useTransactions() {
@@ -63,9 +45,7 @@ export function useTransactions() {
      * Promise.all([getTransactions(), getEvidence()])
      *   .then(([txRes, evRes]) => {
      *     const ev = evRes.data ?? [];
-     *     const enriched = enrichTransactions(txRes.data ?? [], ev);
-     *     const dupes = findDuplicateIds(enriched);
-     *     setTransactions(enriched.map(t => ({ ...t, isDuplicate: dupes.has(t.id) })));
+     *     setTransactions(withMeta(txRes.data ?? [], ev));
      *     setEvidences(ev);
      *   })
      *   .catch(console.error)
@@ -73,55 +53,72 @@ export function useTransactions() {
      * ─────────────────────────────────────────────────────────────
      */
     const ev = MOCK_EVIDENCE;
-    const enriched = enrichTransactions(MOCK_TRANSACTIONS, ev);
-    const dupes = findDuplicateIds(enriched);
-    setTransactions(enriched.map((t) => ({
-      ...t,
-      evidenceCount: t.evidenceCount ?? 0,
-      isDuplicate: dupes.has(t.id),
-    })));
+    setTransactions(withMeta(MOCK_TRANSACTIONS, ev));
     setEvidences(ev);
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  const refreshStatuses = useCallback((updatedEvidence: Evidence[]) => {
+    setEvidences(updatedEvidence);
+    setTransactions((prev) => withMeta(prev, updatedEvidence));
+  }, []);
+
   const addTransaction = (data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
-    /*
-     * ── REAL API ─────────────────────────────────────────────────
-     * await createTransaction(data);
-     * load();
-     * ─────────────────────────────────────────────────────────────
-     */
-    const newTx: TransactionWithMeta = {
+    const newTx: Transaction = {
       ...data,
       id: `TXN-${String(transactions.length + 1).padStart(4, "0")}`,
       status: "PENDING",
       evidenceCount: 0,
-      isDuplicate: false,
     };
-    setTransactions((prev) => [newTx, ...prev]);
+    setTransactions((prev) => withMeta([newTx, ...prev], evidences));
+  };
+
+  const updateTransaction = (
+    id: string,
+    data: Partial<Omit<Transaction, "id" | "status" | "evidenceCount">>
+  ) => {
+    setTransactions((prev) => {
+      const updated = prev.map((t) => (t.id === id ? { ...t, ...data } : t));
+      return withMeta(updated, evidences);
+    });
   };
 
   const deleteTransaction = (id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-    setEvidences((prev) => prev.filter((e) => e.transactionId !== id));
-  };
-
-  // Called by useEvidence after a file is uploaded — recalculates statuses
-  const onEvidenceChange = (updatedEvidence: Evidence[]) => {
+    const updatedEvidence = evidences.filter((e) => e.transactionId !== id);
     setEvidences(updatedEvidence);
     setTransactions((prev) =>
-      prev.map((t) => {
-        const count = updatedEvidence.filter((e) => e.transactionId === t.id).length;
-        return {
-          ...t,
-          evidenceCount: count,
-          status: count >= 1 ? "COMPLETED" : "PENDING",
-        };
-      })
+      withMeta(
+        prev.filter((t) => t.id !== id),
+        updatedEvidence
+      )
     );
   };
 
-  return { transactions, evidences, loading, addTransaction, deleteTransaction, onEvidenceChange };
+  const saveEvidence = (saved: Evidence) => {
+    if (!saved.transactionId) return;
+    const updated = evidences.some((e) => e.id === saved.id)
+      ? evidences.map((e) => (e.id === saved.id ? saved : e))
+      : [saved, ...evidences];
+    refreshStatuses(updated);
+  };
+
+  const deleteEvidence = (id: string) => {
+    refreshStatuses(evidences.filter((e) => e.id !== id));
+  };
+
+  const onEvidenceChange = refreshStatuses;
+
+  return {
+    transactions,
+    evidences,
+    loading,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    saveEvidence,
+    deleteEvidence,
+    onEvidenceChange,
+  };
 }

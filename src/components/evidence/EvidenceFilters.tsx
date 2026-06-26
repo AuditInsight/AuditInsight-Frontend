@@ -4,7 +4,7 @@ import { EvidenceSearch } from "./EvidenceSearch";
 import { EvidenceDropdown } from "./EvidenceDropdown";
 import { theme } from "@/styles/theme";
 
-export type EvidenceTab = "All" | "Complete" | "Pending" | "Red Flagged";
+export type EvidenceTab = "All" | "Complete" | "Pending";
 
 interface EvidenceFiltersProps {
   activeTab: EvidenceTab;
@@ -44,12 +44,7 @@ export const EvidenceFilters = ({
   total,
   setPage,
 }: EvidenceFiltersProps) => {
-  const tabs: EvidenceTab[] = [
-    "All",
-    "Complete",
-    "Pending",
-    "Red Flagged",
-  ];
+  const tabs: EvidenceTab[] = ["All", "Complete", "Pending"];
 
   return (
     /* ✅ CARD WRAPPER */
@@ -86,7 +81,7 @@ export const EvidenceFilters = ({
                 ? "Status"
                 : `Status: ${statusFilter}`
             }
-            options={["All", "Verified", "Pending", "Missing"]}
+            options={["All", "Verified", "Pending"]}
             onChange={(opt) => {
               setStatusFilter(opt);
               setPage(1);

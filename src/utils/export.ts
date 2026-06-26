@@ -31,7 +31,7 @@ export function datedFilename(prefix: string, ext: string) {
 
 export function exportTransactionsCSV(transactions: Transaction[], filename?: string) {
   const csv = rowsToCsv(
-    ["ID", "Date", "Name", "Counterparty", "Amount", "Type", "Status", "Evidence Status", "Risk Score"],
+    ["Transaction ID", "Date", "Name", "Counterparty", "Amount", "Type", "Status", "Evidence Files"],
     transactions.map((t) => [
       t.id,
       t.date,
@@ -40,8 +40,7 @@ export function exportTransactionsCSV(transactions: Transaction[], filename?: st
       t.amount,
       t.type,
       t.status,
-      t.evidenceStatus,
-      t.riskScore ?? "",
+      t.evidenceCount ?? 0,
     ])
   );
   downloadFile(filename ?? datedFilename("transactions", "csv"), csv);
@@ -49,16 +48,14 @@ export function exportTransactionsCSV(transactions: Transaction[], filename?: st
 
 export function exportEvidenceCSV(documents: Evidence[], filename?: string) {
   const csv = rowsToCsv(
-    ["ID", "Document", "Category", "Subcategory", "Transaction", "Status", "Uploaded At", "Notes"],
+    ["Evidence ID", "Transaction ID", "Amount", "Counterparty Name", "Upload Date", "Status"],
     documents.map((e) => [
       e.id,
-      e.documentName ?? e.name,
-      e.category,
-      e.subCategory ?? e.subfolder,
       e.transactionId,
-      e.status,
-      e.uploadedAt ?? "",
-      e.notes ?? "",
+      e.amount ?? "",
+      e.counterparty ?? "",
+      e.uploadedAt ? e.uploadedAt.split("T")[0] : "",
+      e.status ?? "",
     ])
   );
   downloadFile(filename ?? datedFilename("evidence", "csv"), csv);

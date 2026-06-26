@@ -6,7 +6,7 @@ import { usePermissions } from "@/security/access-control";
 
 export default function QuickActions() {
   const router = useRouter();
-  const { canUploadEvidence, canFlagIssue, canViewReports } = usePermissions();
+  const { canUploadEvidence, canFlagIssue } = usePermissions();
 
   return (
     <Card>
@@ -25,11 +25,9 @@ export default function QuickActions() {
         <button style={btn} onClick={() => router.push("/review-queue")}>
           🔍 Review Risks
         </button>
-        {canViewReports && (
-          <button style={btn} onClick={() => router.push("/reports")}>
-            📊 Generate Report
-          </button>
-        )}
+        <button style={btn} onClick={() => router.push("/transactions")}>
+          💳 View Transactions
+        </button>
       </div>
     </Card>
   );

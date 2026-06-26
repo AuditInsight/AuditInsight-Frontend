@@ -177,7 +177,7 @@ export default function FlagIssueModal({ open, onClose, onSubmit }: Props) {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  overlay:     { position: "fixed", inset: 0, background: "rgba(0,0,0,0.50)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: 20 },
+  overlay:     { position: "fixed", inset: 0, background: "rgba(0,0,0,0.50)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9000, padding: 20 },
   modal:       { background: "#fff", borderRadius: 16, width: "100%", maxWidth: 500, boxShadow: "0 24px 64px rgba(0,0,0,0.18)", overflow: "hidden" },
   header:      { padding: "20px 24px", borderBottom: "1px solid #F1F5F9", display: "flex", alignItems: "flex-start", gap: 12 },
   headerIcon:  { fontSize: 26, lineHeight: 1, marginTop: 2 },

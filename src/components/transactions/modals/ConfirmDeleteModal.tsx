@@ -2,6 +2,7 @@
 
 import { Transaction } from "@/types/transaction.types";
 import { theme } from "@/styles/theme";
+import { modalOverlayStyle } from "@/lib/modalOverlay";
 
 interface Props {
   isOpen: boolean;
@@ -21,7 +22,7 @@ export function ConfirmDeleteModal({
   if (!isOpen || !transaction) return null;
 
   return (
-    <div style={overlay} onClick={onClose}>
+    <div style={modalOverlayStyle} onClick={onClose}>
       <div style={modal} onClick={(e) => e.stopPropagation()}>
         <h3 style={title}>Delete transaction?</h3>
         <p style={message}>
@@ -51,16 +52,6 @@ export function ConfirmDeleteModal({
     </div>
   );
 }
-
-const overlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.4)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 1000,
-};
 
 const modal: React.CSSProperties = {
   width: 400,

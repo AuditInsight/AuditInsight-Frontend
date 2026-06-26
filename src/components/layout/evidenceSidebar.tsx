@@ -38,12 +38,8 @@ export const Sidebar = ({
   // ✅ SAFE COUNT FUNCTION
   const getItemCount = (subCategory: string) => {
     return evidenceData.filter((doc) => {
-      if (!doc.subCategory) return false;
-
-      return (
-        doc.subCategory.trim().toLowerCase() ===
-        subCategory.trim().toLowerCase()
-      );
+      if (!doc.subfolder) return false;
+      return doc.subfolder.trim().toLowerCase() === subCategory.trim().toLowerCase();
     }).length;
   };
 

@@ -19,7 +19,7 @@ import { evidenceMatchesSearch } from "@/lib/evidenceSearch";
  * Now managed by useEvidence hook.
  * ──────────────────────────────────────────────────────────────
  */
-import { useEvidence } from "@/hooks/useEvidence";
+import { useTransactions } from "@/hooks/useTransactions";
 import { usePermissions } from "@/security/access-control";
 import { exportEvidenceCSV } from "@/utils/export";
 
@@ -40,7 +40,8 @@ const sections: EvidenceSection[] = [
 ];
 
 export default function EvidencePage() {
-  const { documents, saveEvidence, deleteEvidence } = useEvidence();
+  const { evidences, saveEvidence, deleteEvidence } = useTransactions();
+  const documents = evidences;
   const { canUploadEvidence, canEditEvidence, canDeleteEvidence } = usePermissions();
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -61,30 +62,35 @@ export default function EvidencePage() {
 
   const filteredData = useMemo(() => {
     return documents.filter((e) => {
-      if (categoryFilter !== "All" && e.category !== categoryFilter) return false;
+      if (categoryFilter !== "All" && e.folder !== categoryFilter) return false;
       if (statusFilter !== "All" && e.status !== statusFilter) return false;
       if (yearFilter !== "All") {
-        const year = e.date ? String(e.date).slice(0, 4) : "";
+        const year = e.uploadedAt ? e.uploadedAt.slice(0, 4) : "";
         if (year !== yearFilter) return false;
       }
-      if (activeCategory && e.subCategory && e.subCategory !== activeCategory) return false;
-      if (activeCategory && !e.subCategory) return false;
+      if (activeCategory && e.subfolder && e.subfolder !== activeCategory) return false;
+      if (activeCategory && !e.subfolder) return false;
       if (activeTab === "Pending" && e.status !== "Pending") return false;
       if (activeTab === "Complete" && e.status !== "Verified") return false;
-      if (activeTab === "Red Flagged" && e.status !== "Missing") return false;
       if (search && !evidenceMatchesSearch(e, search)) return false;
       return true;
     });
   }, [documents, activeCategory, activeTab, search, categoryFilter, statusFilter, yearFilter]);
 
   const categoryOptions = useMemo(() => {
-    const values = Array.from(new Set(documents.map((d) => d.category).filter(Boolean))) as string[];
+    const values = Array.from(new Set(documents.map((d) => d.folder).filter(Boolean))) as string[];
     values.sort((a, b) => a.localeCompare(b));
     return ["All", ...values];
   }, [documents]);
 
   const yearOptions = useMemo(() => {
-    const years = Array.from(new Set(documents.map((d) => (d.date ? String(d.date).slice(0, 4) : "")).filter((y) => /^\d{4}$/.test(y))));
+    const years = Array.from(
+      new Set(
+        documents
+          .map((d) => (d.uploadedAt ? d.uploadedAt.slice(0, 4) : ""))
+          .filter((y) => /^\d{4}$/.test(y))
+      )
+    );
     years.sort((a, b) => b.localeCompare(a));
     return ["All", ...years];
   }, [documents]);

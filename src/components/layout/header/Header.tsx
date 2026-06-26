@@ -40,7 +40,7 @@ const ADMIN_NAV = [
 export default function Header({ title }: HeaderProps) {
   const router   = useRouter();
   const pathname = usePathname();
-  const { canManageOrganisation, canViewAdminPanel } = usePermissions();
+  const { canViewSettings, canViewAdminPanel } = usePermissions();
   const { logout, user, role, loading } = useAuth();
   const { unreadCount } = useNotifications();
   const [notifOpen, setNotifOpen] = useState(false);
@@ -49,7 +49,7 @@ export default function Header({ title }: HeaderProps) {
 
   const navItems = canViewAdminPanel
     ? ADMIN_NAV
-    : STANDARD_NAV.filter((item) => !(item.path === "/settings" && !canManageOrganisation));
+    : STANDARD_NAV.filter((item) => !(item.path === "/settings" && !canViewSettings));
 
   const currentRole = (role ?? "CLIENT") as UserRole;
 

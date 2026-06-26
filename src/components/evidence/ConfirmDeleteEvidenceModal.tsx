@@ -25,7 +25,7 @@ export function ConfirmDeleteEvidenceModal({
       <div style={modal} onClick={(e) => e.stopPropagation()}>
         <h3 style={title}>Delete evidence?</h3>
         <p style={message}>
-          Are you sure you want to delete &quot;{evidence.name}&quot;? This
+          Are you sure you want to delete &quot;{evidence.documentName}&quot;? This
           action cannot be undone.
         </p>
 
@@ -59,7 +59,7 @@ const overlay: React.CSSProperties = {
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  zIndex: 1001,
+  zIndex: 9000,
 };
 
 const modal: React.CSSProperties = {

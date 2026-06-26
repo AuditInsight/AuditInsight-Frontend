@@ -4,26 +4,19 @@ import { radius } from "@/styles/radius";
 import { shadows } from "@/styles/shadows";
 import { theme } from "@/styles/theme";
 
-export const modalStyles = {
-  /* =========================
-     BACKDROP OVERLAY
-  ========================= */
+import { zIndex } from "@/styles/zIndex";
 
+export const modalStyles = {
   overlay: {
     position: "fixed" as const,
-
     inset: 0,
-
     background: "rgba(15,23,42,0.45)",
-
     backdropFilter: "blur(10px)",
     WebkitBackdropFilter: "blur(10px)",
-
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-
-    zIndex: 999,
+    zIndex: zIndex.modal,
   },
 
   /* =========================

@@ -90,9 +90,7 @@ export const EvidenceDropdown = (
       {open && (
         <div style={dropdown}>
           {evidences.map((doc) => {
-            const url = doc.fileObject
-              ? URL.createObjectURL(doc.fileObject)
-              : doc.url || "#";
+            const url = doc.fileUpload || "#";
 
             return (
               <div
@@ -118,7 +116,7 @@ export const EvidenceDropdown = (
                 {/* ⬇ DOWNLOAD */}
                 <a
                   href={url}
-                  download={doc.name}
+                  download={doc.documentName}
                   style={actionBtn}
                   onClick={(e) =>
                     e.stopPropagation()
@@ -129,7 +127,7 @@ export const EvidenceDropdown = (
 
                 {/* 📄 LABEL */}
                 <span style={{ flex: 1 }}>
-                  {doc.name}
+                  {doc.documentName}
                 </span>
               </div>
             );
