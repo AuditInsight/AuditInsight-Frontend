@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   LayoutDashboard, ArrowLeftRight, FileCheck, ClipboardList,
-  BarChart3, Settings, LogOut, Building2, UserCheck, Bell, Shield,
+  Settings, LogOut, Building2, UserCheck, Bell, Shield,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { usePermissions } from "@/security/access-control";
@@ -22,12 +22,12 @@ const ROLE_LABEL: Record<UserRole, string> = {
   ADMIN:   "Super Admin",
 };
 
+// Reports removed — system focuses on Transactions & Evidence only
 const STANDARD_NAV = [
   { label: "Dashboard",    icon: LayoutDashboard, path: "/dashboard"    },
   { label: "Transactions", icon: ArrowLeftRight,  path: "/transactions" },
   { label: "Evidence",     icon: FileCheck,       path: "/evidence"     },
   { label: "Review Queue", icon: ClipboardList,   path: "/review-queue" },
-  { label: "Reports",      icon: BarChart3,       path: "/reports"      },
   { label: "Settings",     icon: Settings,        path: "/settings"     },
 ];
 
