@@ -1,60 +1,25 @@
-export type TransactionStatus =
-  | "COMPLETED" | "PENDING" | "FLAGGED"
-  | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "LOCKED";
+// ── Transaction status — only two states ──────────────────────────
+// PENDING   → transaction exists but has NO evidence attached
+// COMPLETED → transaction has at least ONE evidence file attached
+export type TransactionStatus = "PENDING" | "COMPLETED";
 
 export type TransactionSource = "MOBILE_MONEY" | "BANK" | "CASH";
 export type TransactionType   = "EXPENSE" | "INCOME";
-export type EvidenceStatus    = "MISSING" | "PARTIAL" | "COMPLETE";
-
-export type RiskFlag =
-  | "DUPLICATE"
-  | "BELOW_APPROVAL_THRESHOLD"
-  | "WEEKEND_POSTING"
-  | "ROUND_NUMBER"
-  | "AFTER_HOURS"
-  | "HIGH_AMOUNT";
 
 export interface Transaction {
-  id: string | number;
+  id: string;
   organisationId?: string;
-  name?: string;
-  date: string;
-  amount: number;
-  type: TransactionType;
-  paymentMethod?: TransactionSource;
-  status: TransactionStatus;
-  evidenceStatus?: EvidenceStatus;
-  createdBy?: string;
-  createdAt?: string;
-  approvedBy?: string;
-  approvedAt?: string;
-  lockedPeriod?: string;       // e.g. "2024-03" — if set, transaction is immutable
-  chartOfAccount?: string;     // CoA category e.g. "Office Supplies"
-  department?: string;
-  riskFlags?: RiskFlag[];
-  riskScore?: number;
-  notes?: string;
-
-  // Legacy
-  counterparty?: string;
-  source?: TransactionSource;
-  updatedAt?: string;
-}
-
-export interface ChartOfAccount {
-  code: string;
-  name: string;
-  type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE";
-  parent?: string;
-}
-
-export interface BulkImportRow {
-  date: string;
   name: string;
   counterparty: string;
+  date: string;
   amount: number;
   type: TransactionType;
   paymentMethod: TransactionSource;
-  chartOfAccount?: string;
+  // Derived — computed from evidence count, never stored manually
+  status: TransactionStatus;
+  // Number of attached evidence files — computed from evidence array
+  evidenceCount?: number;
+  createdBy?: string;
+  createdAt?: string;
   notes?: string;
 }
