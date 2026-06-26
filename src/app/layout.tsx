@@ -1,3 +1,4 @@
+import "./globals.css";
 import PageLayout from "@/components/layout/PageLayout/PageLayout";
 import { AuthProvider } from "@/context/AuthContext";
 import { Colors } from "@/styles/colors";
@@ -12,6 +13,9 @@ export const metadata = { title: "AuditInsight", description: "Enterprise audit 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body
         suppressHydrationWarning
         style={{

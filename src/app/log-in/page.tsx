@@ -64,9 +64,9 @@ function LoginForm() {
   }
 
   return (
-    <div style={s.shell}>
+    <div style={s.shell} className="auth-shell">
       {/* LEFT PANEL */}
-      <div style={s.left}>
+      <div style={s.left} className="auth-left">
         <div style={s.brandBlock}>
           <div style={s.logoMark}>
             <Shield size={22} strokeWidth={2} />
@@ -88,11 +88,11 @@ function LoginForm() {
           ))}
         </ul>
 
-        <p style={s.leftFooter}>Trusted by audit professionals worldwide.</p>
+        <p style={s.leftFooter} className="auth-left-footer">Trusted by audit professionals worldwide.</p>
       </div>
 
       {/* RIGHT PANEL */}
-      <div style={s.right}>
+      <div style={s.right} className="auth-right">
         <div style={s.formBox}>
           <div style={{ marginBottom: 32 }}>
             <h2 style={s.formTitle}>Welcome back</h2>

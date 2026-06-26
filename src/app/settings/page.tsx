@@ -74,12 +74,12 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div style={styles.layout}>
+      <div style={styles.layout} className="settings-page-layout">
         <SettingsSidebar active={active} setActive={setActive} />
 
         <div style={styles.content}>
           {active === "Organization" && (
-            <div style={styles.grid3}>
+            <div style={styles.grid3} className="settings-grid3">
               <OrganizationProfileCard
                 organization={orgLoading ? "Loading…" : (org?.name ?? "—")}
                 industry={orgLoading ? "…" : (org?.industry ?? "—")}
@@ -114,21 +114,21 @@ export default function SettingsPage() {
 
           {active === "Permissions" && <PermissionsMatrix />}
           {active === "Workflow" && (
-            <div style={styles.grid3}>
+            <div style={styles.grid3} className="settings-grid3">
               <WorkflowStatusesCard />
               <EscalationRulesCard />
               <AutoAssignmentCard />
             </div>
           )}
           {active === "Compliance" && (
-            <div style={styles.grid3}>
+            <div style={styles.grid3} className="settings-grid3">
               <ApprovalLimitsCard />
               <SegregationRulesCard />
               <EvidenceRequirementsCard />
             </div>
           )}
           {active === "Security" && (
-            <div style={styles.grid3}>
+            <div style={styles.grid3} className="settings-grid3">
               <SecuritySettingsCard />
               <PasswordPolicyCard />
               <SessionManagementCard />

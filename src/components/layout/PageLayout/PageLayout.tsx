@@ -52,6 +52,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
           zIndex: 2,
           boxSizing: "border-box",
         }}
+        className={isDashboard ? "" : "page-padding"}
       >
         {children}
       </main>
