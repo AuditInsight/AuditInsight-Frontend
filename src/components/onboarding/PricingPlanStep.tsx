@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PRICING_PLANS, PlanTier, BillingCycle } from "@/types/billing";
+import CheckoutModal from "@/components/payment/CheckoutModal";
 
 interface Props {
   onSelect: (plan: PlanTier, cycle: BillingCycle) => void;
@@ -17,6 +18,7 @@ const CHECK = (
 export default function PricingPlanStep({ onSelect, onBack }: Props) {
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const [selected, setSelected] = useState<PlanTier>("PROFESSIONAL");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const price = (p: typeof PRICING_PLANS[0]) =>
     cycle === "monthly" ? p.monthlyPrice : p.annualPrice;
@@ -90,10 +92,30 @@ export default function PricingPlanStep({ onSelect, onBack }: Props) {
 
       <div style={s.actions}>
         <button style={s.backBtn} onClick={onBack}>← Back</button>
-        <button style={s.continueBtn} onClick={() => onSelect(selected, cycle)}>
-          {selected === "FREE" ? "Get Started Free →" : `Start ${PRICING_PLANS.find(p => p.id === selected)?.name} Plan →`}
+        <button
+          style={s.continueBtn}
+          onClick={() => {
+            if (selected === "FREE") {
+              onSelect(selected, cycle);
+            } else {
+              setCheckoutOpen(true);
+            }
+          }}
+        >
+          {selected === "FREE" ? "Get Started Free →" : `Pay & Start ${PRICING_PLANS.find(p => p.id === selected)?.name} →`}
         </button>
       </div>
+
+      <CheckoutModal
+        open={checkoutOpen}
+        plan={selected}
+        cycle={cycle}
+        onClose={() => setCheckoutOpen(false)}
+        onSuccess={() => {
+          setCheckoutOpen(false);
+          onSelect(selected, cycle);
+        }}
+      />
     </div>
   );
 }
