@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { PlanTier, BillingCycle, PRICING_PLANS } from "@/types/billing";
 import StripeCardInput, { CardData } from "./StripeCardInput";
+import MoMoInput from "./MoMoInput";
 import { TEST_CARDS } from "./cardUtils";
-import { Shield, CheckCircle2, XCircle, Lock, ChevronRight } from "lucide-react";
+import { MoMoData, TEST_PHONES, simulateMoMoPayment } from "./momoUtils";
+import { Shield, CheckCircle2, XCircle, Lock, ChevronRight, CreditCard, Smartphone } from "lucide-react";
 
 // ── Payment result ─────────────────────────────────────────────────
 type PaymentState = "idle" | "processing" | "3dsecure" | "success" | "failed";
@@ -35,8 +38,12 @@ async function simulatePayment(cardNumber: string): Promise<{ success: boolean; 
   return { success: true, receiptId };
 }
 
+type PaymentMethod = "card" | "momo";
+
 export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }: Props) {
+  const [payMethod, setPayMethod]     = useState<PaymentMethod>("card");
   const [cardData, setCardData]       = useState<CardData | null>(null);
+  const [momoData, setMomoData]       = useState<MoMoData | null>(null);
   const [state, setState]             = useState<PaymentState>("idle");
   const [receiptId, setReceiptId]     = useState("");
   const [errorMsg, setErrorMsg]       = useState("");
@@ -47,22 +54,28 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
   const amount   = cycle === "monthly" ? planInfo.monthlyPrice : planInfo.annualPrice;
   const annualTotal = cycle === "annual" ? amount * 12 : null;
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
   const handlePay = async () => {
-    if (!cardData?.isValid) return;
     setErrorMsg("");
     setState("processing");
 
-    // Simulate 3D Secure for amounts > $50
-    if (amount > 50) {
-      await new Promise((r) => setTimeout(r, 800));
-      setState("3dsecure");
-      await new Promise((r) => setTimeout(r, 2000));
-    }
+    let result: { success: boolean; receiptId?: string; error?: string };
 
-    setState("processing");
-    const result = await simulatePayment(cardData.number);
+    if (payMethod === "momo") {
+      if (!momoData?.isValid) return;
+      result = await simulateMoMoPayment(momoData.phone);
+    } else {
+      if (!cardData?.isValid) return;
+      // Simulate 3D Secure for amounts > $50
+      if (amount > 50) {
+        await new Promise((r) => setTimeout(r, 800));
+        setState("3dsecure");
+        await new Promise((r) => setTimeout(r, 2000));
+        setState("processing");
+      }
+      result = await simulatePayment(cardData.number);
+    }
 
     if (result.success) {
       setReceiptId(result.receiptId!);
@@ -84,10 +97,13 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
     setState("idle");
     setErrorMsg("");
     setCardData(null);
+    setMomoData(null);
     onClose();
   };
 
-  return (
+  const isPayReady = payMethod === "card" ? !!cardData?.isValid : !!momoData?.isValid;
+
+  return createPortal(
     <div style={overlay} onClick={(e) => e.target === e.currentTarget && handleClose()}>
       <div style={modal}>
 
@@ -194,14 +210,14 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
                   </div>
                 </div>
 
-                {/* Test cards hint */}
+                {/* Test data hint */}
                 <button
                   style={testCardsToggle}
                   onClick={() => setShowTestCards((v) => !v)}
                 >
-                  🧪 Test cards {showTestCards ? "▲" : "▼"}
+                  🧪 Test {payMethod === "card" ? "cards" : "phones"} {showTestCards ? "▲" : "▼"}
                 </button>
-                {showTestCards && (
+                {showTestCards && payMethod === "card" && (
                   <div style={testCardsBox}>
                     {TEST_CARDS.map((c) => (
                       <div key={c.number} style={testCardRow}>
@@ -221,45 +237,87 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
                     </div>
                   </div>
                 )}
+                {showTestCards && payMethod === "momo" && (
+                  <div style={testCardsBox}>
+                    {TEST_PHONES.map((t) => (
+                      <div key={t.phone} style={testCardRow}>
+                        <span style={{ fontFamily: "monospace", fontSize: 12 }}>{t.phone}</span>
+                        <span style={{
+                          fontSize: 11, fontWeight: 600,
+                          color: t.result === "success" ? "#16a34a" : "#dc2626",
+                          background: t.result === "success" ? "#dcfce7" : "#fee2e2",
+                          padding: "2px 7px", borderRadius: 10,
+                        }}>
+                          {t.label.split("— ")[1]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* RIGHT — Payment form */}
               <div style={formCol}>
                 <div style={formTitle}>Payment Details</div>
 
-                <StripeCardInput onChange={setCardData} disabled={false} />
+                {/* ── Payment method tabs ── */}
+                <div style={tabsRow}>
+                  <button
+                    style={tabBtn(payMethod === "card")}
+                    onClick={() => setPayMethod("card")}
+                  >
+                    <CreditCard size={14} />
+                    Credit / Debit Card
+                  </button>
+                  <button
+                    style={tabBtn(payMethod === "momo")}
+                    onClick={() => setPayMethod("momo")}
+                  >
+                    <Smartphone size={14} />
+                    Mobile Money
+                  </button>
+                </div>
 
-                {/* Save card checkbox */}
-                <label style={saveCardRow}>
-                  <input
-                    type="checkbox"
-                    checked={saveCard}
-                    onChange={(e) => setSaveCard(e.target.checked)}
-                    style={{ width: 15, height: 15, cursor: "pointer" }}
-                  />
-                  <span style={{ fontSize: 13, color: "#374151" }}>Save card for future payments</span>
-                </label>
+                {payMethod === "card" ? (
+                  <StripeCardInput onChange={setCardData} disabled={false} />
+                ) : (
+                  <MoMoInput onChange={setMomoData} disabled={false} />
+                )}
+
+                {/* Save card checkbox — card only */}
+                {payMethod === "card" && (
+                  <label style={saveCardRow}>
+                    <input
+                      type="checkbox"
+                      checked={saveCard}
+                      onChange={(e) => setSaveCard(e.target.checked)}
+                      style={{ width: 15, height: 15, cursor: "pointer" }}
+                    />
+                    <span style={{ fontSize: 13, color: "#374151" }}>Save card for future payments</span>
+                  </label>
+                )}
 
                 {/* Security badges */}
                 <div style={securityRow}>
                   <Lock size={12} color="#94a3b8" />
                   <span style={{ fontSize: 12, color: "#94a3b8" }}>256-bit SSL encryption</span>
                   <span style={secBadge}>PCI DSS</span>
-                  <span style={secBadge}>3D Secure</span>
+                  {payMethod === "card" && <span style={secBadge}>3D Secure</span>}
+                  {payMethod === "momo" && <span style={secBadge}>USSD Push</span>}
                 </div>
 
                 {/* Pay button */}
                 <button
                   style={{
                     ...payBtn,
-                    opacity: cardData?.isValid ? 1 : 0.5,
-                    cursor: cardData?.isValid ? "pointer" : "not-allowed",
+                    opacity: isPayReady ? 1 : 0.5,
+                    cursor: isPayReady ? "pointer" : "not-allowed",
                   }}
-                  disabled={!cardData?.isValid}
+                  disabled={!isPayReady}
                   onClick={handlePay}
                 >
-                  <Lock size={15} />
-                  Pay ${cycle === "annual" ? annualTotal : amount}
+                  {payMethod === "card" ? <Lock size={15} /> : <Smartphone size={15} />}
+                  {payMethod === "card" ? "Pay" : "Pay with MoMo"} ${cycle === "annual" ? annualTotal : amount}
                   <ChevronRight size={15} />
                 </button>
 
@@ -275,7 +333,8 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -465,8 +524,24 @@ const testCardRow: React.CSSProperties = {
 };
 
 const formTitle: React.CSSProperties = {
-  fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 18,
+  fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 14,
 };
+
+const tabsRow: React.CSSProperties = {
+  display: "flex", gap: 8, marginBottom: 18,
+  background: "#f1f5f9", borderRadius: 10, padding: 4,
+};
+
+const tabBtn = (active: boolean): React.CSSProperties => ({
+  flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+  padding: "8px 12px", borderRadius: 8, border: "none",
+  background: active ? "#fff" : "transparent",
+  color: active ? "#0f172a" : "#64748b",
+  fontWeight: active ? 700 : 500,
+  fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+  boxShadow: active ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+  transition: "all 0.15s",
+});
 
 const saveCardRow: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 8,
