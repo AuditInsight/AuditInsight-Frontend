@@ -1,432 +1,287 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { AuthUser, UserRole } from "@/types/user";
-import { MOCK_USERS } from "@/mock/auth.mock";
-import { MOCK_TENANTS } from "@/mock/admin.mock";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
+import { jwtDecode } from "jwt-decode";
+import { isAxiosError } from "axios";
+import { apiClient } from "@/api/client";
+import { tokenStorage } from "@/utils/tokenStorage";
+import {
+  User,
+  AuthState,
+  JwtPayload,
+  LoginRequest,
+  LoginApiResponse,
+  RefreshApiResponse,
+  FrontendRole,
+  mapBackendRoleToFrontend,
+} from "@/types/auth";
+import { OwnedOrganisation } from "@/types/user";
 
-function isUserDeactivated(email: string): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const suspended: string[] = JSON.parse(localStorage.getItem("suspended_users") ?? "[]");
-    return suspended.includes(email.toLowerCase());
-  } catch { return false; }
-}
+// ── Context shape — preserves all signatures the app already uses ──
 
-interface StoredInvite {
-  id: string;
-  email: string;
-  role: UserRole;
-  token: string;
-  status: "PENDING" | "ACCEPTED" | "EXPIRED";
-  createdAt: string;
-  expiresAt: string;
-  organisationId?: string;
-  organisationName?: string;
-  invitedByEmail?: string;
-  invitedByRole?: UserRole;
-}
-
-interface StoredUser {
-  email: string;
-  password: string;
-  role: UserRole;
-  fullName: string;
-  organisationId?: string;
-  organisationName?: string;
-  mustChangePassword: boolean;
-}
-
-interface AuthContextValue {
-  user: AuthUser | null;
-  role: UserRole | null;
+interface AuthContextValue extends AuthState {
+  // Legacy shape consumed by existing components
+  user: User | null;
+  role: FrontendRole | null;
   loading: boolean;
-  login: (email: string, password: string, inviteToken?: string) => { success: boolean; error?: string; redirectTo?: string };
+
+  login: (email: string, password: string, inviteToken?: string) => Promise<{ success: boolean; error?: string; redirectTo?: string }>;
   logout: () => void;
-  completeSignup: () => AuthUser | null;
   completeOnboarding: (orgName: string, orgId: string) => void;
-  setMockRole: (role: UserRole) => void;
   completePasswordReset: (newPassword?: string) => void;
+  switchOrganisation: (orgId: string) => void;
+  addOrganisation: (name: string, industry: string) => string;
+
+  // Dev-only — no-op in production
+  setMockRole: (role: string) => void;
+  completeSignup: () => User | null;
 }
 
 const AuthContext = createContext<AuthContextValue>({
+  status: "loading",
   user: null,
   role: null,
   loading: true,
-  login: () => ({ success: false }),
+  login: async () => ({ success: false }),
   logout: () => {},
-  completeSignup: () => null,
   completeOnboarding: () => {},
-  setMockRole: () => {},
   completePasswordReset: () => {},
+  switchOrganisation: () => {},
+  addOrganisation: () => "",
+  setMockRole: () => {},
+  completeSignup: () => null,
 });
 
-const KEYS = {
-  role:    "auth_role",
-  email:   "auth_email",
-  name:    "auth_name",
-  orgId:   "auth_org_id",
-  orgName: "auth_org_name",
-} as const;
+// ── Build a User from a decoded JWT ───────────────────────────────
 
-const MUST_CHANGE_PASSWORD_KEY = "auth_must_change_password";
-const INVITES_KEY = "mock_invites";
-const USERS_KEY = "mock_users";
-
-const DEV_CREDENTIALS: Record<string, { password: string; role: UserRole }> = {
-  "ceo@insightai.rw":        { password: "demo1234", role: "CLIENT"  },
-  "accountant@insightai.rw": { password: "demo1234", role: "MEMBER"  },
-  "auditor@audit.rw":        { password: "demo1234", role: "AUDITOR" },
-  "admin@auditinsight.com":  { password: "demo1234", role: "ADMIN"   },
-};
-
-function readSession(): AuthUser | null {
-  if (typeof window === "undefined") return null;
-  const role  = localStorage.getItem(KEYS.role)  as UserRole | null;
-  const email = localStorage.getItem(KEYS.email);
-  const name  = localStorage.getItem(KEYS.name);
-  if (!role || !email) return null;
-  const base = MOCK_USERS[role];
-  if (!base) return null;
+function buildUser(payload: JwtPayload, extra?: Partial<User>): User {
   return {
-    ...base,
-    email,
-    fullName:         name ?? base.fullName,
-    organisationId:   localStorage.getItem(KEYS.orgId)   ?? base.organisationId,
-    organisationName: localStorage.getItem(KEYS.orgName) ?? base.organisationName,
-    mustChangePassword: localStorage.getItem(MUST_CHANGE_PASSWORD_KEY) === "true",
+    id: Number(payload.sub),
+    email: payload.email,
+    fullName: extra?.fullName ?? payload.email,
+    role: mapBackendRoleToFrontend(payload.role),
+    backendRole: payload.role,
+    organisationId: payload.organisationId ?? extra?.organisationId,
+    organisationName: extra?.organisationName,
+    mustChangePassword: extra?.mustChangePassword ?? false,
   };
 }
 
-function writeSession(user: AuthUser) {
-  localStorage.setItem(KEYS.role,  user.role);
-  localStorage.setItem(KEYS.email, user.email);
-  localStorage.setItem(KEYS.name,  user.fullName);
-  if (user.organisationId)   localStorage.setItem(KEYS.orgId,   user.organisationId);
-  if (user.organisationName) localStorage.setItem(KEYS.orgName, user.organisationName);
-  localStorage.setItem(MUST_CHANGE_PASSWORD_KEY, user.mustChangePassword ? "true" : "false");
-  localStorage.setItem("mockRole", user.role);
-}
-
-function readStoredInvites() {
-  if (typeof window === "undefined") return [] as StoredInvite[];
-  const raw = localStorage.getItem(INVITES_KEY);
-  if (!raw) return [];
-  try { return JSON.parse(raw) as StoredInvite[]; } catch { return []; }
-}
-
-function writeStoredInvites(invites: StoredInvite[]) {
-  localStorage.setItem(INVITES_KEY, JSON.stringify(invites));
-}
-
-function findInviteByToken(token: string) {
-  return readStoredInvites().find((invite) => invite.token === token && invite.status === "PENDING");
-}
-
-function readStoredUsers() {
-  if (typeof window === "undefined") return [] as StoredUser[];
-  const raw = localStorage.getItem(USERS_KEY);
-  if (!raw) return [];
-  try { return JSON.parse(raw) as StoredUser[]; } catch { return []; }
-}
-
-function writeStoredUsers(users: StoredUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-function findStoredUserByEmail(email: string) {
-  return readStoredUsers().find((user) => user.email.toLowerCase() === email.toLowerCase());
-}
-
-function saveStoredUser(user: StoredUser) {
-  const existing = readStoredUsers();
-  const normalizedEmail = user.email.trim().toLowerCase();
-  const filtered = existing.filter((item) => item.email.toLowerCase() !== normalizedEmail);
-  writeStoredUsers([...filtered, { ...user, email: normalizedEmail }]);
-}
-
-function clearSignupProgress() {
-  localStorage.removeItem("signup_name");
-  localStorage.removeItem("signup_email");
-  localStorage.removeItem("signup_password");
-  localStorage.removeItem("signup_role");
-  localStorage.removeItem("signup_otp_meta");
-  localStorage.removeItem("verified_email");
-  localStorage.removeItem("otp_verified");
-}
-
-function clearSession() {
-  Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
-  localStorage.removeItem(MUST_CHANGE_PASSWORD_KEY);
-  localStorage.removeItem("mockRole");
-  localStorage.removeItem("onboarding_complete");
-  localStorage.removeItem("onboarding_plan");
-  localStorage.removeItem("onboarding_org");
-  clearSignupProgress();
-}
+// ── Provider ───────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser]       = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<AuthState>({
+    // Start as 'loading' — prevents flash of unauthenticated content
+    status: "loading",
+    user: null,
+  });
 
-  useEffect(() => {
-    setUser(readSession());
-    setLoading(false);
+  // Derived convenience fields for legacy consumers
+  const user    = state.user;
+  const loading = state.status === "loading";
+  const role    = state.user?.role ?? null;
+
+  // ── Silent token refresh on mount ─────────────────────────────
+
+  const initializeAuth = useCallback(async () => {
+    if (!tokenStorage.hasSession()) {
+      setState({ status: "unauthenticated", user: null });
+      return;
+    }
+    try {
+      const refreshToken = tokenStorage.getRefreshToken()!;
+      const { data } = await apiClient.post<RefreshApiResponse>(
+        "/auth/refresh",
+        { refreshToken }
+      );
+      tokenStorage.setTokens(data.token, data.refreshToken);
+      const payload = jwtDecode<JwtPayload>(data.token);
+      setState({ status: "authenticated", user: buildUser(payload) });
+    } catch {
+      tokenStorage.clear();
+      setState({ status: "unauthenticated", user: null });
+    }
   }, []);
 
-  const login = (email: string, password: string, inviteToken?: string) => {
-    const key = email.trim().toLowerCase();
-    const invite = inviteToken ? findInviteByToken(inviteToken) : undefined;
+  useEffect(() => { initializeAuth(); }, [initializeAuth]);
 
-    // Story 1.3 — Deactivated user check (Admin toggled Inactive)
-    if (isUserDeactivated(key)) {
-      return { success: false, error: "Your account has been deactivated. Please contact your organisation admin." };
-    }
+  // ── login ──────────────────────────────────────────────────────
 
-    // Story 4.2 — Blocked tenant check
-    const userOrgId =
-      findStoredUserByEmail(key)?.organisationId ??
-      (typeof window !== "undefined" ? localStorage.getItem("auth_org_id") : null);
-    if (userOrgId) {
-      const tenant = MOCK_TENANTS.find((t) => t.id === userOrgId);
-      if (tenant?.isBlocked) {
-        return { success: false, error: "SUBSCRIPTION_SUSPENDED" };
-      }
-    }
-
-    if (invite) {
-      if (!password.trim()) {
-        return { success: false, error: "Please provide a password to accept your invite." };
-      }
-      if (invite.email.toLowerCase() !== key) {
-        return { success: false, error: "Invite token does not match this email." };
-      }
-      const expires = new Date(invite.expiresAt);
-      if (expires.getTime() < Date.now()) {
-        return { success: false, error: "This invite link has expired. Please request a new invite." };
-      }
-
-      const userRole = invite.role;
-      const base = MOCK_USERS[userRole] ?? {
-        id: Date.now(),
-        email: key,
-        fullName: key.split("@")[0],
-        role: userRole,
-        organisationId: invite.organisationId,
-        organisationName: invite.organisationName,
-        mustChangePassword: true,
-      };
-
-      const newUser: AuthUser = {
-        ...base,
-        email: key,
-        fullName: base.fullName || key.split("@")[0],
-        organisationId: invite.organisationId,
-        organisationName: invite.organisationName,
-        mustChangePassword: true,
-      };
-
-      saveStoredUser({
-        email: newUser.email,
+  const login = useCallback(async (
+    email: string,
+    password: string,
+    inviteToken?: string
+  ): Promise<{ success: boolean; error?: string; redirectTo?: string }> => {
+    try {
+      const req: LoginRequest = {
+        username: email.trim().toLowerCase(),
         password,
-        role: newUser.role,
-        fullName: newUser.fullName,
-        organisationId: newUser.organisationId,
-        organisationName: newUser.organisationName,
-        mustChangePassword: true,
-      });
-      writeSession(newUser);
-      setUser(newUser);
-      writeStoredInvites(readStoredInvites().map((item) => item.token === inviteToken ? { ...item, status: "ACCEPTED" } : item));
+        ...(inviteToken ? { inviteToken } : {}),
+      };
+      const { data } = await apiClient.post<LoginApiResponse>("/auth/login", req);
+      tokenStorage.setTokens(data.token, data.refreshToken);
+      const payload = jwtDecode<JwtPayload>(data.token);
+      const newUser = buildUser(payload, { mustChangePassword: data.mustChangePassword });
+      setState({ status: "authenticated", user: newUser });
 
+      if (data.mustChangePassword) return { success: true, redirectTo: "/reset-password" };
+      if (newUser.role === "SYSTEM_ADMIN") return { success: true, redirectTo: "/admin/organizations" };
+      return { success: true, redirectTo: "/dashboard" };
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 423) return { success: false, error: "SUBSCRIPTION_SUSPENDED" };
+        if (status === 401 || status === 403) return { success: false, error: "Invalid email or password." };
+        const msg = (err.response?.data as { message?: string })?.message;
+        return { success: false, error: msg ?? "Something went wrong. Please try again." };
+      }
+      return { success: false, error: "Unable to reach the server. Check your connection." };
+    }
+  }, []);
+
+  // ── logout ─────────────────────────────────────────────────────
+
+  const logout = useCallback(() => {
+    // Best-effort server-side invalidation
+    apiClient.post("/auth/logout").catch(() => {});
+    tokenStorage.clear();
+    setState({ status: "unauthenticated", user: null });
+  }, []);
+
+  // ── completeOnboarding ─────────────────────────────────────────
+
+  const completeOnboarding = useCallback((orgName: string, orgId: string) => {
+    setState((prev) => {
+      if (!prev.user) return prev;
       return {
-        success: true,
-        redirectTo: "/reset-password",
+        ...prev,
+        user: { ...prev.user, organisationId: orgId, organisationName: orgName },
       };
-    }
-
-    const storedUser = findStoredUserByEmail(key);
-    if (storedUser) {
-      if (storedUser.password !== password) {
-        return { success: false, error: "Invalid email or password." };
-      }
-      const loggedInUser: AuthUser = {
-        id: MOCK_USERS[storedUser.role]?.id ?? Date.now(),
-        email: storedUser.email,
-        fullName: storedUser.fullName,
-        role: storedUser.role,
-        organisationId: storedUser.organisationId,
-        organisationName: storedUser.organisationName,
-        mustChangePassword: storedUser.mustChangePassword,
-      };
-      writeSession(loggedInUser);
-      setUser(loggedInUser);
-      return { success: true, redirectTo: loggedInUser.role === "ADMIN" ? "/admin/organizations" : "/dashboard" };
-    }
-
-    const pendingPassword = localStorage.getItem("signup_password");
-    const pendingEmail = localStorage.getItem("signup_email")?.toLowerCase();
-    const pendingRole = localStorage.getItem("signup_role") as UserRole | null;
-    const pendingOtpVerified = localStorage.getItem("otp_verified") === "true";
-
-    if (pendingEmail === key && pendingPassword === password && pendingRole) {
-      if (pendingRole === "CLIENT" && !pendingOtpVerified) {
-        return { success: false, error: "Please verify your email before signing in." };
-      }
-      const base = MOCK_USERS[pendingRole];
-      const newUser: AuthUser = {
-        ...base,
-        email: key,
-        fullName: localStorage.getItem("signup_name") ?? base.fullName,
-        organisationName: localStorage.getItem(KEYS.orgName) ?? base.organisationName,
-        mustChangePassword: false,
-      };
-      saveStoredUser({
-        email: key,
-        password,
-        role: pendingRole,
-        fullName: newUser.fullName,
-        organisationId: newUser.organisationId,
-        organisationName: newUser.organisationName,
-        mustChangePassword: false,
-      });
-      clearSignupProgress();
-      writeSession(newUser);
-      setUser(newUser);
-      return { success: true, redirectTo: pendingRole === "ADMIN" ? "/admin/organizations" : "/dashboard" };
-    }
-
-    const creds = DEV_CREDENTIALS[key];
-    if (!creds || creds.password !== password) {
-      return { success: false, error: "Invalid email or password." };
-    }
-    const base = MOCK_USERS[creds.role];
-
-    const signupName = localStorage.getItem("signup_name");
-    const orgName = localStorage.getItem(KEYS.orgName) ?? base.organisationName;
-
-    const newUser: AuthUser = {
-      ...base,
-      email: key,
-      fullName: signupName ?? base.fullName,
-      organisationName: orgName,
-      mustChangePassword: false,
-    };
-
-    writeSession(newUser);
-    setUser(newUser);
-
-    return {
-      success: true,
-      redirectTo: creds.role === "ADMIN" ? "/admin/organizations" : "/dashboard",
-    };
-  };
-
-  const completeSignup = () => {
-    const email = localStorage.getItem("signup_email");
-    const role = localStorage.getItem("signup_role") as UserRole | null;
-    const name = localStorage.getItem("signup_name");
-    const verifiedEmail = localStorage.getItem("verified_email");
-    const otpVerified = localStorage.getItem("otp_verified") === "true";
-    const password = localStorage.getItem("signup_password");
-
-    if (!email || !role || !password) return null;
-    if (role === "CLIENT" && (!otpVerified || verifiedEmail !== email)) return null;
-
-    const stored = findStoredUserByEmail(email);
-    const base = MOCK_USERS[role];
-
-    const user: AuthUser = {
-      id: stored?.email === email ? MOCK_USERS[role]?.id ?? Date.now() : Date.now(),
-      email,
-      fullName: name ?? base.fullName,
-      role,
-      organisationId: localStorage.getItem(KEYS.orgId) ?? base.organisationId,
-      organisationName: localStorage.getItem(KEYS.orgName) ?? base.organisationName,
-      mustChangePassword: stored?.mustChangePassword ?? false,
-    };
-
-    saveStoredUser({
-      email,
-      password,
-      role,
-      fullName: user.fullName,
-      organisationId: user.organisationId,
-      organisationName: user.organisationName,
-      mustChangePassword: user.mustChangePassword ?? false,
     });
+  }, []);
 
-    clearSignupProgress();
-    writeSession(user);
-    setUser(user);
-    return user;
-  };
+  // ── completePasswordReset ──────────────────────────────────────
 
-  const completeOnboarding = (orgName: string, orgId: string) => {
-    const currentUser = user ?? completeSignup();
-    localStorage.setItem(KEYS.orgName, orgName);
-    localStorage.setItem(KEYS.orgId,   orgId);
-    localStorage.setItem("onboarding_complete", "true");
-    if (currentUser) {
-      const updatedUser = { ...currentUser, organisationName: orgName, organisationId: orgId };
-      writeSession(updatedUser);
-      setUser(updatedUser);
-      saveStoredUser({
-        email: updatedUser.email,
-        password: findStoredUserByEmail(updatedUser.email)?.password ?? localStorage.getItem("signup_password") ?? "",
-        role: updatedUser.role,
-        fullName: updatedUser.fullName,
-        organisationId: updatedUser.organisationId,
-        organisationName: updatedUser.organisationName,
-        mustChangePassword: updatedUser.mustChangePassword ? true : false,
-      });
-    }
-  };
-
-  const completePasswordReset = (newPassword?: string) => {
-    localStorage.setItem(MUST_CHANGE_PASSWORD_KEY, "false");
-    setUser((prev) => {
-      const next = prev ? { ...prev, mustChangePassword: false } : prev;
-      if (next) {
-        const stored = findStoredUserByEmail(next.email);
-        if (stored) {
-          saveStoredUser({
-            ...stored,
-            password: newPassword ?? stored.password,
-            mustChangePassword: false,
-          });
-        }
-      }
-      return next;
+  const completePasswordReset = useCallback((_newPassword?: string) => {
+    setState((prev) => {
+      if (!prev.user) return prev;
+      return { ...prev, user: { ...prev.user, mustChangePassword: false } };
     });
-  };
+  }, []);
 
-  const logout = () => {
-    if (typeof window !== "undefined") {
-      import("@/security/audit-logger").then(({ appendAuditLog }) => {
-        const role  = localStorage.getItem("auth_role")  ?? "CLIENT";
-        const email = localStorage.getItem("auth_email") ?? "";
-        appendAuditLog({ userId: 0, userEmail: email, userRole: role, action: "USER_LOGOUT", targetResourceId: email, detail: "User logged out" });
-      });
-    }
-    clearSession();
-    setUser(null);
-  };
+  // ── switchOrganisation ─────────────────────────────────────────
 
-  const setMockRole = (role: UserRole) => {
-    const base = MOCK_USERS[role];
-    if (!base) return;
-    writeSession(base);
-    setUser(base);
-  };
+  const switchOrganisation = useCallback((orgId: string) => {
+    setState((prev) => {
+      if (!prev.user) return prev;
+      const org = (prev.user as User & { organisations?: OwnedOrganisation[] })
+        .organisations?.find((o) => o.id === orgId);
+      if (!org) return prev;
+      return {
+        ...prev,
+        user: { ...prev.user, organisationId: org.id, organisationName: org.name },
+      };
+    });
+  }, []);
+
+  // ── addOrganisation ────────────────────────────────────────────
+
+  const addOrganisation = useCallback((name: string, industry: string): string => {
+    const newId  = `org-${Date.now().toString(36)}`;
+    const newOrg: OwnedOrganisation = { id: newId, name: name.trim(), industry: industry.trim() };
+    setState((prev) => {
+      if (!prev.user) return prev;
+      const u = prev.user as User & { organisations?: OwnedOrganisation[] };
+      const orgs = [...(u.organisations ?? []), newOrg];
+      return {
+        ...prev,
+        user: { ...u, organisations: orgs, organisationId: newId, organisationName: newOrg.name },
+      };
+    });
+    return newId;
+  }, []);
+
+  // ── Dev no-ops (removed in production) ────────────────────────
+
+  const setMockRole  = useCallback(() => {}, []);
+  const completeSignup = useCallback(() => null, []);
+
+  // ── Full-screen loader while initializing ──────────────────────
+
+  if (state.status === "loading") {
+    return <AuthLoadingScreen />;
+  }
 
   return (
-    <AuthContext.Provider value={{ user, role: user?.role ?? null, loading, login, logout, completeSignup, completeOnboarding, setMockRole, completePasswordReset }}>
+    <AuthContext.Provider
+      value={{
+        ...state,
+        user,
+        role,
+        loading,
+        login,
+        logout,
+        completeOnboarding,
+        completePasswordReset,
+        switchOrganisation,
+        addOrganisation,
+        setMockRole,
+        completeSignup,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
+// ── Full-screen loader ─────────────────────────────────────────────
+
+function AuthLoadingScreen() {
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        background: "#f8fafc", zIndex: 9999, gap: 16,
+      }}
+    >
+      <style>{`
+        @keyframes ai-spin  { to { transform: rotate(360deg); } }
+        @keyframes ai-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+      `}</style>
+      <div style={{
+        width: 44, height: 44, borderRadius: "50%",
+        border: "3px solid #e2e8f0", borderTopColor: "#1e3a8a",
+        animation: "ai-spin 0.75s linear infinite",
+      }} />
+      <span style={{
+        fontSize: 13, color: "#94a3b8", fontWeight: 500,
+        animation: "ai-pulse 1.5s ease-in-out infinite",
+      }}>
+        Loading AuditInsight…
+      </span>
+    </div>
+  );
+}
+
+// ── Hooks ──────────────────────────────────────────────────────────
+
 export function useAuth(): AuthContextValue {
   return useContext(AuthContext);
+}
+
+export function useRequiredUser(): User {
+  const { user, status } = useAuth();
+  if (status !== "authenticated" || !user) {
+    throw new Error("useRequiredUser() called outside an authenticated context");
+  }
+  return user;
 }

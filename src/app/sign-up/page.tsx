@@ -3,10 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Shield, Building2, ClipboardCheck, Check, Loader2 } from "lucide-react";
-import { buildSignupOtpMeta } from "@/mock/auth.mock";
+import { Eye, EyeOff, Shield, Building2, ClipboardCheck, Check, Loader2, AlertTriangle } from "lucide-react";
+import { isAxiosError } from "axios";
+import { apiClient } from "@/api/client";
+import { RegisterRequest, RegisterApiResponse, ApiErrorResponse, BackendRole } from "@/types/auth";
 
-type UserRole = "CLIENT" | "AUDITOR";
+// ── Password strength ──────────────────────────────────────────────
 
 function getStrength(p: string) {
   if (!p) return { score: 0, label: "", color: "" };
@@ -15,15 +17,19 @@ function getStrength(p: string) {
   if (/[A-Z]/.test(p)) s++;
   if (/\d/.test(p)) s++;
   if (/[@$!%*?&]/.test(p)) s++;
-  if (s <= 1) return { score: s, label: "Weak", color: "#ef4444" };
-  if (s === 2) return { score: s, label: "Fair", color: "#f97316" };
-  if (s === 3) return { score: s, label: "Good", color: "#eab308" };
-  return { score: s, label: "Strong", color: "#22c55e" };
+  if (s <= 1) return { score: s, label: "Weak",   color: "#ef4444" };
+  if (s === 2) return { score: s, label: "Fair",   color: "#f97316" };
+  if (s === 3) return { score: s, label: "Good",   color: "#eab308" };
+  return           { score: s, label: "Strong", color: "#22c55e" };
 }
 
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-const ROLE_CONTENT: Record<UserRole, { heading: string; desc: string; bullets: string[] }> = {
+// ── Role content ───────────────────────────────────────────────────
+
+type UIRole = "CLIENT" | "AUDITOR";
+
+const ROLE_CONTENT: Record<UIRole, { heading: string; desc: string; bullets: string[] }> = {
   CLIENT: {
     heading: "Manage your organisation's finances",
     desc: "AuditInsight gives your team a single workspace to upload evidence, track transactions, and stay audit-ready.",
@@ -36,44 +42,71 @@ const ROLE_CONTENT: Record<UserRole, { heading: string; desc: string; bullets: s
   },
 };
 
+// ── Component ──────────────────────────────────────────────────────
+
 export default function SignupPage() {
   const router = useRouter();
-  const [role, setRole] = useState<UserRole>("CLIENT");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [role, setRole]                     = useState<UIRole>("CLIENT");
+  const [firstName, setFirstName]           = useState("");
+  const [lastName, setLastName]             = useState("");
+  const [email, setEmail]                   = useState("");
+  const [password, setPassword]             = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [showPassword, setShowPassword]     = useState(false);
+  const [showConfirm, setShowConfirm]       = useState(false);
+  const [isSubmitting, setIsSubmitting]     = useState(false);
+  const [error, setError]                   = useState("");
+
   const strength = getStrength(password);
-  const content = ROLE_CONTENT[role];
+  const content  = ROLE_CONTENT[role];
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
     if (!firstName.trim() || !lastName.trim()) { setError("Please enter your first and last name."); return; }
-    if (!email.trim()) { setError("Please enter your email address."); return; }
-    if (!PASSWORD_PATTERN.test(password)) { setError("Password must be 8+ chars with uppercase, number and symbol (@$!%*?&)."); return; }
-    if (password !== confirmPassword) { setError("Passwords do not match."); return; }
+    if (!email.trim())                          { setError("Please enter your email address."); return; }
+    if (!PASSWORD_PATTERN.test(password))       { setError("Password must be 8+ chars with uppercase, number and symbol (@$!%*?&)."); return; }
+    if (password !== confirmPassword)           { setError("Passwords do not match."); return; }
+
     setIsSubmitting(true);
-    const trimmedEmail = email.trim().toLowerCase();
-    localStorage.setItem("signup_email", trimmedEmail);
-    localStorage.setItem("signup_role", role);
-    localStorage.setItem("signup_name", `${firstName.trim()} ${lastName.trim()}`);
-    localStorage.setItem("signup_password", password);
-    if (role === "CLIENT") {
-      localStorage.setItem("signup_otp_meta", JSON.stringify(buildSignupOtpMeta(trimmedEmail)));
+
+    const payload: RegisterRequest = {
+      firstName: firstName.trim(),
+      lastName:  lastName.trim(),
+      username:  email.trim().toLowerCase(),  // backend expects 'username' not 'email'
+      password,
+      role:      role as BackendRole,
+    };
+
+    try {
+      await apiClient.post<RegisterApiResponse>("/auth/sign-up", payload);
+
+      // Store email so verify-otp page knows where to send the user
+      sessionStorage.setItem("pending_email", payload.username);
+      sessionStorage.setItem("pending_role",  role);
+
+      if (role === "CLIENT") {
+        router.push(`/verify-otp?email=${encodeURIComponent(payload.username)}&next=/onboarding`);
+      } else {
+        // Auditor accounts need admin approval — no OTP flow, just inform user
+        router.push("/log-in?registered=auditor");
+      }
+    } catch (err: unknown) {
+      if (isAxiosError<ApiErrorResponse>(err)) {
+        const msg = err.response?.data?.message;
+        const status = err.response?.status;
+        if (status === 409) {
+          setError("An account with this email already exists.");
+        } else {
+          setError(msg ?? "Registration failed. Please try again.");
+        }
+      } else {
+        setError("Unable to reach the server. Check your connection.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    await new Promise((r) => setTimeout(r, 600));
-    if (role === "CLIENT") {
-      router.push(`/verify-otp?email=${encodeURIComponent(trimmedEmail)}&next=/onboarding`);
-    } else {
-      router.push("/log-in?registered=auditor");
-    }
-    setIsSubmitting(false);
   };
 
   return (
@@ -113,7 +146,7 @@ export default function SignupPage() {
 
           {error && (
             <div style={s.errorBanner}>
-              <Shield size={14} style={{ flexShrink: 0 }} /> {error}
+              <AlertTriangle size={14} style={{ flexShrink: 0 }} /> {error}
             </div>
           )}
 
@@ -137,14 +170,17 @@ export default function SignupPage() {
 
             {/* Name row */}
             <div style={{ display: "flex", gap: 12 }}>
-              {[["First name", "First", firstName, setFirstName, "given-name"], ["Last name", "Last", lastName, setLastName, "family-name"]].map(([label, placeholder, value, setter, autoComplete]) => (
-                <div key={label as string} style={{ flex: 1, marginBottom: 16 }}>
-                  <label style={s.label}>{label as string}</label>
-                  <input type="text" placeholder={placeholder as string} value={value as string}
-                    onChange={(e) => (setter as (v: string) => void)(e.target.value)}
-                    style={s.input} autoComplete={autoComplete as string}
+              {([
+                ["First name", "First",  firstName, setFirstName, "given-name"],
+                ["Last name",  "Last",   lastName,  setLastName,  "family-name"],
+              ] as const).map(([label, placeholder, value, setter, autoComplete]) => (
+                <div key={label} style={{ flex: 1, marginBottom: 16 }}>
+                  <label style={s.label}>{label}</label>
+                  <input type="text" placeholder={placeholder} value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    style={s.input} autoComplete={autoComplete}
                     onFocus={(e) => Object.assign(e.currentTarget.style, s.inputFocus)}
-                    onBlur={(e) => Object.assign(e.currentTarget.style, s.input)} />
+                    onBlur={(e)  => Object.assign(e.currentTarget.style, s.input)} />
                 </div>
               ))}
             </div>
@@ -152,10 +188,11 @@ export default function SignupPage() {
             {/* Email */}
             <div style={{ marginBottom: 16 }}>
               <label style={s.label}>Work email</label>
-              <input type="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)}
+              <input type="email" placeholder="you@company.com" value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 style={s.input} autoComplete="email"
                 onFocus={(e) => Object.assign(e.currentTarget.style, s.inputFocus)}
-                onBlur={(e) => Object.assign(e.currentTarget.style, s.input)} />
+                onBlur={(e)  => Object.assign(e.currentTarget.style, s.input)} />
             </div>
 
             {/* Password */}
@@ -166,7 +203,7 @@ export default function SignupPage() {
                   value={password} onChange={(e) => setPassword(e.target.value)}
                   style={{ ...s.input, paddingRight: 44 }} autoComplete="new-password"
                   onFocus={(e) => Object.assign(e.currentTarget.style, { ...s.inputFocus, paddingRight: "44px" })}
-                  onBlur={(e) => Object.assign(e.currentTarget.style, { ...s.input, paddingRight: "44px" })} />
+                  onBlur={(e)  => Object.assign(e.currentTarget.style, { ...s.input,      paddingRight: "44px" })} />
                 <button type="button" onClick={() => setShowPassword((v) => !v)} style={s.eyeBtn}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -192,12 +229,14 @@ export default function SignupPage() {
                   style={{ ...s.input, paddingRight: 44, borderColor: confirmPassword && confirmPassword !== password ? "#ef4444" : undefined }}
                   autoComplete="new-password"
                   onFocus={(e) => Object.assign(e.currentTarget.style, { ...s.inputFocus, paddingRight: "44px" })}
-                  onBlur={(e) => Object.assign(e.currentTarget.style, { ...s.input, paddingRight: "44px" })} />
+                  onBlur={(e)  => Object.assign(e.currentTarget.style, { ...s.input,      paddingRight: "44px" })} />
                 <button type="button" onClick={() => setShowConfirm((v) => !v)} style={s.eyeBtn}>
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {confirmPassword && confirmPassword !== password && <span style={{ fontSize: 12, color: "#ef4444", marginTop: 5, display: "block" }}>Passwords do not match</span>}
+              {confirmPassword && confirmPassword !== password && (
+                <span style={{ fontSize: 12, color: "#ef4444", marginTop: 5, display: "block" }}>Passwords do not match</span>
+              )}
               {confirmPassword && confirmPassword === password && (
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#16a34a", marginTop: 5 }}>
                   <Check size={12} /> Passwords match
@@ -205,7 +244,8 @@ export default function SignupPage() {
               )}
             </div>
 
-            <button type="submit" disabled={isSubmitting} style={{ ...s.submitBtn, opacity: isSubmitting ? 0.72 : 1 }}>
+            <button type="submit" disabled={isSubmitting}
+              style={{ ...s.submitBtn, opacity: isSubmitting ? 0.72 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}>
               {isSubmitting ? (
                 <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                   <Loader2 size={15} style={{ animation: "spin 0.8s linear infinite" }} /> Creating account…
@@ -256,5 +296,5 @@ const s: Record<string, React.CSSProperties> = {
   input: { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: "#fff", fontSize: 14.5, color: "#0f172a", outline: "none", boxSizing: "border-box", fontFamily: "inherit" },
   inputFocus: { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #1e3a8a", background: "#fff", fontSize: 14.5, color: "#0f172a", outline: "none", boxSizing: "border-box", fontFamily: "inherit", boxShadow: "0 0 0 3px rgba(30,58,138,0.10)" },
   eyeBtn: { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" },
-  submitBtn: { width: "100%", padding: "13px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer", marginTop: 4, fontFamily: "inherit", letterSpacing: "0.2px" },
+  submitBtn: { width: "100%", padding: "13px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontWeight: 600, fontSize: 15, marginTop: 4, fontFamily: "inherit", letterSpacing: "0.2px" },
 };

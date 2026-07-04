@@ -1,4 +1,5 @@
 import { AuthUser } from "@/types/user";
+import { MOCK_ORGANISATIONS } from "@/mock/organisation.mock";
 
 /** Fixed OTP for frontend mock registration — always use this on /verify-otp */
 export const DUMMY_OTP_CODE = "123456";
@@ -29,6 +30,7 @@ export const MOCK_USERS: Record<string, AuthUser> = {
     role: "CLIENT",
     organisationId: "org-001",
     organisationName: "InsightAI Rwanda Ltd",
+    organisations: MOCK_ORGANISATIONS,
     mustChangePassword: false,
   },
   MEMBER: {

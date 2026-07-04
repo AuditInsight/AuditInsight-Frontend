@@ -1,6 +1,6 @@
 import "./globals.css";
 import PageLayout from "@/components/layout/PageLayout/PageLayout";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider } from "@/context/AuthContext.production";
 import { Colors } from "@/styles/colors";
 import { seedNotificationsIfEmpty } from "@/mock/notifications.mock";
 

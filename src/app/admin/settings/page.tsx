@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePermissions } from "@/security/access-control";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.production";
 import {
   Settings, Shield, Bell, CreditCard, Globe, Lock,
   Users, Database, Mail, ChevronRight, Check, AlertCircle,

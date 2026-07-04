@@ -3,60 +3,58 @@
 import { useState, useEffect, useCallback } from "react";
 import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
-import { MOCK_TRANSACTIONS } from "@/mock/transactions.mock";
-import { MOCK_EVIDENCE } from "@/mock/evidence.mock";
 import {
-  enrichTransactions,
-  findDuplicateIds,
-} from "@/lib/transactionMetrics";
-
-/*
- * ── REAL API (commented for UI refinement phase) ──────────────────
- * import { getTransactions, createTransaction, updateTransactionStatus, getEvidence } from "@/utils/api";
- * ─────────────────────────────────────────────────────────────────
- */
+  getTransactions,
+  getEvidence,
+  createTransaction as apiCreateTransaction,
+  updateTransaction as apiUpdateTransaction,
+  deleteTransaction as apiDeleteTransaction,
+  CreateTransactionRequest,
+} from "@/utils/api";
+import { enrichTransactions, findDuplicateIds } from "@/lib/transactionMetrics";
+import { useAuth } from "@/context/AuthContext.production";
 
 export interface TransactionWithMeta extends Transaction {
   evidenceCount: number;
   isDuplicate: boolean;
 }
 
-function withMeta(
-  transactions: Transaction[],
-  evidence: Evidence[]
-): TransactionWithMeta[] {
+function withMeta(transactions: Transaction[], evidence: Evidence[]): TransactionWithMeta[] {
   const enriched = enrichTransactions(transactions, evidence);
-  const dupes = findDuplicateIds(enriched);
+  const dupes    = findDuplicateIds(enriched);
   return enriched.map((t) => ({
     ...t,
     evidenceCount: t.evidenceCount ?? 0,
-    isDuplicate: dupes.has(t.id),
+    isDuplicate:   dupes.has(t.id),
   }));
 }
 
 export function useTransactions() {
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState<TransactionWithMeta[]>([]);
-  const [evidences, setEvidences] = useState<Evidence[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [evidences,    setEvidences]    = useState<Evidence[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState<string | null>(null);
 
-  const load = useCallback(() => {
-    /*
-     * ── REAL API ─────────────────────────────────────────────────
-     * Promise.all([getTransactions(), getEvidence()])
-     *   .then(([txRes, evRes]) => {
-     *     const ev = evRes.data ?? [];
-     *     setTransactions(withMeta(txRes.data ?? [], ev));
-     *     setEvidences(ev);
-     *   })
-     *   .catch(console.error)
-     *   .finally(() => setLoading(false));
-     * ─────────────────────────────────────────────────────────────
-     */
-    const ev = MOCK_EVIDENCE;
-    setTransactions(withMeta(MOCK_TRANSACTIONS, ev));
-    setEvidences(ev);
-    setLoading(false);
-  }, []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const orgId = user?.organisationId;
+      const [txRes, evRes] = await Promise.all([
+        getTransactions(orgId),
+        getEvidence(orgId),
+      ]);
+      const ev = evRes.data ?? [];
+      setEvidences(ev);
+      setTransactions(withMeta(txRes.data ?? [], ev));
+    } catch (err) {
+      console.error("useTransactions load error", err);
+      setError("Failed to load transactions.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.organisationId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -65,34 +63,55 @@ export function useTransactions() {
     setTransactions((prev) => withMeta(prev, updatedEvidence));
   }, []);
 
-  const addTransaction = (data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
+  const addTransaction = async (
+    data: Omit<Transaction, "id" | "status" | "evidenceCount">
+  ) => {
+    const req: CreateTransactionRequest = {
+      organisationId: user?.organisationId ?? "",
+      name:          data.name,
+      counterparty:  data.counterparty,
+      date:          data.date,
+      amount:        data.amount,
+      type:          data.type,
+      paymentMethod: data.paymentMethod,
+      notes:         data.notes,
+    };
+    const { data: created } = await apiCreateTransaction(req);
+    // Map API response back to Transaction shape
     const newTx: Transaction = {
-      ...data,
-      id: `TXN-${String(transactions.length + 1).padStart(4, "0")}`,
-      status: "PENDING",
+      id:            created.id,
+      name:          created.name,
+      counterparty:  created.counterparty ?? "",
+      date:          created.date,
+      amount:        created.amount,
+      type:          created.type,
+      paymentMethod: created.paymentMethod,
+      status:        created.status,
       evidenceCount: 0,
+      createdBy:     created.createdBy,
+      createdAt:     created.createdAt,
+      notes:         created.notes,
     };
     setTransactions((prev) => withMeta([newTx, ...prev], evidences));
   };
 
-  const updateTransaction = (
+  const updateTransaction = async (
     id: string,
     data: Partial<Omit<Transaction, "id" | "status" | "evidenceCount">>
   ) => {
+    await apiUpdateTransaction(id, data);
     setTransactions((prev) => {
       const updated = prev.map((t) => (t.id === id ? { ...t, ...data } : t));
       return withMeta(updated, evidences);
     });
   };
 
-  const deleteTransaction = (id: string) => {
+  const deleteTransaction = async (id: string) => {
+    await apiDeleteTransaction(id);
     const updatedEvidence = evidences.filter((e) => e.transactionId !== id);
     setEvidences(updatedEvidence);
     setTransactions((prev) =>
-      withMeta(
-        prev.filter((t) => t.id !== id),
-        updatedEvidence
-      )
+      withMeta(prev.filter((t) => t.id !== id), updatedEvidence)
     );
   };
 
@@ -108,17 +127,16 @@ export function useTransactions() {
     refreshStatuses(evidences.filter((e) => e.id !== id));
   };
 
-  const onEvidenceChange = refreshStatuses;
-
   return {
     transactions,
     evidences,
     loading,
+    error,
     addTransaction,
     updateTransaction,
     deleteTransaction,
     saveEvidence,
     deleteEvidence,
-    onEvidenceChange,
+    onEvidenceChange: refreshStatuses,
   };
 }

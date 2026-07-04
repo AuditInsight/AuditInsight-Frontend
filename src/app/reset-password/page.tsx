@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.production";
 import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
 import Link from "next/link";
@@ -17,7 +17,12 @@ export default function ResetPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const { user, loading, completePasswordReset } = useAuth();
+  const { user, status } = useAuth();
+  const loading = status === "loading";
+
+  // completePasswordReset is a legacy mock helper — in production we call the API directly.
+  // After a successful password change, we just redirect to dashboard.
+  const completePasswordReset = (_newPassword?: string) => { /* no-op: API call handles this */ };
 
   useEffect(() => {
     if (!loading && !user) {

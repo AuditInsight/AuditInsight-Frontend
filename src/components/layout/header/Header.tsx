@@ -8,19 +8,19 @@ import {
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { usePermissions } from "@/security/access-control";
-import { useAuth } from "@/context/AuthContext";
-import { UserRole } from "@/types/user";
+import { useAuth } from "@/context/AuthContext.production";
+import { FrontendRole } from "@/types/auth";
 import NotificationsPanel from "./NotificationsPanel";
 import { useNotifications } from "@/hooks/useNotifications";
 import CompanySwitcher from "./CompanySwitcher";
 
 export interface HeaderProps { title: string; }
 
-const ROLE_LABEL: Record<UserRole, string> = {
-  CLIENT:  "Org Admin",
-  MEMBER:  "Accountant",
-  AUDITOR: "Auditor",
-  ADMIN:   "Super Admin",
+const ROLE_LABEL: Record<FrontendRole, string> = {
+  ORG_ADMIN:    "Org Admin",
+  ACCOUNTANT:   "Accountant",
+  AUDITOR:      "Auditor",
+  SYSTEM_ADMIN: "Super Admin",
 };
 
 const STANDARD_NAV = [
@@ -41,7 +41,9 @@ export default function Header({ title }: HeaderProps) {
   const router   = useRouter();
   const pathname = usePathname();
   const { canManageOrganisation, canViewAdminPanel } = usePermissions();
-  const { logout, user, role, loading } = useAuth();
+  const { logout, user, status } = useAuth();
+  const loading = status === "loading";
+  const role = user?.role ?? null;
   const { unreadCount } = useNotifications();
   const [notifOpen,  setNotifOpen]  = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -52,7 +54,7 @@ export default function Header({ title }: HeaderProps) {
     ? ADMIN_NAV
     : STANDARD_NAV.filter((item) => !(item.path === "/settings" && !canManageOrganisation));
 
-  const currentRole     = (role ?? "CLIENT") as UserRole;
+  const currentRole     = (role ?? "ORG_ADMIN") as FrontendRole;
   const displayName     = loading ? "" : (user?.fullName ?? "");
   const displayOrg      = loading ? "" : (user?.organisationName ?? "");
   const displayRole     = ROLE_LABEL[currentRole];

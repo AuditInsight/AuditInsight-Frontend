@@ -10,7 +10,7 @@ import {
   seedNotificationsIfEmpty,
   NotifType,
 } from "@/mock/notifications.mock";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.production";
 
 export function useNotifications() {
   const { user } = useAuth();

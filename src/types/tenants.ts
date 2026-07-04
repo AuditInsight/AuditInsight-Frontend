@@ -1,0 +1,17 @@
+export interface CreateOrganisationRequest {
+  name: string;
+  industry: string;
+  fiscalYearStart: string;  // MM-dd format e.g. "01-01"
+  fiscalYearEnd: string;    // MM-dd format e.g. "12-31"
+  currencies: string[];     // e.g. ["USD", "RWF"]
+}
+
+export interface OrganisationApiResponse {
+  id: string;
+  name: string;
+  industry: string;
+  fiscalYearStart: string;
+  fiscalYearEnd: string;
+  currencies: string[];
+  createdAt: string;
+}
