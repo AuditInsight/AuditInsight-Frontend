@@ -1,23 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.production";
 import { usePermissions } from "@/security/access-control";
 import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { TransactionIntegrityDashboard } from "@/components/dashboard/TransactionIntegrityDashboard";
 import { Loader2 } from "lucide-react";
-import { UserRole } from "@/types/user";
+import { FrontendRole } from "@/types/auth";
 
-const ROLE_LABEL: Record<UserRole, string> = {
-  CLIENT: "Organisation Admin",
-  MEMBER: "Accountant",
-  AUDITOR: "Auditor",
-  ADMIN: "Super Admin",
+const ROLE_LABEL: Record<FrontendRole, string> = {
+  ORG_ADMIN:    "Organisation Admin",
+  ACCOUNTANT:   "Accountant",
+  AUDITOR:      "Auditor",
+  SYSTEM_ADMIN: "Super Admin",
 };
 
 export default function DashboardPage() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { canViewAdminPanel } = usePermissions();
   const { transactions, evidence, loading } = useDashboardData();
   const router = useRouter();
@@ -47,7 +47,7 @@ export default function DashboardPage() {
       transactions={transactions}
       evidence={evidence}
       user={user}
-      roleLabel={ROLE_LABEL[(role ?? "CLIENT") as UserRole]}
+      roleLabel={ROLE_LABEL[user?.role ?? "ORG_ADMIN"]}
     />
   );
 }

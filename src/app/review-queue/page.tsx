@@ -16,7 +16,7 @@ import { theme } from "@/styles/theme";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useTransactions } from "@/hooks/useTransactions";
 import { usePermissions } from "@/security/access-control";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.production";
 import { appendAuditLog } from "@/security/audit-logger";
 import { ReviewItem } from "@/lib/reviewEngine";
 import { exportReviewQueueCSV } from "@/utils/export";
@@ -58,7 +58,9 @@ export default function ReviewQueuePage() {
       severity: flag.severity as "Critical" | "Medium" | "Low",
       due: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString().split("T")[0],
       status: "Open",
-    }, user?.fullName ?? "Auditor");
+      description: flag.notes,
+      flaggedBy: user?.fullName ?? "Auditor",
+    });
     appendAuditLog({
       userId: user?.id ?? 0, userEmail: user?.email ?? "",
       userRole: user?.role ?? "AUDITOR", action: "FLAG_CREATED",
@@ -75,7 +77,7 @@ export default function ReviewQueuePage() {
 
   const handleResolveSubmit = (id: string, note: string, fileName?: string) => {
     const item = items.find((i) => i.id === id);
-    resolveIssue(id, note, user?.fullName ?? "Accountant");
+    resolveIssue(id, note);
     appendAuditLog({
       userId: user?.id ?? 0, userEmail: user?.email ?? "",
       userRole: user?.role ?? "MEMBER", action: "FLAG_RESOLVED",

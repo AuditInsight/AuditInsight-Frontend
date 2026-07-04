@@ -1,20 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Check, Loader2 } from "lucide-react";
+import { Shield, Check } from "lucide-react";
+import { isAxiosError } from "axios";
 import OrganisationSetupStep from "@/components/onboarding/OrganisationSetupStep";
 import PricingPlanStep from "@/components/onboarding/PricingPlanStep";
 import { PlanTier, BillingCycle } from "@/types/billing";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.production";
+import { apiClient } from "@/api/client";
+import { CreateOrganisationRequest, OrganisationApiResponse } from "@/types/tenants";
+import { ApiErrorResponse } from "@/types/auth";
 
 type Step = "org-setup" | "pricing";
 
 interface OrgData {
   orgName: string;
   industry: string;
-  size: string;
-  country: string;
+  fiscalYearStart: string;
+  fiscalYearEnd: string;
+  currencies: string[];
 }
 
 const STEPS: { id: Step; label: string }[] = [
@@ -23,11 +28,13 @@ const STEPS: { id: Step; label: string }[] = [
 ];
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { user, completeOnboarding } = useAuth();
-  const [step, setStep] = useState<Step>("org-setup");
-  const [orgData, setOrgData] = useState<OrgData | null>(null);
+  const router      = useRouter();
+  const { user }    = useAuth();
+
+  const [step, setStep]         = useState<Step>("org-setup");
+  const [orgData, setOrgData]   = useState<OrgData | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [error, setError]       = useState("");
 
   const stepIndex = STEPS.findIndex((s) => s.id === step);
 
@@ -38,51 +45,40 @@ export default function OnboardingPage() {
 
   const handlePlanSelect = async (plan: PlanTier, cycle: BillingCycle) => {
     setCompleting(true);
-    const org = orgData ?? { orgName: "My Organisation", industry: "", size: "", country: "" };
-    // Persist org and plan to localStorage
-    localStorage.setItem("onboarding_plan",  plan);
-    localStorage.setItem("onboarding_cycle", cycle);
-    localStorage.setItem("onboarding_org",   JSON.stringify(org));
-    // Write org name back into the auth session so Header shows it immediately
-    completeOnboarding(org.orgName, `org-${Date.now()}`);
-    await new Promise((r) => setTimeout(r, 900));
-    router.push("/dashboard");
+    setError("");
+
+    const org = orgData ?? { orgName: "My Organisation", industry: "", fiscalYearStart: "01-01", fiscalYearEnd: "12-31", currencies: ["USD"] };
+
+    try {
+      const payload: CreateOrganisationRequest = {
+        name:            org.orgName,
+        industry:        org.industry,
+        fiscalYearStart: org.fiscalYearStart,
+        fiscalYearEnd:   org.fiscalYearEnd,
+        currencies:      org.currencies,
+      };
+
+      // Create the organisation — backend links it to the authenticated user
+      await apiClient.post<OrganisationApiResponse>("/organisations", payload);
+
+      // For paid plans, billing integration would go here.
+      // For now we store the selection and proceed.
+      sessionStorage.setItem("selected_plan",  plan);
+      sessionStorage.setItem("selected_cycle", cycle);
+
+      router.replace("/dashboard");
+    } catch (err: unknown) {
+      setCompleting(false);
+      if (isAxiosError<ApiErrorResponse>(err)) {
+        setError(err.response?.data?.message ?? "Failed to create organisation. Please try again.");
+      } else {
+        setError("Unable to reach the server. Check your connection.");
+      }
+    }
   };
 
-  // Derive display info for the top bar
-  const [displayName, setDisplayName] = useState(user?.fullName ?? "New User");
-  const [displayEmail, setDisplayEmail] = useState(user?.email ?? "");
-
-  useEffect(() => {
-    if (user) return;
-
-    const signupRole = localStorage.getItem("signup_role");
-    const signupEmail = localStorage.getItem("signup_email");
-
-    if (!signupEmail || signupRole !== "CLIENT") {
-      router.replace("/sign-up");
-      return;
-    }
-
-    const otpVerified = localStorage.getItem("otp_verified") === "true";
-    const verifiedEmail = localStorage.getItem("verified_email");
-    if (!otpVerified || verifiedEmail !== signupEmail) {
-      router.replace(`/verify-otp?email=${encodeURIComponent(signupEmail)}&next=/onboarding`);
-    }
-  }, [user, router]);
-
-  useEffect(() => {
-    if (!user) {
-      const storedName = typeof window !== "undefined" ? localStorage.getItem("signup_name") : null;
-      const storedEmail = typeof window !== "undefined" ? localStorage.getItem("signup_email") : null;
-      setDisplayName(storedName ?? "New User");
-      setDisplayEmail(storedEmail ?? "");
-    } else {
-      setDisplayName(user.fullName);
-      setDisplayEmail(user.email);
-    }
-  }, [user]);
-
+  const displayName = user?.fullName ?? "New User";
+  const displayEmail = user?.email ?? "";
   const initials = displayName
     .split(" ")
     .map((n) => n[0] ?? "")
@@ -92,30 +88,20 @@ export default function OnboardingPage() {
 
   return (
     <div style={s.shell}>
-      {/* ── Top bar ── */}
+      {/* Top bar */}
       <div style={s.topBar}>
-        {/* Logo */}
         <div style={s.logoRow}>
-          <div style={s.logoMark}>
-            <Shield size={15} color="#fff" strokeWidth={2.5} />
-          </div>
+          <div style={s.logoMark}><Shield size={15} color="#fff" strokeWidth={2.5} /></div>
           <span style={s.logoText}>AuditInsight</span>
         </div>
 
-        {/* Step indicator */}
         <div style={s.stepRow}>
           {STEPS.map((st, i) => (
             <div key={st.id} style={s.stepGroup}>
-              <div style={{
-                ...s.stepDot,
-                ...(i < stepIndex ? s.stepDone  : {}),
-                ...(i === stepIndex ? s.stepActive : {}),
-              }}>
+              <div style={{ ...s.stepDot, ...(i < stepIndex ? s.stepDone : {}), ...(i === stepIndex ? s.stepActive : {}) }}>
                 {i < stepIndex ? <Check size={12} strokeWidth={3} /> : i + 1}
               </div>
-              <span style={{ ...s.stepLabel, ...(i === stepIndex ? s.stepLabelActive : {}) }}>
-                {st.label}
-              </span>
+              <span style={{ ...s.stepLabel, ...(i === stepIndex ? s.stepLabelActive : {}) }}>{st.label}</span>
               {i < STEPS.length - 1 && (
                 <div style={{ ...s.stepLine, ...(i < stepIndex ? s.stepLineDone : {}) }} />
               )}
@@ -123,7 +109,6 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        {/* Logged-in user pill */}
         <div style={s.userPill}>
           <div style={s.userAvatar}>{initials}</div>
           <div style={s.userInfo}>
@@ -133,8 +118,11 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      {/* ── Main content ── */}
+      {/* Main content */}
       <div style={s.main}>
+        {error && (
+          <div style={s.errorBanner} role="alert">{error}</div>
+        )}
         {completing ? (
           <div style={s.completingWrap}>
             <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
@@ -153,118 +141,29 @@ export default function OnboardingPage() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  shell: {
-    minHeight: "100vh",
-    background: "#f8fafc",
-    display: "flex",
-    flexDirection: "column",
-  },
-
-  // ── top bar ──
-  topBar: {
-    background: "#fff",
-    borderBottom: "1px solid #e2e8f0",
-    height: 64,
-    padding: "0 32px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-    position: "sticky",
-    top: 0,
-    zIndex: 50,
-  },
-
+  shell: { minHeight: "100vh", background: "#f8fafc", display: "flex", flexDirection: "column" },
+  topBar: { background: "#fff", borderBottom: "1px solid #e2e8f0", height: 64, padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, position: "sticky", top: 0, zIndex: 50 },
   logoRow: { display: "flex", alignItems: "center", gap: 10, flexShrink: 0 },
-  logoMark: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    background: "linear-gradient(135deg, #0f3d75, #1e3a8a)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  logoMark: { width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #0f3d75, #1e3a8a)", display: "flex", alignItems: "center", justifyContent: "center" },
   logoText: { fontSize: 16, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.3px" },
-
-  // ── step indicator ──
   stepRow: { display: "flex", alignItems: "center" },
   stepGroup: { display: "flex", alignItems: "center", gap: 8 },
-  stepDot: {
-    width: 28,
-    height: 28,
-    borderRadius: "50%",
-    background: "#e2e8f0",
-    color: "#94a3b8",
-    fontSize: 12,
-    fontWeight: 700,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
+  stepDot: { width: 28, height: 28, borderRadius: "50%", background: "#e2e8f0", color: "#94a3b8", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   stepActive: { background: "#1e3a8a", color: "#fff" },
   stepDone:   { background: "#22c55e", color: "#fff" },
   stepLabel:  { fontSize: 13, color: "#94a3b8", fontWeight: 500, marginRight: 6 },
   stepLabelActive: { color: "#0f172a", fontWeight: 600 },
   stepLine:   { width: 36, height: 2, background: "#e2e8f0", marginRight: 6 },
   stepLineDone: { background: "#22c55e" },
-
-  // ── user pill ──
-  userPill: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "6px 14px 6px 6px",
-    borderRadius: 40,
-    border: "1px solid #e2e8f0",
-    background: "#f8fafc",
-    flexShrink: 0,
-  },
-  userAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #0f3d75, #1e3a8a)",
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: 700,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
+  userPill: { display: "flex", alignItems: "center", gap: 10, padding: "6px 14px 6px 6px", borderRadius: 40, border: "1px solid #e2e8f0", background: "#f8fafc", flexShrink: 0 },
+  userAvatar: { width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #0f3d75, #1e3a8a)", color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   userInfo:  { display: "flex", flexDirection: "column", gap: 1 },
   userName:  { fontSize: 13, fontWeight: 600, color: "#0f172a", lineHeight: 1.2 },
   userEmail: { fontSize: 11, color: "#94a3b8", lineHeight: 1.2 },
-
-  // ── main ──
-  main: {
-    flex: 1,
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "center",
-    padding: "52px 40px 80px",
-  },
-
-  // ── completing overlay ──
-  completingWrap: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 14,
-    minHeight: 260,
-  },
-  spinnerRing: {
-    width: 48,
-    height: 48,
-    borderRadius: "50%",
-    border: "3px solid #e2e8f0",
-    borderTopColor: "#1e3a8a",
-    animation: "spin 0.8s linear infinite",
-  } as React.CSSProperties,
+  main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", padding: "52px 40px 80px" },
+  errorBanner: { background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 10, padding: "11px 16px", fontSize: 13.5, marginBottom: 24, width: "100%", maxWidth: 900, alignSelf: "center", boxSizing: "border-box" },
+  completingWrap: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, minHeight: 260, width: "100%" },
+  spinnerRing: { width: 48, height: 48, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#1e3a8a", animation: "spin 0.8s linear infinite" } as React.CSSProperties,
   completingTitle:    { fontSize: 18, fontWeight: 700, color: "#0f172a", margin: 0 },
   completingSubtitle: { fontSize: 14, color: "#64748b", margin: 0 },
 };
-

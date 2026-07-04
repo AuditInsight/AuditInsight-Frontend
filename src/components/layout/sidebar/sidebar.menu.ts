@@ -1,4 +1,4 @@
-import { UserRole } from "@/types/user";
+import { FrontendRole } from "@/types/auth";
 
 export interface NavItem {
   label: string;
@@ -20,9 +20,9 @@ const ADMIN_NAV: NavItem[] = [
   { label: "Settings",          path: "/admin/settings",      icon: "⚙️" },
 ];
 
-export const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
-  MEMBER:  CORE_NAV,
-  CLIENT:  CORE_NAV,
-  AUDITOR: CORE_NAV,
-  ADMIN:   ADMIN_NAV,
+export const NAV_BY_ROLE: Record<FrontendRole, NavItem[]> = {
+  ACCOUNTANT:   CORE_NAV,
+  ORG_ADMIN:    CORE_NAV,
+  AUDITOR:      CORE_NAV,
+  SYSTEM_ADMIN: ADMIN_NAV,
 };

@@ -1,9 +1,10 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.production";
 
 export function useProfile() {
-  const { user, loading } = useAuth();
+  const { user, status } = useAuth();
+  const loading = status === "loading";
 
   const fullName = user?.fullName ?? "";
   const initials = fullName

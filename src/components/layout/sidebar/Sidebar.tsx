@@ -1,24 +1,24 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext.production";
 import { NAV_BY_ROLE } from "./sidebar.menu";
-import { UserRole } from "@/types/user";
+import { FrontendRole } from "@/types/auth";
 import { LogOut, Shield } from "lucide-react";
 
-const ROLE_CONFIG: Record<UserRole, { label: string; color: string; bg: string }> = {
-  CLIENT:  { label: "Org Admin",   color: "#1e3a8a", bg: "#eff6ff" },
-  MEMBER:  { label: "Accountant",  color: "#15803d", bg: "#f0fdf4" },
-  AUDITOR: { label: "Auditor",     color: "#b45309", bg: "#fffbeb" },
-  ADMIN:   { label: "Super Admin", color: "#7c3aed", bg: "#faf5ff" },
+const ROLE_CONFIG: Record<FrontendRole, { label: string; color: string; bg: string }> = {
+  ORG_ADMIN:    { label: "Org Admin",   color: "#1e3a8a", bg: "#eff6ff" },
+  ACCOUNTANT:   { label: "Accountant",  color: "#15803d", bg: "#f0fdf4" },
+  AUDITOR:      { label: "Auditor",     color: "#b45309", bg: "#fffbeb" },
+  SYSTEM_ADMIN: { label: "Super Admin", color: "#7c3aed", bg: "#faf5ff" },
 };
 
 export default function Sidebar() {
-  const { user, role, logout } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
-  const currentRole = (role ?? "CLIENT") as UserRole;
+  const currentRole = (user?.role ?? "ORG_ADMIN") as FrontendRole;
   const navItems = NAV_BY_ROLE[currentRole] ?? [];
   const cfg = ROLE_CONFIG[currentRole];
 

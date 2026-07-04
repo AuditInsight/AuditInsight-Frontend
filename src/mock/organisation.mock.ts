@@ -1,5 +1,12 @@
 import { Organisation, OrganisationMemberResponse } from "@/utils/api";
+import { OwnedOrganisation } from "@/types/user";
 
+export const MOCK_ORGANISATIONS: OwnedOrganisation[] = [
+  { id: "org-001", name: "InsightAI Rwanda Ltd",  industry: "Financial Technology" },
+  { id: "org-002", name: "Kigali Trade Co.",       industry: "Retail & Commerce"    },
+];
+
+// Keep single export for hooks that still reference it
 export const MOCK_ORGANISATION: Organisation = {
   id: "org-001",
   clientId: "1",
