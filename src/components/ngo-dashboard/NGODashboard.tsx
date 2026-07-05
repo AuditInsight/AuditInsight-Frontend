@@ -26,6 +26,7 @@ import ExecutiveOverviewBanner from "@/components/ngo-dashboard/rbac/ExecutiveOv
 import ReportSigningPanel from "@/components/ngo-dashboard/rbac/ReportSigningPanel";
 import DonorScopeBanner from "@/components/ngo-dashboard/rbac/DonorScopeBanner";
 import RoleBadge from "@/components/ngo-dashboard/rbac/RoleBadge";
+import NGORoleSwitcher from "@/components/ngo-dashboard/rbac/NGORoleSwitcher";
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
@@ -499,6 +500,7 @@ function NGODashboardInner() {
         onClose={() => setFlagTarget(null)}
         onSubmit={handleFlagSubmit}
       />
+      <NGORoleSwitcher />
     </div>
   );
 }
