@@ -167,3 +167,31 @@ export function useScopedData<T>(
     [items, scopeData],
   );
 }
+
+// ── Role metadata helpers ──────────────────────────────────────────────────────────────────
+
+const ROLE_LABELS: Record<NGOUserRole, string> = {
+  ACCOUNTANT:           "Finance Officer",
+  AUDITOR:              "Auditor",
+  ORG_ADMIN:            "Executive Director",
+  DONOR_REPRESENTATIVE: "Donor Representative",
+};
+
+const ROLE_ACCENTS: Record<NGOUserRole, { color: string; bg: string; border: string }> = {
+  ACCOUNTANT:           { color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0" },
+  AUDITOR:              { color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
+  ORG_ADMIN:            { color: "#1e3a8a", bg: "#eff6ff", border: "#bfdbfe" },
+  DONOR_REPRESENTATIVE: { color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe" },
+};
+
+/** Returns the human-readable label for the current user's role */
+export function useRoleLabel(): string {
+  const { user } = useRBAC();
+  return ROLE_LABELS[user.role];
+}
+
+/** Returns the accent color tokens for the current user's role */
+export function useRoleAccent(): { color: string; bg: string; border: string } {
+  const { user } = useRBAC();
+  return ROLE_ACCENTS[user.role];
+}
