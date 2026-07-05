@@ -476,30 +476,16 @@ function NGODashboardInner() {
                 <ReportSigningPanel />
               </PermissionGate>
 
-              {/* DONOR_REPRESENTATIVE: Scoped Portfolio */}
-              {activeRole === "DONOR_REPRESENTATIVE" && user.donorScope && (() => {
-                const dt = scopedTransactions;
-                const dg = dt.filter(t => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
-                const ds = dt.filter(t => t.type === "EXPENSE").reduce((s, t) => s + t.amount, 0);
-                return (
-                  <div style={s.summaryCard}>
-                    <h3 style={s.cardTitle}>{user.donorScope} Portfolio</h3>
-                    <div style={s.divider} />
-                    {[
-                      { label: "Total transactions",   value: dt.length,                                       color: "#0f172a" },
-                      { label: "Grant disbursed",      value: `RWF ${(dg / 1_000_000).toFixed(1)}M`,          color: "#16a34a" },
-                      { label: "Total expenditure",    value: `RWF ${(ds / 1_000_000).toFixed(1)}M`,          color: "#1e3a8a" },
-                      { label: "Flagged transactions", value: dt.filter(t => t.status === "FLAGGED").length,   color: "#dc2626" },
-                      { label: "Evidence complete",    value: dt.filter(t => t.status === "COMPLETED").length, color: "#16a34a" },
-                    ].map(({ label, value, color }) => (
-                      <div key={label} style={s.summaryRow}>
-                        <span style={{ flex: 1, fontSize: 13, color: "#475569" }}>{label}</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color }}>{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
+              {/* DONOR_REPRESENTATIVE: Scoped Portfolio Metrics */}
+              <PermissionGate component="panel:donor_metrics">
+                {user.assignedDonorId && (
+                  <DonorScopeMetrics
+                    allTransactions={transactions}
+                    allFlags={flags}
+                    donorScope={user.assignedDonorId}
+                  />
+                )}
+              </PermissionGate>
             </div>
           </div>
         </div>
