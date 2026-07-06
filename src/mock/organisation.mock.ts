@@ -2,8 +2,9 @@ import { Organisation, OrganisationMemberResponse } from "@/utils/api";
 import { OwnedOrganisation } from "@/types/user";
 
 export const MOCK_ORGANISATIONS: OwnedOrganisation[] = [
-  { id: "org-001", name: "InsightAI Rwanda Ltd",  industry: "Financial Technology" },
-  { id: "org-002", name: "Kigali Trade Co.",       industry: "Retail & Commerce"    },
+  { id: "org-001", name: "InsightAI Rwanda Ltd",        industry: "Financial Technology"          },
+  { id: "org-002", name: "Kigali Trade Co.",             industry: "Retail & Commerce"             },
+  { id: "org-ngo-001", name: "Rwanda Health Foundation", industry: "NGO / Non-Governmental Organisation" },
 ];
 
 // Keep single export for hooks that still reference it
@@ -16,6 +17,17 @@ export const MOCK_ORGANISATION: Organisation = {
   fiscalYearEnd: "12-31",
   defaultCurrency: "RWF",
   createdAt: "2024-01-15T08:00:00",
+};
+
+export const MOCK_NGO_ORGANISATION: Organisation = {
+  id: "org-ngo-001",
+  clientId: "5",
+  name: "Rwanda Health Foundation",
+  industry: "NGO / Non-Governmental Organisation",
+  fiscalYearStart: "01-01",
+  fiscalYearEnd: "12-31",
+  defaultCurrency: "USD",
+  createdAt: "2024-03-01T08:00:00",
 };
 
 export const MOCK_MEMBERS: OrganisationMemberResponse[] = [

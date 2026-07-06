@@ -18,7 +18,7 @@ const PUBLIC_PATHS = [
 
 export default function PageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isPublicPage = PUBLIC_PATHS.includes(pathname);
+  const isPublicPage = PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/ngo-dashboard");
   const isDashboard = pathname === "/dashboard";
 
   // Enforces forced password reset for invited users (Story 2.1 / 3.1)

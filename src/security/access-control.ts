@@ -98,12 +98,33 @@ const PERMISSIONS: Record<FrontendRole, Permissions> = {
     canSuspendMembers:    false,
     canViewAdminPanel:    true,
   },
+  // NGO-only role — strict read-only, scoped to their donor's projects
+  DONOR_REPRESENTATIVE: {
+    canViewTransactions:  true,
+    canAddTransaction:    false,
+    canEditTransaction:   false,
+    canDeleteTransaction: false,
+    canViewEvidence:      true,
+    canUploadEvidence:    false,
+    canEditEvidence:      false,
+    canDeleteEvidence:    false,
+    canFlagIssue:         false,
+    canResolveIssue:      false,
+    canApproveTransaction:false,
+    canViewAuditLogs:     false,
+    canViewSettings:      false,
+    canManageOrganisation:false,
+    canInviteMembers:     false,
+    canSuspendMembers:    false,
+    canViewAdminPanel:    false,
+  },
 };
 
 const FALLBACK: Permissions = PERMISSIONS["ORG_ADMIN"];
 
 export function usePermissions(): Permissions {
-  const { role } = useAuth();
+  const { user } = useAuth();
+  const role = user?.role ?? null;
   if (!role) return FALLBACK;
   return PERMISSIONS[role as FrontendRole] ?? FALLBACK;
 }

@@ -6,6 +6,7 @@ import { Building2, AlertCircle } from "lucide-react";
 interface OrgData {
   orgName: string;
   industry: string;
+  orgType: "NGO" | "PRIVATE";
   employeeCount: string;
   fiscalYearStart: string;
   fiscalYearEnd: string;
@@ -49,7 +50,7 @@ export default function OrganisationSetupStep({ onNext }: Props) {
     if (!employeeCount.trim())         { setError("Number of employees is required."); return; }
     if (currencies.length === 0)        { setError("Please select at least one currency."); return; }
     setError("");
-    onNext({ orgName: orgName.trim(), industry, employeeCount: employeeCount.trim(), fiscalYearStart, fiscalYearEnd, currencies });
+    onNext({ orgName: orgName.trim(), industry, orgType: industry.toLowerCase().includes("ngo") ? "NGO" : "PRIVATE", employeeCount: employeeCount.trim(), fiscalYearStart, fiscalYearEnd, currencies });
   };
 
   return (
@@ -147,20 +148,20 @@ export default function OrganisationSetupStep({ onNext }: Props) {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  wrap: { display: "flex", flexDirection: "column", alignItems: "center", maxWidth: 520, margin: "0 auto", width: "100%" },
-  iconWrap: { width: 60, height: 60, borderRadius: "50%", background: "rgba(30,58,138,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  heading: { fontSize: 26, fontWeight: 700, color: "#0f172a", margin: "0 0 8px", letterSpacing: "-0.4px", textAlign: "center" },
-  sub: { fontSize: 14, color: "#64748b", margin: "0 0 28px", textAlign: "center", lineHeight: 1.6 },
-  errBanner: { background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginBottom: 18, width: "100%", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8 },
-  fieldGroup: { marginBottom: 16, width: "100%" },
-  row: { display: "flex", gap: 12, width: "100%" },
-  label: { display: "block", fontSize: 13.5, fontWeight: 600, color: "#374151", marginBottom: 6 },
-  req: { color: "#ef4444" },
-  hint: { display: "block", fontSize: 11.5, color: "#94a3b8", marginTop: 4 },
-  input: { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#fff", transition: "border-color 0.15s" },
-  select: { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#fff" },
-  currencyGrid: { display: "flex", flexWrap: "wrap", gap: 8 },
-  currencyBtn: { padding: "7px 14px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#fff", fontSize: 13, fontWeight: 500, color: "#374151", cursor: "pointer", fontFamily: "inherit" },
-  currencyBtnActive: { border: "1.5px solid #1e3a8a", background: "rgba(30,58,138,0.06)", color: "#1e3a8a", fontWeight: 700 },
-  btn: { width: "100%", padding: "13px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer", marginTop: 8, fontFamily: "inherit", letterSpacing: "0.2px" },
+  wrap: { display: "flex", flexDirection: "column", alignItems: "center", maxWidth: 540, margin: "0 auto", width: "100%", background: "#fff", borderRadius: 16, padding: "40px 40px 36px", boxShadow: "0 4px 24px rgba(15,23,42,0.08)", border: "1px solid #e2e8f0" },
+  iconWrap: { width: 56, height: 56, borderRadius: 14, background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, boxShadow: "0 4px 12px rgba(30,58,138,0.25)" },
+  heading: { fontSize: 24, fontWeight: 700, color: "#0f172a", margin: "0 0 6px", letterSpacing: "-0.5px", textAlign: "center" },
+  sub: { fontSize: 14, color: "#64748b", margin: "0 0 32px", textAlign: "center", lineHeight: 1.65 },
+  errBanner: { background: "#f0f4ff", border: "1px solid #bfcfff", color: "#1e3a8a", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginBottom: 20, width: "100%", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8 },
+  fieldGroup: { marginBottom: 18, width: "100%" },
+  row: { display: "flex", gap: 14, width: "100%" },
+  label: { display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 7, letterSpacing: "0.1px" },
+  req: { color: "#2563eb" },
+  hint: { display: "block", fontSize: 11.5, color: "#94a3b8", marginTop: 5 },
+  input: { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#f8fafc", transition: "border-color 0.15s, box-shadow 0.15s" },
+  select: { width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#f8fafc", cursor: "pointer" },
+  currencyGrid: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 2 },
+  currencyBtn: { padding: "7px 14px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#f8fafc", fontSize: 13, fontWeight: 500, color: "#475569", cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" },
+  currencyBtnActive: { border: "1.5px solid #1e3a8a", background: "rgba(30,58,138,0.07)", color: "#1e3a8a", fontWeight: 700 },
+  btn: { width: "100%", padding: "13px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer", marginTop: 10, fontFamily: "inherit", letterSpacing: "0.2px", boxShadow: "0 4px 12px rgba(30,58,138,0.25)", transition: "opacity 0.15s" },
 };

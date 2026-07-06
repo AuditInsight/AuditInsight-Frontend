@@ -26,7 +26,9 @@ export default function CompanySwitcher() {
   if (role !== "ORG_ADMIN" && role !== "AUDITOR") return null;
 
   const orgs: OwnedOrganisation[] =
-    role === "AUDITOR" ? AUDITOR_ORGS : (user?.organisations ?? []);
+    role === "AUDITOR" ? AUDITOR_ORGS : [];
+  // Note: organisations list is not available on the production User type.
+  // In production, fetch from /organisations endpoint instead.
 
   const activeOrgId   = user?.organisationId ?? orgs[0]?.id ?? "";
   const activeOrg     = orgs.find((o) => o.id === activeOrgId) ?? orgs[0];

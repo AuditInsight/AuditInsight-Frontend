@@ -17,6 +17,7 @@ type Step = "org-setup" | "pricing";
 interface OrgData {
   orgName: string;
   industry: string;
+  orgType: "NGO" | "PRIVATE";
   fiscalYearStart: string;
   fiscalYearEnd: string;
   currencies: string[];
@@ -47,12 +48,13 @@ export default function OnboardingPage() {
     setCompleting(true);
     setError("");
 
-    const org = orgData ?? { orgName: "My Organisation", industry: "", fiscalYearStart: "01-01", fiscalYearEnd: "12-31", currencies: ["USD"] };
+    const org = orgData ?? { orgName: "My Organisation", industry: "", orgType: "PRIVATE" as const, fiscalYearStart: "01-01", fiscalYearEnd: "12-31", currencies: ["USD"] };
 
     try {
       const payload: CreateOrganisationRequest = {
         name:            org.orgName,
         industry:        org.industry,
+        orgType:         org.orgType,
         fiscalYearStart: org.fiscalYearStart,
         fiscalYearEnd:   org.fiscalYearEnd,
         currencies:      org.currencies,
@@ -150,17 +152,17 @@ const s: Record<string, React.CSSProperties> = {
   stepGroup: { display: "flex", alignItems: "center", gap: 8 },
   stepDot: { width: 28, height: 28, borderRadius: "50%", background: "#e2e8f0", color: "#94a3b8", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   stepActive: { background: "#1e3a8a", color: "#fff" },
-  stepDone:   { background: "#22c55e", color: "#fff" },
+  stepDone:   { background: "#1e3a8a", color: "#fff" },
   stepLabel:  { fontSize: 13, color: "#94a3b8", fontWeight: 500, marginRight: 6 },
   stepLabelActive: { color: "#0f172a", fontWeight: 600 },
   stepLine:   { width: 36, height: 2, background: "#e2e8f0", marginRight: 6 },
-  stepLineDone: { background: "#22c55e" },
+  stepLineDone: { background: "#1e3a8a" },
   userPill: { display: "flex", alignItems: "center", gap: 10, padding: "6px 14px 6px 6px", borderRadius: 40, border: "1px solid #e2e8f0", background: "#f8fafc", flexShrink: 0 },
   userAvatar: { width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #0f3d75, #1e3a8a)", color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   userInfo:  { display: "flex", flexDirection: "column", gap: 1 },
   userName:  { fontSize: 13, fontWeight: 600, color: "#0f172a", lineHeight: 1.2 },
   userEmail: { fontSize: 11, color: "#94a3b8", lineHeight: 1.2 },
-  main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", padding: "52px 40px 80px" },
+  main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "52px 24px 80px" },
   errorBanner: { background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 10, padding: "11px 16px", fontSize: 13.5, marginBottom: 24, width: "100%", maxWidth: 900, alignSelf: "center", boxSizing: "border-box" },
   completingWrap: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, minHeight: 260, width: "100%" },
   spinnerRing: { width: 48, height: 48, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#1e3a8a", animation: "spin 0.8s linear infinite" } as React.CSSProperties,

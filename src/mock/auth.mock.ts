@@ -23,6 +23,7 @@ export function isSignupOtpValid(code: string, meta?: Pick<SignupOtpMeta, "code"
 }
 
 export const MOCK_USERS: Record<string, AuthUser> = {
+  // ── Private company users ─────────────────────────────────────────
   CLIENT: {
     id: 1,
     email: "ceo@insightai.rw",
@@ -56,6 +57,43 @@ export const MOCK_USERS: Record<string, AuthUser> = {
     email: "admin@auditinsight.com",
     fullName: "Super Admin",
     role: "ADMIN",
+    mustChangePassword: false,
+  },
+  // ── NGO users ─────────────────────────────────────────────────────
+  NGO_ADMIN: {
+    id: 10,
+    email: "director@rwandahealth.org",
+    fullName: "Dr. Emmanuel Nkusi",
+    role: "CLIENT",
+    organisationId: "org-ngo-001",
+    organisationName: "Rwanda Health Foundation",
+    mustChangePassword: false,
+  },
+  NGO_ACCOUNTANT: {
+    id: 11,
+    email: "finance@rwandahealth.org",
+    fullName: "Diane Uwase",
+    role: "MEMBER",
+    organisationId: "org-ngo-001",
+    organisationName: "Rwanda Health Foundation",
+    mustChangePassword: false,
+  },
+  NGO_AUDITOR: {
+    id: 12,
+    email: "auditor@rwandahealth.org",
+    fullName: "Grace Uwimana",
+    role: "AUDITOR",
+    organisationId: "org-ngo-001",
+    organisationName: "Rwanda Health Foundation",
+    mustChangePassword: false,
+  },
+  NGO_DONOR: {
+    id: 13,
+    email: "s.mitchell@usaid.gov",
+    fullName: "Sarah Mitchell",
+    role: "MEMBER",
+    organisationId: "org-ngo-001",
+    organisationName: "Rwanda Health Foundation",
     mustChangePassword: false,
   },
 };
