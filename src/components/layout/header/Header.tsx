@@ -17,10 +17,11 @@ import CompanySwitcher from "./CompanySwitcher";
 export interface HeaderProps { title: string; }
 
 const ROLE_LABEL: Record<FrontendRole, string> = {
-  ORG_ADMIN:    "Org Admin",
-  ACCOUNTANT:   "Accountant",
-  AUDITOR:      "Auditor",
-  SYSTEM_ADMIN: "Super Admin",
+  ORG_ADMIN:            "Org Admin",
+  ACCOUNTANT:           "Accountant",
+  AUDITOR:              "Auditor",
+  SYSTEM_ADMIN:         "Super Admin",
+  DONOR_REPRESENTATIVE: "Donor Representative",
 };
 
 const STANDARD_NAV = [

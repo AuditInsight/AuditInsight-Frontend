@@ -6,78 +6,50 @@ import { useNGOToast } from "@/components/ngo-dashboard/NGOPageLayout";
 import PermissionGate from "@/components/ngo-dashboard/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
+import { theme } from "@/styles/theme";
 import { User, Lock, Bell, Building2 } from "lucide-react";
 
-// ── Shared primitives ──────────────────────────────────────────────────────────
+// ── Primitives ─────────────────────────────────────────────────────────────────
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100">
-        <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+    <div style={{ background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, boxShadow: theme.shadows.sm, overflow: "hidden" }}>
+      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${theme.colors.divider}` }}>
+        <h2 style={{ margin: 0, fontSize: theme.typography.md, fontWeight: 700, color: theme.colors.textPrimary }}>{title}</h2>
       </div>
-      <div className="p-5">{children}</div>
+      <div style={{ padding: "20px" }}>{children}</div>
     </div>
   );
 }
 
-function Field({
-  label, defaultValue, type = "text", readOnly = false,
-}: {
-  label: string; defaultValue?: string; type?: string; readOnly?: boolean;
-}) {
+function Field({ label, defaultValue, type = "text", readOnly = false }: { label: string; defaultValue?: string; type?: string; readOnly?: boolean }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-slate-500">{label}</label>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{ fontSize: theme.typography.xs, fontWeight: 600, color: theme.colors.textSecondary }}>{label}</label>
       <input
-        type={type}
-        defaultValue={defaultValue}
-        readOnly={readOnly}
-        className={`px-3 py-2.5 rounded-xl border text-sm text-slate-900 font-[inherit] outline-none transition-colors ${
-          readOnly
-            ? "bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed"
-            : "bg-white border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-        }`}
+        type={type} defaultValue={defaultValue} readOnly={readOnly}
+        style={{ padding: "9px 12px", borderRadius: theme.radius.md, border: `1px solid ${theme.colors.border}`, fontSize: theme.typography.sm, color: readOnly ? theme.colors.textMuted : theme.colors.textPrimary, fontFamily: "inherit", outline: "none", background: readOnly ? theme.colors.appBackground : theme.colors.Surface, cursor: readOnly ? "not-allowed" : "text" }}
       />
     </div>
   );
 }
 
-function Toggle({
-  label, sub, defaultChecked, disabled = false,
-}: {
-  label: string; sub?: string; defaultChecked?: boolean; disabled?: boolean;
-}) {
+function Toggle({ label, sub, defaultChecked, disabled = false }: { label: string; sub?: string; defaultChecked?: boolean; disabled?: boolean }) {
   const [on, setOn] = useState(defaultChecked ?? false);
   return (
-    <div className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${theme.colors.divider}` }}>
       <div>
-        <p className="text-sm font-semibold text-slate-900">{label}</p>
-        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+        <p style={{ margin: 0, fontSize: theme.typography.sm, fontWeight: 600, color: theme.colors.textPrimary }}>{label}</p>
+        {sub && <p style={{ margin: "2px 0 0", fontSize: theme.typography.xs, color: theme.colors.textMuted }}>{sub}</p>}
       </div>
-      <button
-        onClick={() => !disabled && setOn((v) => !v)}
-        disabled={disabled}
-        style={{
-          width: 42, height: 24, borderRadius: 999, border: "none",
-          cursor: disabled ? "not-allowed" : "pointer",
-          background: on ? "#1e3a8a" : "#e2e8f0",
-          position: "relative", transition: "background 0.2s", flexShrink: 0,
-          opacity: disabled ? 0.5 : 1,
-        }}
-      >
-        <span style={{
-          position: "absolute", top: 3, left: on ? 21 : 3,
-          width: 18, height: 18, borderRadius: "50%",
-          background: "#fff", transition: "left 0.2s",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-        }} />
+      <button onClick={() => !disabled && setOn((v) => !v)} disabled={disabled} style={{ width: 42, height: 24, borderRadius: 999, border: "none", cursor: disabled ? "not-allowed" : "pointer", background: on ? theme.colors.primary : theme.colors.surfaceDark, position: "relative", transition: "background 0.2s", flexShrink: 0, opacity: disabled ? 0.5 : 1 }}>
+        <span style={{ position: "absolute", top: 3, left: on ? 21 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: theme.shadows.xs }} />
       </button>
     </div>
   );
 }
 
-// ── Settings content ───────────────────────────────────────────────────────────
+// ── Settings ───────────────────────────────────────────────────────────────────
 
 type Tab = "Organisation" | "Profile" | "Notifications" | "Security";
 
@@ -91,66 +63,45 @@ const TAB_ICONS: Record<Tab, React.ReactNode> = {
 function SettingsContent() {
   const { user, can } = useRBAC();
   const toast = useNGOToast();
-
-  const canEditOrg     = can("settings:org:edit");
+  const isDonor = user.role === "DONOR_REPRESENTATIVE";
   const canEditProfile = can("settings:profile:edit");
-  const isDonor        = user.role === "DONOR_REPRESENTATIVE";
 
-  // DONOR_REPRESENTATIVE only sees Profile + Security tabs
-  const visibleTabs: Tab[] = isDonor
-    ? ["Profile", "Security"]
-    : ["Organisation", "Profile", "Notifications", "Security"];
-
+  const visibleTabs: Tab[] = isDonor ? ["Profile", "Security"] : ["Organisation", "Profile", "Notifications", "Security"];
   const [active, setActive] = useState<Tab>(visibleTabs[0]);
 
   const handleSave = () => {
-    if (!canEditProfile) {
-      toast.error("Read-only", "Your role does not have permission to save settings.");
-      return;
-    }
+    if (!canEditProfile) { toast.error("Read-only", "Your role does not have permission to save settings."); return; }
     toast.success("Settings saved", "Your changes have been saved successfully.");
   };
 
   return (
-    <div className="flex gap-5 items-start">
-      {/* Sidebar tabs */}
-      <div className="w-48 flex-shrink-0 bg-white rounded-2xl border border-slate-200 shadow-sm p-2 flex flex-col gap-1">
+    <div style={{ display: "flex", gap: theme.spacing.xl, alignItems: "flex-start" }}>
+
+      {/* Sidebar */}
+      <div style={{ width: 200, flexShrink: 0, background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, boxShadow: theme.shadows.sm, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
         {visibleTabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActive(tab)}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-none text-sm cursor-pointer font-[inherit] w-full text-left transition-colors ${
-              active === tab
-                ? "bg-blue-50 text-blue-900 font-semibold"
-                : "bg-transparent text-slate-500 hover:bg-slate-50 font-normal"
-            }`}
-          >
-            <span style={{ color: active === tab ? "#1e3a8a" : "#94a3b8" }}>
-              {TAB_ICONS[tab]}
-            </span>
+          <button key={tab} onClick={() => setActive(tab)} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 12px", borderRadius: theme.radius.md, border: "none", background: active === tab ? theme.colors.primarySoft : "transparent", color: active === tab ? theme.colors.primary : theme.colors.textSecondary, fontWeight: active === tab ? 600 : 400, fontSize: theme.typography.sm, cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left", transition: "all 0.15s" }}>
+            <span style={{ color: active === tab ? theme.colors.primary : theme.colors.textMuted }}>{TAB_ICONS[tab]}</span>
             {tab}
           </button>
         ))}
       </div>
 
-      {/* Content panel */}
-      <div className="flex-1 flex flex-col gap-4">
+      {/* Content */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: theme.spacing.lg }}>
 
-        {/* Organisation — ORG_ADMIN only (settings:org:edit) */}
         {active === "Organisation" && (
           <PermissionGate
             permission="settings:org:edit"
             fallback={
-              <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
-                <Lock size={14} className="text-amber-500 flex-shrink-0" />
-                <p className="text-xs text-amber-700 font-medium">
-                  Organisation settings are restricted to Executive Directors only.
-                </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: theme.radius.md, background: theme.colors.warningBg, border: `1px solid #fde68a` }}>
+                <Lock size={14} style={{ color: theme.colors.warning, flexShrink: 0 }} />
+                <span style={{ fontSize: theme.typography.sm, color: "#92400e" }}>Organisation settings are restricted to Executive Directors only.</span>
               </div>
             }
           >
             <Section title="Organisation Profile">
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.spacing.lg }}>
                 <Field label="Organisation Name"   defaultValue="Rwanda Health Foundation" />
                 <Field label="Registration Number" defaultValue="NGO-RW-2019-0042" />
                 <Field label="Country"             defaultValue="Rwanda" />
@@ -162,30 +113,24 @@ function SettingsContent() {
           </PermissionGate>
         )}
 
-        {/* Profile — all roles, read-only for DONOR_REPRESENTATIVE */}
         {active === "Profile" && (
           <Section title="Personal Profile">
             {isDonor && (
-              <div className="flex items-center gap-2 mb-4 px-3 py-2.5 rounded-xl bg-violet-50 border border-violet-200">
-                <Lock size={13} className="text-violet-500 flex-shrink-0" />
-                <p className="text-xs text-violet-700 font-medium">
-                  Profile fields are read-only for Donor Representatives.
-                </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, padding: "10px 14px", borderRadius: theme.radius.md, background: "#f5f3ff", border: "1px solid #ddd6fe" }}>
+                <Lock size={13} style={{ color: "#7c3aed", flexShrink: 0 }} />
+                <span style={{ fontSize: theme.typography.xs, color: "#5b21b6", fontWeight: 500 }}>Profile fields are read-only for Donor Representatives.</span>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.spacing.lg }}>
               <Field label="Full Name"  defaultValue={user.fullName}  readOnly={isDonor} />
               <Field label="Job Title"  defaultValue={isDonor ? "Donor Representative" : "Finance Officer"} readOnly={isDonor} />
               <Field label="Email"      defaultValue={user.email}     type="email" readOnly={isDonor} />
               <Field label="Phone"      defaultValue="+250 788 111 222" readOnly={isDonor} />
-              {isDonor && user.assignedDonorId && (
-                <Field label="Assigned Donor" defaultValue={user.assignedDonorId} readOnly />
-              )}
+              {isDonor && user.assignedDonorId && <Field label="Assigned Donor" defaultValue={user.assignedDonorId} readOnly />}
             </div>
           </Section>
         )}
 
-        {/* Notifications — hidden for DONOR_REPRESENTATIVE */}
         {active === "Notifications" && !isDonor && (
           <Section title="Notification Preferences">
             <Toggle label="New audit flag raised"     sub="Get notified when a transaction is flagged"  defaultChecked />
@@ -196,26 +141,21 @@ function SettingsContent() {
           </Section>
         )}
 
-        {/* Security — all roles */}
         {active === "Security" && (
           <Section title="Security Settings">
-            <div className="flex flex-col gap-4">
+            <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.lg }}>
               <Field label="Current Password" type="password" />
               <Field label="New Password"     type="password" />
               <Field label="Confirm Password" type="password" />
-              <Toggle label="Two-factor authentication"    sub="Require OTP on every login" />
+              <Toggle label="Two-factor authentication"     sub="Require OTP on every login" />
               <Toggle label="Session timeout after 30 min" sub="Auto sign-out on inactivity" defaultChecked />
             </div>
           </Section>
         )}
 
-        {/* Save — hidden for DONOR_REPRESENTATIVE (read-only profile) */}
         {!isDonor && (
-          <div className="flex justify-end">
-            <button
-              onClick={handleSave}
-              className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition-colors"
-            >
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={handleSave} style={{ padding: "10px 24px", borderRadius: theme.radius.md, border: "none", background: theme.colors.primary, color: "#fff", fontSize: theme.typography.sm, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", boxShadow: theme.shadows.sm }}>
               Save Changes
             </button>
           </div>
@@ -228,10 +168,7 @@ function SettingsContent() {
 export default function NGOSettingsPage() {
   return (
     <ProtectedRoute>
-      <NGOPageLayout
-        pageTitle="Settings"
-        pageSub="Manage your organisation profile, preferences, and security."
-      >
+      <NGOPageLayout pageTitle="Settings" pageSub="Manage your organisation profile, preferences, and security.">
         <SettingsContent />
       </NGOPageLayout>
     </ProtectedRoute>

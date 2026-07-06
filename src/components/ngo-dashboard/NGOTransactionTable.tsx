@@ -33,21 +33,21 @@ type SortKey = "date" | "amount" | "projectName" | "donor" | "status";
 type SortDir = "asc" | "desc";
 
 const STATUS_CFG: Record<NGOTransactionStatus, {
-  label: string; dot: string; badge: string;
+  label: string; dotColor: string; badgeColor: string; badgeBg: string; badgeBorder: string;
 }> = {
-  COMPLETED: { label: "Complete", dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  PENDING:   { label: "Pending",  dot: "bg-amber-400",   badge: "bg-amber-50 text-amber-700 border-amber-200"   },
-  FLAGGED:   { label: "Flagged",  dot: "bg-red-500",     badge: "bg-red-50 text-red-700 border-red-200"         },
+  COMPLETED: { label: "Complete", dotColor: "#1e3a8a", badgeColor: "#1e3a8a", badgeBg: "rgba(30,58,138,0.07)",  badgeBorder: "rgba(30,58,138,0.2)"  },
+  PENDING:   { label: "Pending",  dotColor: "#475569", badgeColor: "#475569", badgeBg: "#f1f5f9",              badgeBorder: "#e2e8f0"              },
+  FLAGGED:   { label: "Flagged",  dotColor: "#64748b", badgeColor: "#334155", badgeBg: "#f1f5f9",              badgeBorder: "#cbd5e1"              },
 };
 
 function EvidenceBadge({ txn }: { txn: NGOTransaction }) {
   const cfg = STATUS_CFG[txn.status];
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.badge}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, border: `1px solid ${cfg.badgeBorder}`, color: cfg.badgeColor, background: cfg.badgeBg }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: cfg.dotColor, flexShrink: 0 }} />
       {txn.status === "COMPLETED" && `${txn.evidenceCount} file${txn.evidenceCount !== 1 ? "s" : ""}`}
       {txn.status === "PENDING"   && "No evidence"}
-      {txn.status === "FLAGGED"   && "⚠ Flagged"}
+      {txn.status === "FLAGGED"   && "Flagged"}
     </span>
   );
 }
@@ -69,14 +69,10 @@ function ActionCell({
   if (canSee("txn:upload_btn")) {
     const needsEvidence = txn.status === "PENDING" || txn.status === "FLAGGED";
     return (
-      <div className="flex items-center gap-2">
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button
           onClick={onUpload}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
-            needsEvidence
-              ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm"
-              : "bg-blue-50 hover:bg-blue-100 text-blue-800 border-blue-200"
-          }`}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: `1px solid ${needsEvidence ? "#1e3a8a" : "rgba(30,58,138,0.25)"}`, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", background: needsEvidence ? "#1e3a8a" : "rgba(30,58,138,0.06)", color: needsEvidence ? "#fff" : "#1e3a8a", transition: "all 0.15s" }}
         >
           <Upload size={12} />
           {txn.status === "FLAGGED" ? "Re-upload" : "Upload"}
@@ -84,7 +80,7 @@ function ActionCell({
         <PermissionGate component="txn:edit_btn">
           <button
             onClick={onEdit}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-semibold transition-colors"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "#f8fafc", color: "#475569", border: "1px solid #e2e8f0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
           >
             <Edit2 size={12} /> Edit
           </button>
@@ -93,7 +89,7 @@ function ActionCell({
     );
   }
 
-  // AUDITOR — Flag Compliance Issue (strictly Auditor-only)
+  // AUDITOR — Flag Compliance Issue
   if (canSee("txn:flag_btn")) {
     const alreadyFlagged = txn.status === "FLAGGED";
     return (
@@ -101,11 +97,7 @@ function ActionCell({
         onClick={onFlag}
         disabled={alreadyFlagged}
         title={alreadyFlagged ? "Already flagged" : "Flag a compliance issue"}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
-          alreadyFlagged
-            ? "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed"
-            : "bg-red-50 hover:bg-red-100 text-red-700 border-red-200 cursor-pointer"
-        }`}
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12, fontWeight: 600, fontFamily: "inherit", cursor: alreadyFlagged ? "not-allowed" : "pointer", background: alreadyFlagged ? "#f8fafc" : "#f1f5f9", color: alreadyFlagged ? "#94a3b8" : "#334155", transition: "all 0.15s" }}
       >
         <Flag size={12} />
         {alreadyFlagged ? "Flagged" : "Flag Issue"}
@@ -113,11 +105,11 @@ function ActionCell({
     );
   }
 
-  // ORG_ADMIN / DONOR_REPRESENTATIVE — read-only status label, no actions
+  // ORG_ADMIN / DONOR_REPRESENTATIVE — read-only
   const cfg = STATUS_CFG[txn.status];
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.badge}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, border: `1px solid ${cfg.badgeBorder}`, color: cfg.badgeColor, background: cfg.badgeBg }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: cfg.dotColor, flexShrink: 0 }} />
       {cfg.label}
     </span>
   );
@@ -188,18 +180,18 @@ export default function NGOTransactionTable({
     user.role === "AUDITOR"    ? "Audit Action" : "Status";
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(15,23,42,0.05)" }}>
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 flex-wrap">
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f1f5f9", flexWrap: "wrap" as const }}>
         <input
-          className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+          style={{ flex: 1, minWidth: 200, padding: "8px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13.5, color: "#0f172a", outline: "none", fontFamily: "inherit", background: "#f8fafc" }}
           placeholder="Search transactions, projects, counterparties…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex items-center gap-2">
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <select
-            className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-700 outline-none bg-white cursor-pointer"
+            style={{ padding: "7px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, color: "#475569", outline: "none", background: "#f8fafc", cursor: "pointer", fontFamily: "inherit" }}
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as NGOTransactionStatus | "ALL")}
           >
@@ -210,7 +202,7 @@ export default function NGOTransactionTable({
           </select>
           {!donorScope && (
             <select
-              className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-700 outline-none bg-white cursor-pointer"
+              style={{ padding: "7px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, color: "#475569", outline: "none", background: "#f8fafc", cursor: "pointer", fontFamily: "inherit" }}
               value={filterDonor}
               onChange={(e) => setFilterDonor(e.target.value as DonorName | "ALL")}
             >
@@ -219,36 +211,36 @@ export default function NGOTransactionTable({
             </select>
           )}
         </div>
-        <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+        <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500, whiteSpace: "nowrap" as const }}>
           {sorted.length} transaction{sorted.length !== 1 ? "s" : ""}
         </span>
       </div>
 
       {/* Donor scope banner */}
       {donorScope && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-50 border-b border-violet-100">
-          <Lock size={13} className="text-violet-600 flex-shrink-0" />
-          <p className="text-xs font-semibold text-violet-800">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "rgba(30,58,138,0.04)", borderBottom: "1px solid rgba(30,58,138,0.1)" }}>
+          <Lock size={13} style={{ color: "#1e3a8a", flexShrink: 0 }} />
+          <p style={{ fontSize: 12.5, fontWeight: 600, color: "#1e3a8a", margin: 0 }}>
             Viewing transactions scoped to <strong>{donorScope}</strong> only.
           </p>
         </div>
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead className="bg-slate-50">
+      <div style={{ overflowX: "auto" as const }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13.5 }}>
+          <thead style={{ background: "#f8fafc" }}>
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
+              <th style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.07em", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" as const }}>
                 ID
               </th>
               {(["projectName", "donor", "amount", "date", "status"] as SortKey[]).map((col) => (
                 <th
                   key={col}
                   onClick={() => handleSort(col)}
-                  className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap cursor-pointer hover:text-slate-700 select-none"
+                  style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.07em", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" as const, cursor: "pointer", userSelect: "none" as const }}
                 >
-                  <span className="inline-flex items-center gap-1">
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                     {col === "projectName" ? "Project" :
                      col === "donor"       ? "Donor"   :
                      col === "amount"      ? "Amount"  :
@@ -257,18 +249,18 @@ export default function NGOTransactionTable({
                   </span>
                 </th>
               ))}
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
+              <th style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.07em", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" as const }}>
                 Budget Line
               </th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
+              <th style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.07em", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" as const }}>
                 {actionColLabel}
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody style={{ borderTop: "1px solid #f1f5f9" }}>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400">
+                <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center" as const, fontSize: 13.5, color: "#94a3b8" }}>
                   No transactions match your filters.
                 </td>
               </tr>
@@ -276,46 +268,39 @@ export default function NGOTransactionTable({
               sorted.map((txn) => (
                 <tr
                   key={txn.id}
-                  className={`hover:bg-slate-50 transition-colors ${txn.status === "FLAGGED" ? "border-l-2 border-l-red-400" : ""}`}
+                  style={{ borderBottom: "1px solid #f8fafc", borderLeft: txn.status === "FLAGGED" ? "3px solid #94a3b8" : "3px solid transparent" }}
                 >
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="font-mono text-xs font-bold text-slate-500">{txn.id}</span>
+                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
+                    <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>{txn.id}</span>
                   </td>
-                  <td className="px-4 py-3.5">
-                    <p className="text-sm font-semibold text-slate-900 leading-tight">{txn.projectName}</p>
-                    <p className="text-xs text-slate-400 mt-0.5 max-w-[180px] truncate">{txn.description}</p>
+                  <td style={{ padding: "12px 16px" }}>
+                    <p style={{ fontSize: 13.5, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: 1.3 }}>{txn.projectName}</p>
+                    <p style={{ fontSize: 12, color: "#94a3b8", margin: "3px 0 0", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{txn.description}</p>
                   </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-100">
+                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
+                    <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, background: "rgba(30,58,138,0.07)", color: "#1e3a8a", border: "1px solid rgba(30,58,138,0.15)" }}>
                       {txn.donor}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <p className={`text-sm font-bold ${txn.type === "INCOME" ? "text-emerald-700" : "text-slate-900"}`}>
+                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
+                    <p style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a", margin: 0 }}>
                       {txn.type === "INCOME" ? "+" : "−"}{txn.currency} {txn.amount.toLocaleString()}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">{txn.paymentMethod.replace("_", " ")}</p>
+                    <p style={{ fontSize: 11.5, color: "#94a3b8", margin: "2px 0 0" }}>{txn.paymentMethod.replace("_", " ")}</p>
                   </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="text-xs text-slate-600">
-                      {new Date(txn.date).toLocaleDateString("en-GB", {
-                        day: "numeric", month: "short", year: "numeric",
-                      })}
+                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
+                    <span style={{ fontSize: 12.5, color: "#475569" }}>
+                      {new Date(txn.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td style={{ padding: "12px 16px" }}>
                     <EvidenceBadge txn={txn} />
                   </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="text-xs text-slate-500">{txn.budgetLine}</span>
+                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
+                    <span style={{ fontSize: 12.5, color: "#64748b" }}>{txn.budgetLine}</span>
                   </td>
-                  <td className="px-4 py-3.5">
-                    <ActionCell
-                      txn={txn}
-                      onUpload={() => onUploadEvidence(txn)}
-                      onEdit={() => onEditTransaction(txn)}
-                      onFlag={() => onFlagIssue(txn)}
-                    />
+                  <td style={{ padding: "12px 16px" }}>
+                    <ActionCell txn={txn} onUpload={() => onUploadEvidence(txn)} onEdit={() => onEditTransaction(txn)} onFlag={() => onFlagIssue(txn)} />
                   </td>
                 </tr>
               ))
@@ -323,11 +308,11 @@ export default function NGOTransactionTable({
           </tbody>
           {sorted.length > 0 && (
             <tfoot>
-              <tr className="bg-slate-50">
-                <td colSpan={3} className="px-4 py-3 text-xs font-bold text-slate-500">
+              <tr style={{ background: "#f8fafc" }}>
+                <td colSpan={3} style={{ padding: "10px 16px", fontSize: 12, fontWeight: 700, color: "#64748b" }}>
                   Net total ({sorted.length} transactions)
                 </td>
-                <td className={`px-4 py-3 text-sm font-bold ${totalAmount >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                <td style={{ padding: "10px 16px", fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>
                   {totalAmount >= 0 ? "+" : ""}RWF {Math.abs(totalAmount).toLocaleString()}
                 </td>
                 <td colSpan={4} />

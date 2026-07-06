@@ -8,11 +8,15 @@
  * backend's naming conventions.
  */
 
+// ── Organisation type — drives which dashboard and nav the user sees ─
+export type OrgType = "NGO" | "PRIVATE";
+
 // ── Raw roles as the backend JWT encodes them ──────────────────────
 export type BackendRole = "CLIENT" | "MEMBER" | "AUDITOR" | "ADMIN";
 
 // ── Business-logical roles the UI uses everywhere ─────────────────
-export type FrontendRole = "ORG_ADMIN" | "ACCOUNTANT" | "AUDITOR" | "SYSTEM_ADMIN";
+// DONOR_REPRESENTATIVE is NGO-only — scoped view to a single donor's projects
+export type FrontendRole = "ORG_ADMIN" | "ACCOUNTANT" | "AUDITOR" | "SYSTEM_ADMIN" | "DONOR_REPRESENTATIVE";
 
 /**
  * Maps a backend JWT role to the UI-facing business role.
@@ -34,10 +38,11 @@ export function mapBackendRoleToFrontend(role: BackendRole): FrontendRole {
  */
 export function mapFrontendRoleToBackend(role: FrontendRole): BackendRole {
   const map: Record<FrontendRole, BackendRole> = {
-    ORG_ADMIN:    "CLIENT",
-    ACCOUNTANT:   "MEMBER",
-    AUDITOR:      "AUDITOR",
-    SYSTEM_ADMIN: "ADMIN",
+    ORG_ADMIN:            "CLIENT",
+    ACCOUNTANT:           "MEMBER",
+    AUDITOR:              "AUDITOR",
+    SYSTEM_ADMIN:         "ADMIN",
+    DONOR_REPRESENTATIVE: "MEMBER",  // NGO-only role — maps to MEMBER on backend
   };
   return map[role];
 }
@@ -46,6 +51,7 @@ export function mapFrontendRoleToBackend(role: FrontendRole): BackendRole {
 export interface JwtPayload {
   sub: string;           // user id (as string in JWT standard)
   email: string;
+  fullName?: string;     // may be present in JWT; fallback to email if absent
   role: BackendRole;
   organisationId?: string;
   iat: number;           // issued at (unix seconds)
@@ -61,6 +67,8 @@ export interface User {
   backendRole: BackendRole;     // kept for API calls that need the raw value
   organisationId?: string;
   organisationName?: string;
+  orgType?: OrgType;            // NGO or PRIVATE — set after org fetch post-login
+  donorScope?: string | null;   // NGO DONOR_REPRESENTATIVE only
   mustChangePassword: boolean;
 }
 

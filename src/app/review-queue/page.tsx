@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
 import ReviewStats from "@/components/review-queue/ReviewStats";
 import ReviewFilters from "@/components/review-queue/ReviewFilters";
-import ReviewSidebar from "@/components/review-queue/ReviewSidebar";
 import ReviewTable from "@/components/review-queue/ReviewTable";
 import ReviewPagination from "@/components/review-queue/ReviewPagination";
 import FlagIssueModal from "@/components/review-queue/FlagIssueModal";
@@ -101,10 +100,10 @@ export default function ReviewQueuePage() {
     <div style={s.page}>
       <style>{`
         .rq-stats { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 16px; }
-        .rq-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; margin-top: 16px; align-items: start; }
-        .rq-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
+        .rq-filters { display: flex; align-items: center; gap: 10; flex-wrap: wrap; margin-top: 12px; margin-bottom: 16px; }
+        .rq-issue-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+        .rq-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         @media (max-width: 1024px) { .rq-stats { grid-template-columns: repeat(3,1fr); } }
-        @media (max-width: 900px)  { .rq-layout { grid-template-columns: 1fr; } }
         @media (max-width: 600px)  { .rq-stats { grid-template-columns: repeat(2,1fr); } }
         @media (max-width: 400px)  { .rq-stats { grid-template-columns: 1fr; } }
       `}</style>
@@ -117,17 +116,28 @@ export default function ReviewQueuePage() {
       />
 
       <ReviewStats transactions={transactions} evidence={evidences} />
-      <ReviewFilters severity={severity} setSeverity={setSeverity} />
 
-      <div className="rq-layout">
-        <ReviewSidebar data={items} active={activeIssue} setActive={setActiveIssue} />
-        <div className="rq-table-wrap">
-          <ReviewTable
-            data={paginated}
-            onRowClick={(row) => router.push(`/transactions?transactionId=${row.transactionId}`)}
-            onResolve={canResolveIssue ? handleResolve : undefined}
-          />
+      <div style={s.filtersRow}>
+        <div style={s.issueTabs}>
+          {["All", "Missing Evidence", "Verification Problems", "Compliance Issues", "Control Violations", "AI / Risk Flags", "System Errors"].map((label) => (
+            <button
+              key={label}
+              onClick={() => setActiveIssue(label)}
+              style={{ ...s.issueTab, ...(activeIssue === label ? s.issueTabActive : {}) }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+        <ReviewFilters severity={severity} setSeverity={setSeverity} />
+      </div>
+
+      <div className="rq-table-wrap">
+        <ReviewTable
+          data={paginated}
+          onRowClick={(row) => router.push(`/transactions?transactionId=${row.transactionId}`)}
+          onResolve={canResolveIssue ? handleResolve : undefined}
+        />
       </div>
 
       <ReviewPagination page={page} setPage={setPage} totalPages={totalPages} />
@@ -149,5 +159,9 @@ export default function ReviewQueuePage() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: { padding: theme.spacing.lg, background: theme.colors.appBackground, minHeight: "100vh" },
+  page:          { padding: theme.spacing.lg, background: theme.colors.appBackground, minHeight: "100vh" },
+  filtersRow:    { display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, margin: "12px 0 16px" },
+  issueTabs:     { display: "flex", gap: 6, flexWrap: "wrap" },
+  issueTab:      { padding: "7px 14px", borderRadius: 20, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, fontWeight: 500, color: "#374151", cursor: "pointer", whiteSpace: "nowrap" as const },
+  issueTabActive:{ background: "#1e3a8a", color: "#fff", border: "1px solid #1e3a8a", fontWeight: 600 },
 };

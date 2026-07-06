@@ -1,14 +1,5 @@
 "use client";
 
-/**
- * ExecutiveOverviewBanner.tsx — ORG_ADMIN-only executive greeting banner.
- *
- * Displays a high-level summary of the organisation's audit health,
- * burn rate, and active project count. Gated by widget:executive_overview.
- *
- * Gated by: COMPONENT_GATE["panel:executive_flags"] → ORG_ADMIN only.
- */
-
 import { ShieldCheck, TrendingUp, FolderOpen, AlertTriangle } from "lucide-react";
 import type { NGOTransaction, NGOFlag } from "@/types/ngo";
 import { useRBAC } from "@/context/RBACContext";
@@ -20,97 +11,90 @@ interface Props {
 
 export default function ExecutiveOverviewBanner({ transactions, flags }: Props) {
   const { user } = useRBAC();
-
   if (user.role !== "ORG_ADMIN") return null;
 
   const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  const totalGrant  = transactions.filter((t) => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
-  const totalSpend  = transactions.filter((t) => t.type === "EXPENSE").reduce((s, t) => s + t.amount, 0);
-  const burnPct     = totalGrant > 0 ? Math.round((totalSpend / totalGrant) * 100) : 0;
-  const openFlags   = flags.filter((f) => f.status === "OPEN").length;
-  const projects    = new Set(transactions.map((t) => t.projectName)).size;
+  const totalGrant    = transactions.filter((t) => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
+  const totalSpend    = transactions.filter((t) => t.type === "EXPENSE").reduce((s, t) => s + t.amount, 0);
+  const burnPct       = totalGrant > 0 ? Math.round((totalSpend / totalGrant) * 100) : 0;
+  const openFlags     = flags.filter((f) => f.status === "OPEN").length;
+  const projects      = new Set(transactions.map((t) => t.projectName)).size;
   const criticalFlags = flags.filter((f) => f.status === "OPEN" && f.severity === "CRITICAL").length;
 
-  const burnColor =
-    burnPct > 90 ? "#dc2626" : burnPct > 70 ? "#d97706" : "#1e3a8a";
+  const kpis = [
+    {
+      label: "Grant Utilisation",
+      value: `${burnPct}%`,
+      sub: `RWF ${((totalGrant - totalSpend) / 1_000_000).toFixed(1)}M remaining`,
+      icon: <TrendingUp size={14} />,
+    },
+    {
+      label: "Active Projects",
+      value: projects,
+      sub: `${transactions.length} total transactions`,
+      icon: <FolderOpen size={14} />,
+    },
+    {
+      label: "Open Audit Flags",
+      value: openFlags,
+      sub: openFlags === 0 ? "All clear" : `${criticalFlags} critical`,
+      icon: <AlertTriangle size={14} />,
+    },
+    {
+      label: "Total Grant Funding",
+      value: `RWF ${(totalGrant / 1_000_000).toFixed(1)}M`,
+      sub: "All donors combined",
+      icon: <ShieldCheck size={14} />,
+    },
+  ];
 
   return (
-    <div className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-900 to-blue-800 p-6 shadow-lg text-white overflow-hidden relative">
-      {/* Background decoration */}
-      <div
-        className="absolute inset-0 opacity-10 pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 80% 50%, rgba(255,255,255,0.15) 0%, transparent 60%)",
-        }}
-      />
+    <div style={s.banner}>
+      {/* Radial glow */}
+      <div style={s.glow} />
 
       {/* Greeting row */}
-      <div className="flex items-start justify-between gap-4 mb-5 relative">
+      <div style={s.topRow}>
         <div>
-          <p className="text-blue-200 text-sm font-medium mb-1">
-            {greeting}, {user.fullName.split(" ")[0]} · {user.organisationName}
-          </p>
-          <h2 className="text-2xl font-bold text-white leading-tight tracking-tight">
-            Executive Overview
-          </h2>
-          <p className="text-blue-200 text-sm mt-1">
-            Read-only monitoring dashboard · All departments
-          </p>
+          <p style={s.greeting}>{greeting}, {user.fullName.split(" ")[0]} · {user.organisationName}</p>
+          <h2 style={s.heading}>Executive Overview</h2>
+          <p style={s.sub}>Read-only monitoring dashboard · All departments</p>
         </div>
-        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center">
-          <ShieldCheck size={22} className="text-white" />
+        <div style={s.shieldWrap}>
+          <ShieldCheck size={22} color="#fff" />
         </div>
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 relative">
-        {[
-          {
-            label: "Grant Utilisation",
-            value: `${burnPct}%`,
-            sub: `RWF ${((totalGrant - totalSpend) / 1_000_000).toFixed(1)}M remaining`,
-            icon: <TrendingUp size={14} />,
-            accent: burnColor,
-          },
-          {
-            label: "Active Projects",
-            value: projects,
-            sub: `${transactions.length} total transactions`,
-            icon: <FolderOpen size={14} />,
-            accent: "#60a5fa",
-          },
-          {
-            label: "Open Audit Flags",
-            value: openFlags,
-            sub: openFlags === 0 ? "All clear" : `${criticalFlags} critical`,
-            icon: <AlertTriangle size={14} />,
-            accent: openFlags > 0 ? "#fca5a5" : "#86efac",
-          },
-          {
-            label: "Total Grant Funding",
-            value: `RWF ${(totalGrant / 1_000_000).toFixed(1)}M`,
-            sub: "All donors combined",
-            icon: <ShieldCheck size={14} />,
-            accent: "#a5b4fc",
-          },
-        ].map(({ label, value, sub, icon, accent }) => (
-          <div
-            key={label}
-            className="rounded-xl bg-white/10 border border-white/15 p-4 backdrop-blur-sm"
-          >
-            <div className="flex items-center gap-1.5 mb-2" style={{ color: accent }}>
+      <div style={s.kpiGrid}>
+        {kpis.map(({ label, value, sub, icon }) => (
+          <div key={label} style={s.kpiCard}>
+            <div style={s.kpiLabel}>
               {icon}
-              <span className="text-xs font-semibold">{label}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 600 }}>{label}</span>
             </div>
-            <p className="text-xl font-bold text-white leading-none mb-1">{value}</p>
-            <p className="text-xs text-blue-200">{sub}</p>
+            <p style={s.kpiValue}>{value}</p>
+            <p style={s.kpiSub}>{sub}</p>
           </div>
         ))}
       </div>
     </div>
   );
 }
+
+const s: Record<string, React.CSSProperties> = {
+  banner:    { position: "relative", borderRadius: 16, background: "linear-gradient(135deg,#0f2d5e,#1e3a8a)", padding: "24px", overflow: "hidden", boxShadow: "0 4px 24px rgba(15,23,42,0.18)" },
+  glow:      { position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: "radial-gradient(circle at 80% 50%, rgba(255,255,255,0.08) 0%, transparent 60%)" },
+  topRow:    { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 20, position: "relative" },
+  greeting:  { fontSize: 12.5, color: "rgba(147,197,253,0.9)", fontWeight: 500, margin: "0 0 4px" },
+  heading:   { fontSize: 22, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px", margin: "0 0 4px", lineHeight: 1.2 },
+  sub:       { fontSize: 12.5, color: "rgba(147,197,253,0.8)", margin: 0 },
+  shieldWrap:{ width: 48, height: 48, borderRadius: 12, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  kpiGrid:   { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, position: "relative" },
+  kpiCard:   { borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", padding: "14px 16px", backdropFilter: "blur(4px)" },
+  kpiLabel:  { display: "flex", alignItems: "center", gap: 6, color: "rgba(147,197,253,0.9)", marginBottom: 8 },
+  kpiValue:  { fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1, margin: "0 0 4px" },
+  kpiSub:    { fontSize: 11.5, color: "rgba(147,197,253,0.75)", margin: 0 },
+};

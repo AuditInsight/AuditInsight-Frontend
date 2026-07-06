@@ -75,7 +75,7 @@ export default function PricingPlanStep({ onSelect, onBack }: Props) {
               <ul style={s.featureList}>
                 {plan.features.map(f => (
                   <li key={f} style={s.featureItem}>
-                    <span style={{ ...s.checkIcon, color: isSelected ? "#1e3a8a" : "#22c55e" }}>{CHECK}</span>
+                    <span style={{ ...s.checkIcon, color: "#2563eb" }}>{CHECK}</span>
                     {f}
                   </li>
                 ))}
@@ -127,12 +127,12 @@ const s: Record<string, React.CSSProperties> = {
   toggle: { display: "flex", background: "#F1F5F9", borderRadius: 10, padding: 4, gap: 4, marginBottom: 32 },
   toggleBtn: { padding: "8px 20px", borderRadius: 8, border: "none", fontSize: 14, fontWeight: 500, cursor: "pointer", background: "transparent", color: "#64748B", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 },
   toggleActive: { background: "#fff", color: "#0F172A", fontWeight: 600, boxShadow: "0 1px 4px rgba(0,0,0,0.10)" },
-  saveBadge: { background: "#dcfce7", color: "#16a34a", fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 20 },
+  saveBadge: { background: "rgba(30,58,138,0.08)", color: "#1e3a8a", fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 20 },
   grid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, width: "100%", marginBottom: 32 },
-  card: { position: "relative", background: "#fff", border: "1.5px solid #E2E8F0", borderRadius: 14, padding: "22px 18px", textAlign: "left", cursor: "pointer", fontFamily: "inherit", transition: "all 0.18s", display: "flex", flexDirection: "column", gap: 0 },
+  card: { position: "relative", background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: 14, padding: "24px 20px", textAlign: "left", cursor: "pointer", fontFamily: "inherit", transition: "all 0.18s", display: "flex", flexDirection: "column", gap: 0, boxShadow: "0 1px 4px rgba(15,23,42,0.05)" },
   cardSelected: { border: "2px solid #1e3a8a", boxShadow: "0 0 0 4px rgba(30,58,138,0.08)" },
-  cardPopular: { border: "1.5px solid #7c3aed", boxShadow: "0 4px 18px rgba(124,58,237,0.10)" },
-  popularBadge: { position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, whiteSpace: "nowrap" },
+  cardPopular: { border: "1.5px solid #2563eb", boxShadow: "0 4px 18px rgba(30,58,138,0.12)" },
+  popularBadge: { position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(135deg,#1e3a8a,#2563eb)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, whiteSpace: "nowrap" },
   planName: { fontSize: 16, fontWeight: 700, color: "#0F172A", marginBottom: 10 },
   priceRow: { display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 },
   priceAmount: { fontSize: 28, fontWeight: 800, color: "#0F172A" },

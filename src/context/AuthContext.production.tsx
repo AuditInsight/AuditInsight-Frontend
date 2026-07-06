@@ -17,8 +17,13 @@ import {
   JwtPayload,
   LoginRequest,
   LoginApiResponse,
+  OrgType,
   mapBackendRoleToFrontend,
 } from "@/types/auth";
+import { OrganisationApiResponse } from "@/types/tenants";
+import { tryDevLogin } from "@/utils/devAuth";
+
+const IS_DEV = process.env.NEXT_PUBLIC_DEV_AUTH === "true";
 
 // ── Context shape ──────────────────────────────────────────────────
 
@@ -36,14 +41,20 @@ const AuthContext = createContext<AuthContextValue>({
 
 // ── Helper ─────────────────────────────────────────────────────────
 
-function buildUserFromJwt(payload: JwtPayload): User {
+function buildUserFromJwt(payload: JwtPayload & { orgType?: OrgType; donorScope?: string | null; fullName?: string }): User {
+  // MEMBER + donorScope present = DONOR_REPRESENTATIVE (NGO-only role)
+  const role = payload.role === "MEMBER" && payload.donorScope
+    ? "DONOR_REPRESENTATIVE" as const
+    : mapBackendRoleToFrontend(payload.role);
   return {
     id: Number(payload.sub),
     email: payload.email,
-    fullName: payload.email, // enriched by /profile call later
-    role: mapBackendRoleToFrontend(payload.role),
+    fullName: payload.fullName ?? payload.email,
+    role,
     backendRole: payload.role,
     organisationId: payload.organisationId,
+    orgType: payload.orgType,
+    donorScope: payload.donorScope ?? null,
     mustChangePassword: false,
   };
 }
@@ -89,24 +100,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (credentials: LoginRequest): Promise<{ redirectTo: string }> => {
+
+      // ── Dev bypass ────────────────────────────────────────────────
+      // If NEXT_PUBLIC_DEV_AUTH=true, check dummy credentials first.
+      // Returns null when the email is not in the dummy table so we
+      // fall through to the real API automatically.
+      if (IS_DEV) {
+        const devResult = tryDevLogin(
+          credentials.username,
+          credentials.password
+        );
+        if (devResult) {
+          tokenStorage.setTokens(devResult.token);
+          const payload = jwtDecode<JwtPayload & { orgType?: OrgType; donorScope?: string | null }>(devResult.token);
+          const user: User = {
+            ...buildUserFromJwt(payload),
+            fullName:           devResult.fullName,
+            organisationName:   devResult.organisationName,
+            orgType:            devResult.orgType,
+            donorScope:         devResult.donorScope ?? null,
+            mustChangePassword:  devResult.mustChangePassword,
+          };
+          setState({ status: "authenticated", user });
+          if (user.mustChangePassword)      return { redirectTo: "/reset-password" };
+          if (user.role === "SYSTEM_ADMIN") return { redirectTo: "/admin/organizations" };
+          if (user.orgType === "NGO")       return { redirectTo: "/ngo-dashboard" };
+          return { redirectTo: "/dashboard" };
+        }
+      }
+
+      // ── Real API ──────────────────────────────────────────────────
       const { data } = await apiClient.post<LoginApiResponse>(
         "/auth/login",
         credentials
       );
 
-      // Backend returns only an access token — store it in memory
       tokenStorage.setTokens(data.token);
 
       const payload = jwtDecode<JwtPayload>(data.token);
-      const user: User = {
+      let user: User = {
         ...buildUserFromJwt(payload),
         mustChangePassword: data.mustChangePassword,
       };
+
+      // Fetch the organisation to determine NGO vs PRIVATE routing.
+      if (user.organisationId) {
+        try {
+          const { data: org } = await apiClient.get<OrganisationApiResponse>(
+            `/organisations/${user.organisationId}`
+          );
+          user = { ...user, organisationName: org.name, orgType: org.orgType };
+        } catch {
+          // Non-fatal — falls back to PRIVATE layout
+        }
+      }
 
       setState({ status: "authenticated", user });
 
       if (data.mustChangePassword)      return { redirectTo: "/reset-password" };
       if (user.role === "SYSTEM_ADMIN") return { redirectTo: "/admin/organizations" };
+      if (user.orgType === "NGO")       return { redirectTo: "/ngo-dashboard" };
       return { redirectTo: "/dashboard" };
     },
     []

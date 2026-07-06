@@ -51,6 +51,108 @@ const FEATURES = [
   { icon: AlertTriangle, text: "Compliance flagging & review queues"      },
 ];
 
+// ── Dev credentials hint (only rendered when NEXT_PUBLIC_DEV_AUTH=true) ──
+
+const DEV_ACCOUNTS = [
+  {
+    group: "Private Company — InsightAI Rwanda Ltd",
+    color: "#1e3a8a",
+    bg: "#eff6ff",
+    border: "#bfdbfe",
+    accounts: [
+      { role: "Org Admin",  email: "ceo@insightai.rw",       password: "Password1" },
+      { role: "Accountant", email: "accountant@insightai.rw", password: "Password1" },
+      { role: "Auditor",    email: "auditor@audit.rw",        password: "Password1" },
+    ],
+  },
+  {
+    group: "NGO — Rwanda Health Foundation",
+    color: "#15803d",
+    bg: "#f0fdf4",
+    border: "#bbf7d0",
+    accounts: [
+      { role: "Executive Director", email: "director@rwandahealth.org", password: "Password1" },
+      { role: "Finance Officer",    email: "finance@rwandahealth.org",  password: "Password1" },
+      { role: "Auditor",            email: "auditor@rwandahealth.org",  password: "Password1" },
+      { role: "Donor Rep (USAID)",  email: "s.mitchell@usaid.gov",      password: "Password1" },
+    ],
+  },
+];
+
+function DevCredentialsPanel({ onFill }: { onFill: (email: string, password: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: "100%", padding: "9px 14px", borderRadius: 10,
+          border: "1.5px dashed #cbd5e1", background: "#f8fafc",
+          color: "#475569", fontSize: 13, fontWeight: 600,
+          cursor: "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}
+      >
+        <span>🔑 Dev credentials</span>
+        <span style={{ fontSize: 11, color: "#94a3b8" }}>{open ? "▲ hide" : "▼ show"}</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
+          {DEV_ACCOUNTS.map((group) => (
+            <div
+              key={group.group}
+              style={{
+                borderRadius: 10, border: `1px solid ${group.border}`,
+                background: group.bg, overflow: "hidden",
+              }}
+            >
+              <div style={{
+                padding: "7px 12px", fontSize: 11, fontWeight: 700,
+                color: group.color, letterSpacing: "0.04em",
+                textTransform: "uppercase", borderBottom: `1px solid ${group.border}`,
+              }}>
+                {group.group}
+              </div>
+              {group.accounts.map((acc) => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => { onFill(acc.email, acc.password); setOpen(false); }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    width: "100%", padding: "8px 12px",
+                    background: "transparent", border: "none",
+                    borderBottom: `1px solid ${group.border}`,
+                    cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                    transition: "background 0.12s",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.04)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <div>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: group.color }}>
+                      {acc.role}
+                    </span>
+                    <span style={{ fontSize: 11.5, color: "#64748b", marginLeft: 8 }}>
+                      {acc.email}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }}>click to fill →</span>
+                </button>
+              ))}
+            </div>
+          ))}
+          <p style={{ margin: 0, fontSize: 11, color: "#94a3b8", textAlign: "center" }}>
+            All passwords: <strong>Password1</strong>
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Inner form (needs useSearchParams so must be wrapped in Suspense) ──
 
 function LoginForm() {
@@ -65,9 +167,12 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError,  setServerError]  = useState<string | null>(null);
 
+  const IS_DEV = process.env.NEXT_PUBLIC_DEV_AUTH === "true";
+
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -153,6 +258,16 @@ function LoginForm() {
             <h2 style={s.formTitle}>Welcome back</h2>
             <p style={s.formSubtitle}>Sign in to your audit workspace</p>
           </div>
+
+          {/* Dev credentials panel */}
+          {IS_DEV && (
+            <DevCredentialsPanel
+              onFill={(email, password) => {
+                setValue("username", email,    { shouldValidate: true });
+                setValue("password", password, { shouldValidate: true });
+              }}
+            />
+          )}
 
           {/* Banners */}
           {registered === "auditor" && (

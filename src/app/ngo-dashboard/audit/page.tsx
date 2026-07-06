@@ -7,10 +7,8 @@ import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
 import type { NGOFlag } from "@/types/ngo";
-import {
-  ShieldCheck, AlertTriangle, CheckCircle2,
-  Clock, FileText, Lock,
-} from "lucide-react";
+import { theme } from "@/styles/theme";
+import { ShieldCheck, AlertTriangle, CheckCircle2, Clock, FileText, Lock } from "lucide-react";
 
 const CHECKLIST = [
   { category: "Financial Records", items: [
@@ -42,7 +40,7 @@ const CHECKLIST = [
 const totalItems = CHECKLIST.flatMap((c) => c.items).length;
 const doneItems  = CHECKLIST.flatMap((c) => c.items).filter((i) => i.done).length;
 const readiness  = Math.round((doneItems / totalItems) * 100);
-const scoreColor = readiness >= 80 ? "#16a34a" : readiness >= 60 ? "#d97706" : "#dc2626";
+const scoreColor = readiness >= 80 ? theme.colors.success : readiness >= 60 ? theme.colors.warning : theme.colors.danger;
 
 function AuditReadinessContent() {
   const { user, can } = useRBAC();
@@ -50,111 +48,92 @@ function AuditReadinessContent() {
 
   const openFlags = flags.filter((f) => f.status === "OPEN");
   const evidenced = NGO_TRANSACTIONS.filter((t) => t.evidenceCount > 0).length;
-
-  // ACCOUNTANT and DONOR_REPRESENTATIVE don't have access to this page
   const hasAccess = user.role === "AUDITOR" || user.role === "ORG_ADMIN";
 
   if (!hasAccess) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
-          <Lock size={24} className="text-slate-400" />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 16, background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, boxShadow: theme.shadows.sm }}>
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: theme.colors.appBackground, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Lock size={24} style={{ color: theme.colors.textMuted }} />
         </div>
-        <p className="text-base font-bold text-slate-900">Access Restricted</p>
-        <p className="text-sm text-slate-500 text-center max-w-sm">
+        <p style={{ margin: 0, fontSize: theme.typography.lg, fontWeight: 700, color: theme.colors.textPrimary }}>Access Restricted</p>
+        <p style={{ margin: 0, fontSize: theme.typography.sm, color: theme.colors.textMuted, textAlign: "center", maxWidth: 360 }}>
           The Audit Readiness page is available to Auditors and Executive Directors only.
-          Contact your administrator if you need access.
         </p>
+        <a href="/ngo-dashboard" style={{ marginTop: 8, padding: "9px 22px", borderRadius: theme.radius.md, background: theme.colors.primary, color: "#fff", fontSize: theme.typography.sm, fontWeight: 600, textDecoration: "none" }}>
+          Back to Dashboard
+        </a>
       </div>
     );
   }
 
-  const resolveFlag = (id: string) => {
-    setFlags((prev) =>
-      prev.map((f) => f.id === id ? { ...f, status: "RESOLVED" as const, resolvedAt: new Date().toISOString() } : f)
-    );
-  };
+  const resolveFlag = (id: string) => setFlags((prev) => prev.map((f) => f.id === id ? { ...f, status: "RESOLVED" as const, resolvedAt: new Date().toISOString() } : f));
 
   return (
-    <>
-      {/* Score + stats */}
-      <div className="flex gap-4 flex-wrap">
-        {/* Readiness ring */}
-        <div className="flex items-center gap-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex-[2] min-w-[280px]">
-          <svg width={96} height={96} viewBox="0 0 96 96" className="flex-shrink-0">
-            <circle cx={48} cy={48} r={38} fill="none" stroke="#f1f5f9" strokeWidth={9} />
-            <circle
-              cx={48} cy={48} r={38} fill="none"
-              stroke={scoreColor} strokeWidth={9}
+    <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xl }}>
+
+      {/* Score + side stats */}
+      <div style={{ display: "flex", gap: theme.spacing.lg, flexWrap: "wrap" }}>
+        {/* Ring card */}
+        <div style={{ flex: 2, minWidth: 280, display: "flex", alignItems: "center", gap: 24, background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, padding: "24px", boxShadow: theme.shadows.sm }}>
+          <svg width={96} height={96} viewBox="0 0 96 96" style={{ flexShrink: 0 }}>
+            <circle cx={48} cy={48} r={38} fill="none" stroke={theme.colors.appBackground} strokeWidth={9} />
+            <circle cx={48} cy={48} r={38} fill="none" stroke={scoreColor} strokeWidth={9}
               strokeDasharray={`${(readiness / 100) * 2 * Math.PI * 38} ${2 * Math.PI * 38}`}
               strokeLinecap="round" transform="rotate(-90 48 48)"
-              style={{ transition: "stroke-dasharray 0.8s ease" }}
-            />
-            <text x={48} y={48} textAnchor="middle" dominantBaseline="central"
-              style={{ fontSize: 18, fontWeight: 700, fill: "#0f172a" }}>
-              {readiness}%
-            </text>
+              style={{ transition: "stroke-dasharray 0.8s ease" }} />
+            <text x={48} y={48} textAnchor="middle" dominantBaseline="central" style={{ fontSize: 18, fontWeight: 700, fill: theme.colors.textPrimary }}>{readiness}%</text>
           </svg>
           <div>
-            <p className="text-lg font-bold text-slate-900 mb-1.5">Audit Readiness Score</p>
-            <p className="text-sm text-slate-500 leading-relaxed mb-3">
-              {readiness >= 80
-                ? "Your organisation is well-prepared for an external audit."
-                : readiness >= 60
-                ? "Some gaps need to be addressed before the audit."
-                : "Critical gaps detected — immediate action required."}
+            <p style={{ margin: "0 0 6px", fontSize: theme.typography.lg, fontWeight: 700, color: theme.colors.textPrimary }}>Audit Readiness Score</p>
+            <p style={{ margin: "0 0 14px", fontSize: theme.typography.sm, color: theme.colors.textSecondary, lineHeight: theme.typography.lineHeight.relaxed }}>
+              {readiness >= 80 ? "Your organisation is well-prepared for an external audit." : readiness >= 60 ? "Some gaps need to be addressed before the audit." : "Critical gaps detected — immediate action required."}
             </p>
-            <div className="flex gap-2">
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-50">
-                {doneItems} Complete
-              </span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold text-red-600 bg-red-50">
-                {totalItems - doneItems} Pending
-              </span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: theme.typography.xs, fontWeight: 600, color: theme.colors.success, background: theme.colors.successBg }}>{doneItems} Complete</span>
+              <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: theme.typography.xs, fontWeight: 600, color: theme.colors.danger, background: theme.colors.dangerBg }}>{totalItems - doneItems} Pending</span>
             </div>
           </div>
         </div>
 
         {/* Side stats */}
-        <div className="flex flex-col gap-3 flex-1 min-w-[200px]">
+        <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}>
           {[
-            { label: "Open Audit Flags",       value: openFlags.length,                          color: "#dc2626", icon: <AlertTriangle size={15} /> },
-            { label: "Transactions Evidenced", value: `${evidenced}/${NGO_TRANSACTIONS.length}`, color: "#1e3a8a", icon: <FileText size={15} />      },
-            { label: "Checklist Progress",     value: `${doneItems}/${totalItems}`,              color: "#16a34a", icon: <CheckCircle2 size={15} />   },
-            { label: "Days to Next Audit",     value: "42",                                      color: "#d97706", icon: <Clock size={15} />           },
+            { label: "Open Audit Flags",       value: openFlags.length,                          color: theme.colors.danger,  icon: <AlertTriangle size={15} /> },
+            { label: "Transactions Evidenced", value: `${evidenced}/${NGO_TRANSACTIONS.length}`, color: theme.colors.primary, icon: <FileText size={15} />      },
+            { label: "Checklist Progress",     value: `${doneItems}/${totalItems}`,              color: theme.colors.success, icon: <CheckCircle2 size={15} />   },
+            { label: "Days to Next Audit",     value: "42",                                      color: theme.colors.warning, icon: <Clock size={15} />           },
           ].map(({ label, value, color, icon }) => (
-            <div key={label} className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 px-4 py-3">
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 12, background: theme.colors.Surface, borderRadius: theme.radius.md, border: `1px solid ${theme.colors.border}`, padding: "12px 16px", boxShadow: theme.shadows.xs }}>
               <span style={{ color }}>{icon}</span>
-              <span className="flex-1 text-sm text-slate-500">{label}</span>
-              <span className="text-sm font-bold text-slate-900">{value}</span>
+              <span style={{ flex: 1, fontSize: theme.typography.sm, color: theme.colors.textSecondary }}>{label}</span>
+              <span style={{ fontSize: theme.typography.sm, fontWeight: 700, color: theme.colors.textPrimary }}>{value}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Checklist grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: theme.spacing.lg }}>
         {CHECKLIST.map((section) => {
           const done = section.items.filter((i) => i.done).length;
           return (
-            <div key={section.category} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={15} className="text-blue-900" />
-                  <span className="text-sm font-bold text-slate-900">{section.category}</span>
+            <div key={section.category} style={{ background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, boxShadow: theme.shadows.sm, overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: `1px solid ${theme.colors.divider}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <ShieldCheck size={15} style={{ color: theme.colors.primary }} />
+                  <span style={{ fontSize: theme.typography.md, fontWeight: 700, color: theme.colors.textPrimary }}>{section.category}</span>
                 </div>
-                <span className={`text-xs font-bold ${done === section.items.length ? "text-emerald-600" : "text-amber-600"}`}>
-                  {done}/{section.items.length}
-                </span>
+                <span style={{ fontSize: theme.typography.sm, fontWeight: 700, color: done === section.items.length ? theme.colors.success : theme.colors.warning }}>{done}/{section.items.length}</span>
               </div>
-              <div className="px-5 py-4 flex flex-col gap-2.5">
+              <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
                 {section.items.map((item, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                     {item.done
-                      ? <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
-                      : <Clock size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                      ? <CheckCircle2 size={14} style={{ color: theme.colors.success, flexShrink: 0, marginTop: 1 }} />
+                      : <Clock size={14} style={{ color: theme.colors.warning, flexShrink: 0, marginTop: 1 }} />
                     }
-                    <span className={`text-sm ${item.done ? "text-slate-400 line-through" : "text-slate-700 font-medium"}`}>
+                    <span style={{ fontSize: theme.typography.sm, color: item.done ? theme.colors.textMuted : theme.colors.textPrimary, fontWeight: item.done ? 400 : 500, textDecoration: item.done ? "line-through" : "none" }}>
                       {item.label}
                     </span>
                   </div>
@@ -165,67 +144,43 @@ function AuditReadinessContent() {
         })}
       </div>
 
-      {/* Open flags — Resolve gated to ORG_ADMIN */}
+      {/* Open flags */}
       {openFlags.length > 0 && (
-        <div className="bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2.5 px-5 py-4 border-b border-red-100 bg-red-50">
-            <AlertTriangle size={15} className="text-red-600" />
-            <p className="text-sm font-bold text-red-700">
-              {openFlags.length} Open Flag{openFlags.length !== 1 ? "s" : ""} — Must Resolve Before Audit
-            </p>
+        <div style={{ background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid #fecaca`, boxShadow: theme.shadows.sm, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", borderBottom: "1px solid #fecaca", background: theme.colors.dangerBg }}>
+            <AlertTriangle size={15} style={{ color: theme.colors.danger }} />
+            <span style={{ fontSize: theme.typography.md, fontWeight: 700, color: theme.colors.danger }}>{openFlags.length} Open Flag{openFlags.length !== 1 ? "s" : ""} — Must Resolve Before Audit</span>
           </div>
-          <div className="divide-y divide-slate-50">
+          <div>
             {openFlags.map((flag) => (
-              <div key={flag.id} className="flex items-start gap-3 px-5 py-4 hover:bg-slate-50 transition-colors">
-                <span
-                  className="px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0 mt-0.5"
-                  style={{
-                    color: flag.severity === "CRITICAL" ? "#dc2626" : "#d97706",
-                    background: flag.severity === "CRITICAL" ? "#fef2f2" : "#fffbeb",
-                  }}
-                >
+              <div key={flag.id} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "16px 20px", borderBottom: `1px solid ${theme.colors.divider}` }}>
+                <span style={{ padding: "2px 10px", borderRadius: 999, fontSize: theme.typography.xs, fontWeight: 700, flexShrink: 0, marginTop: 2, color: flag.severity === "CRITICAL" ? theme.colors.danger : theme.colors.warning, background: flag.severity === "CRITICAL" ? theme.colors.dangerBg : theme.colors.warningBg }}>
                   {flag.severity}
                 </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">{flag.category}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {flag.transactionId} · {flag.projectName} · {flag.donor}
-                  </p>
-                  <p className="text-sm text-slate-600 mt-1 leading-relaxed">{flag.notes}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: "0 0 3px", fontSize: theme.typography.sm, fontWeight: 600, color: theme.colors.textPrimary }}>{flag.category}</p>
+                  <p style={{ margin: "0 0 6px", fontSize: theme.typography.xs, color: theme.colors.textMuted }}>{flag.transactionId} · {flag.projectName} · {flag.donor}</p>
+                  <p style={{ margin: 0, fontSize: theme.typography.sm, color: theme.colors.textSecondary, lineHeight: theme.typography.lineHeight.relaxed }}>{flag.notes}</p>
                 </div>
-
-                {/* ORG_ADMIN: Resolve button */}
                 <PermissionGate permission="flag:resolve">
-                  <button
-                    onClick={() => resolveFlag(flag.id)}
-                    className="flex-shrink-0 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
-                  >
+                  <button onClick={() => resolveFlag(flag.id)} style={{ flexShrink: 0, padding: "7px 16px", borderRadius: theme.radius.md, border: "none", background: theme.colors.success, color: "#fff", fontSize: theme.typography.sm, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                     Resolve
                   </button>
                 </PermissionGate>
-
-                {/* AUDITOR: read-only label */}
-                {!can("flag:resolve") && (
-                  <span className="flex-shrink-0 text-xs text-slate-400 font-medium pt-1">
-                    Awaiting resolution
-                  </span>
-                )}
+                {!can("flag:resolve") && <span style={{ flexShrink: 0, fontSize: theme.typography.xs, color: theme.colors.textMuted, paddingTop: 4 }}>Awaiting resolution</span>}
               </div>
             ))}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
 export default function AuditReadinessPage() {
   return (
     <ProtectedRoute>
-      <NGOPageLayout
-        pageTitle="Audit Readiness"
-        pageSub="Assess your organisation's readiness for an external audit."
-      >
+      <NGOPageLayout pageTitle="Audit Readiness" pageSub="Assess your organisation's readiness for an external audit.">
         <AuditReadinessContent />
       </NGOPageLayout>
     </ProtectedRoute>
