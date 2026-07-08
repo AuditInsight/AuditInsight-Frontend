@@ -113,3 +113,5 @@ const s: Record<string, React.CSSProperties> = {
   scopeBanner: { display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "rgba(30,58,138,0.05)", border: "1px solid rgba(30,58,138,0.18)" },
   card:        { background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "16px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" },
 };
+
+
