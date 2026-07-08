@@ -11,20 +11,20 @@ import NGOTransactionTable from "./NGOTransactionTable";
 import NGOFlagIssueModal from "./NGOFlagIssueModal";
 import NGONotificationPanel from "./NGONotificationPanel";
 import { useAuth } from "@/context/AuthContext.production";
-import { RBACProvider, useRBAC, useScopedData } from "@/context/RBACContext";
+import { useRBAC, useScopedData } from "@/context/RBACContext";
 import type { NGORole, NGOTransaction, NGOFlag, NGONotification, DonorName } from "@/types/ngo";
 import { NGO_PERMISSIONS } from "@/types/ngo";
 import { NGO_TRANSACTIONS, NGO_FLAGS, NGO_NOTIFICATIONS, NGO_MOCK_USERS } from "@/mock/ngo.mock";
-import PermissionGate from "@/components/ngo-dashboard/rbac/PermissionGate";
-import ActionItems from "@/components/ngo-dashboard/rbac/ActionItems";
-import AuditorAlertsPanel from "@/components/ngo-dashboard/rbac/AuditorAlertsPanel";
-import ExecutiveAlertPanel from "@/components/ngo-dashboard/rbac/ExecutiveAlertPanel";
-import AuditSummaryPanel from "@/components/ngo-dashboard/rbac/AuditSummaryPanel";
-import DonorScopeMetrics from "@/components/ngo-dashboard/rbac/DonorScopeMetrics";
-import ExecutiveOverviewBanner from "@/components/ngo-dashboard/rbac/ExecutiveOverviewBanner";
-import ReportSigningPanel from "@/components/ngo-dashboard/rbac/ReportSigningPanel";
-import DonorScopeBanner from "@/components/ngo-dashboard/rbac/DonorScopeBanner";
-import NGORoleSwitcher from "@/components/ngo-dashboard/rbac/NGORoleSwitcher";
+import PermissionGate from "@/components/ngo/rbac/PermissionGate";
+import ActionItems from "@/components/ngo/rbac/ActionItems";
+import AuditorAlertsPanel from "@/components/ngo/rbac/AuditorAlertsPanel";
+import ExecutiveAlertPanel from "@/components/ngo/rbac/ExecutiveAlertPanel";
+import AuditSummaryPanel from "@/components/ngo/rbac/AuditSummaryPanel";
+import DonorScopeMetrics from "@/components/ngo/rbac/DonorScopeMetrics";
+import ExecutiveOverviewBanner from "@/components/ngo/rbac/ExecutiveOverviewBanner";
+import ReportSigningPanel from "@/components/ngo/rbac/ReportSigningPanel";
+import DonorScopeBanner from "@/components/ngo/rbac/DonorScopeBanner";
+import NGORoleSwitcher from "@/components/ngo/rbac/NGORoleSwitcher";
 import AddTransactionModal from "./AddTransactionModal";
 import UploadEvidenceModal from "./UploadEvidenceModal";
 import EditTransactionModal from "./EditTransactionModal";
@@ -412,8 +412,8 @@ function NGODashboardInner() {
                 <ReportSigningPanel />
               </PermissionGate>
               <PermissionGate component="panel:donor_metrics">
-                {user.assignedDonorId && (
-                  <DonorScopeMetrics allTransactions={transactions} allFlags={flags} donorScope={user.assignedDonorId} />
+                {rbacUser.assignedDonorId && (
+                  <DonorScopeMetrics allTransactions={transactions} allFlags={flags} donorScope={rbacUser.assignedDonorId} />
                 )}
               </PermissionGate>
             </div>
@@ -456,12 +456,9 @@ function NGODashboardInner() {
   );
 }
 
+// RBACProvider is mounted at (ngo)/layout.tsx — no need to re-wrap here.
 export default function NGODashboard() {
-  return (
-    <RBACProvider>
-      <NGODashboardInner />
-    </RBACProvider>
-  );
+  return <NGODashboardInner />;
 }
 
 const tb: Record<string, React.CSSProperties> = {
@@ -524,3 +521,5 @@ const tb: Record<string, React.CSSProperties> = {
   userName: { fontSize: 12.5, fontWeight: 700, color: "#0f172a", lineHeight: 1.2 },
   userRole: { fontSize: 10.5, color: "#64748b", fontWeight: 500, textTransform: "capitalize" as const, lineHeight: 1.2 },
 };
+
+
