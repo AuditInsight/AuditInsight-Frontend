@@ -130,3 +130,5 @@ const s: Record<string, React.CSSProperties> = {
   summaryRow:  { display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 18px", cursor: "pointer" },
   resolveBtn:  { fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 8, background: "#0f172a", color: "#fff", border: "none", cursor: "pointer", fontFamily: "inherit" },
 };
+
+
