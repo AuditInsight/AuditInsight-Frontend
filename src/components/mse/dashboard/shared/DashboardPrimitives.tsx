@@ -55,3 +55,5 @@ export function SparkBars({ color }: { color: string }) {
     </div>
   );
 }
+
+

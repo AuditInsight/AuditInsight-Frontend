@@ -169,3 +169,5 @@ const s: Record<string, React.CSSProperties> = {
   completingTitle:    { fontSize: 18, fontWeight: 700, color: "#0f172a", margin: 0 },
   completingSubtitle: { fontSize: 14, color: "#64748b", margin: 0 },
 };
+
+

@@ -36,3 +36,5 @@ export default function AddWidgetCard({ onClick }: { onClick: () => void }) {
     </div>
   );
 }
+
+

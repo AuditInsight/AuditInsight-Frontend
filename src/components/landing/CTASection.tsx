@@ -67,3 +67,5 @@ const s: Record<string, React.CSSProperties> = {
   ghostBtn:   { height: 52, padding: "0 24px", borderRadius: 12, border: "1.5px solid rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.10)", fontSize: 15, fontWeight: 600, color: "#fff", cursor: "pointer", fontFamily: "inherit" },
   trustItem:  { fontSize: 13, color: "rgba(255,255,255,0.60)", fontWeight: 500 },
 };
+
+

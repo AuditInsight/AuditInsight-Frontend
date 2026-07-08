@@ -1,7 +1,7 @@
 "use client";
 
-import NGOPageLayout from "@/components/ngo-dashboard/NGOPageLayout";
-import DonorScopeBanner from "@/components/ngo-dashboard/rbac/DonorScopeBanner";
+import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import DonorScopeBanner from "@/components/ngo/rbac/DonorScopeBanner";
 import { useRBAC, useScopedData } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
@@ -130,3 +130,5 @@ export default function CompliancePage() {
     </ProtectedRoute>
   );
 }
+
+

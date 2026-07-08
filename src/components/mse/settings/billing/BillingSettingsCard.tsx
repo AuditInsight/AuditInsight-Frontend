@@ -213,3 +213,5 @@ const s: Record<string, React.CSSProperties> = {
   invoiceAmount: { fontSize: 18, fontWeight: 700, color: "#0F172A" },
   payNowBtn: { padding: "7px 16px", borderRadius: 8, border: "none", background: "#1e3a8a", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" },
 };
+
+

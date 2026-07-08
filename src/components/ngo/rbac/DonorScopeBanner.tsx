@@ -31,3 +31,5 @@ const s: Record<string, React.CSSProperties> = {
   sub:     { fontSize: 12, color: "#475569", margin: "3px 0 0", lineHeight: 1.5 },
   badge:   { flexShrink: 0, padding: "4px 10px", borderRadius: 999, background: "rgba(30,58,138,0.1)", color: "#1e3a8a", fontSize: 10.5, fontWeight: 700, border: "1px solid rgba(30,58,138,0.2)", letterSpacing: "0.05em" },
 };
+
+

@@ -227,3 +227,5 @@ const s: Record<string, React.CSSProperties> = {
   successTitle: { fontSize: 17, fontWeight: 700, color: "#0f172a", margin: 0 },
   successSub:   { fontSize: 13.5, color: "#64748b", margin: 0 },
 };
+
+

@@ -187,3 +187,5 @@ const evidenceInfo: React.CSSProperties = { display: "flex", alignItems: "flex-s
 const evidenceIcon: React.CSSProperties = { width: 36, height: 36, borderRadius: 9, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
 const previewBtn: React.CSSProperties = { display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", cursor: "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" };
 const downloadBtn: React.CSSProperties = { display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "none", background: "#1e3a8a", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" };
+
+

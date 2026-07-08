@@ -2,7 +2,7 @@
  * rbac/index.ts — Barrel export for all RBAC components, hooks, and types.
  *
  * Import from here instead of individual files:
- *   import { PermissionGate, useRBACGuard, RoleBadge } from "@/components/ngo-dashboard/rbac";
+ *   import { PermissionGate, useRBACGuard, RoleBadge } from "@/components/ngo/rbac";
  */
 
 // ── Components ─────────────────────────────────────────────────────────────────
@@ -53,3 +53,5 @@ export {
   buildRBACUser,
   buildDataScope,
 } from "@/types/rbac";
+
+

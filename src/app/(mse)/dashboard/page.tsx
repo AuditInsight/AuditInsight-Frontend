@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext.production";
 import { usePermissions } from "@/security/access-control";
 import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { TransactionIntegrityDashboard } from "@/components/dashboard/TransactionIntegrityDashboard";
+import { TransactionIntegrityDashboard } from "@/components/mse/dashboard/TransactionIntegrityDashboard";
 import { Loader2 } from "lucide-react";
 import { FrontendRole } from "@/types/auth";
 
@@ -52,3 +52,5 @@ export default function DashboardPage() {
     />
   );
 }
+
+

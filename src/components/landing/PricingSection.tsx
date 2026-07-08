@@ -110,3 +110,5 @@ const s: Record<string, React.CSSProperties> = {
   btn:          { width: "100%", height: 44, borderRadius: 12, border: "1.5px solid #e2e8f0", background: "#fff", color: "#1e3a8a", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   btnHL:        { background: "#fff", color: "#1e3a8a", border: "none", boxShadow: "0 4px 14px rgba(0,0,0,0.15)" },
 };
+
+

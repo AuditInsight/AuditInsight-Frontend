@@ -298,3 +298,5 @@ const s: Record<string, React.CSSProperties> = {
   eyeBtn: { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" },
   submitBtn: { width: "100%", padding: "13px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontWeight: 600, fontSize: 15, marginTop: 4, fontFamily: "inherit", letterSpacing: "0.2px" },
 };
+
+

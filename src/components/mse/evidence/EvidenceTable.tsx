@@ -113,3 +113,5 @@ const th: React.CSSProperties = {
   whiteSpace: "nowrap",
   borderBottom: `1px solid ${theme.colors.border}`,
 };
+
+

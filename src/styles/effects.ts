@@ -42,3 +42,5 @@ export const effects = {
     boxShadow: "0 12px 40px rgba(15, 23, 42, 0.12)",
   },
 };
+
+

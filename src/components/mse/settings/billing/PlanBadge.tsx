@@ -69,3 +69,5 @@ const s: Record<string, React.CSSProperties> = {
   renewalDate: { fontSize: 15, fontWeight: 700, color: "#fff" },
   daysLeft: { fontSize: 12, marginTop: 2, fontWeight: 500 },
 };
+
+

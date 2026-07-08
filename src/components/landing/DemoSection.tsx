@@ -34,3 +34,5 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: "center", fontSize: 20, fontWeight: 700,
   },
 };
+
+

@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/layout/evidenceSidebar";
-import { EvidenceHeader } from "@/components/evidence/EvidenceHeader";
-import { EvidenceFilters, EvidenceTab } from "@/components/evidence/EvidenceFilters";
-import { EvidenceTable } from "@/components/evidence/EvidenceTable";
-import { EvidencePagination } from "@/components/evidence/EvidencePagination";
-import { EvidenceUploadModal } from "@/components/evidence/EvidenceUploadModal";
-import { EvidenceDetailsModal } from "@/components/evidence/EvidenceDetailsModal";
-import { ConfirmDeleteEvidenceModal } from "@/components/evidence/ConfirmDeleteEvidenceModal";
+import { EvidenceHeader } from "@/components/mse/evidence/EvidenceHeader";
+import { EvidenceFilters, EvidenceTab } from "@/components/mse/evidence/EvidenceFilters";
+import { EvidenceTable } from "@/components/mse/evidence/EvidenceTable";
+import { EvidencePagination } from "@/components/mse/evidence/EvidencePagination";
+import { EvidenceUploadModal } from "@/components/mse/evidence/EvidenceUploadModal";
+import { EvidenceDetailsModal } from "@/components/mse/evidence/EvidenceDetailsModal";
+import { ConfirmDeleteEvidenceModal } from "@/components/mse/evidence/ConfirmDeleteEvidenceModal";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
 import { evidenceMatchesSearch } from "@/lib/evidenceSearch";
@@ -203,3 +203,5 @@ export default function EvidencePage() {
 const s: Record<string, React.CSSProperties> = {
   page: { background: theme.colors.appBackground, minHeight: "100vh", fontFamily: theme.typography.fontFamily },
 };
+
+

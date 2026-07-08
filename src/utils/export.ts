@@ -171,3 +171,5 @@ export function exportReportsPDF(
     </tr></thead><tbody>${rowsHtml}</tbody></table>`
   );
 }
+
+

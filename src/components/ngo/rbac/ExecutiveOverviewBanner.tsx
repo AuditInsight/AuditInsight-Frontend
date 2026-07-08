@@ -98,3 +98,5 @@ const s: Record<string, React.CSSProperties> = {
   kpiValue:  { fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1, margin: "0 0 4px" },
   kpiSub:    { fontSize: 11.5, color: "rgba(147,197,253,0.75)", margin: 0 },
 };
+
+

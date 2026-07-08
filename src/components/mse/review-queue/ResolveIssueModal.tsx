@@ -96,3 +96,5 @@ const s: Record<string, React.CSSProperties> = {
   cancelBtn: { padding: "9px 18px", borderRadius: 9, border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 500 },
   submitBtn: { padding: "9px 20px", borderRadius: 9, border: "none", background: "#16a34a", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "inherit" },
 };
+
+

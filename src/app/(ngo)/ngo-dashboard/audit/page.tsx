@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo-dashboard/NGOPageLayout";
-import PermissionGate from "@/components/ngo-dashboard/rbac/PermissionGate";
+import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
@@ -186,3 +186,5 @@ export default function AuditReadinessPage() {
     </ProtectedRoute>
   );
 }
+
+

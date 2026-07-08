@@ -40,3 +40,5 @@ const s: Record<string, React.CSSProperties> = {
   q:       { margin: "0 0 8px", fontSize: 16, fontWeight: 700, color: "#0f172a" },
   a:       { margin: 0, fontSize: 14, color: "#64748b", lineHeight: 1.65 },
 };
+
+

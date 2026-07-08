@@ -52,3 +52,5 @@ const styles: Record<string, CSSProperties> = {
   th: { textAlign: "left", padding: "10px 12px", borderBottom: "2px solid #e5e7eb", color: "#64748b", fontWeight: 600, fontSize: 12 },
   td: { padding: "12px", borderBottom: "1px solid #f1f5f9", color: "#334155", verticalAlign: "top" },
 };
+
+

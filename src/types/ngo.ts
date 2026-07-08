@@ -146,3 +146,5 @@ export const NGO_PERMISSIONS: Record<NGORole, NGOPermissions> = {
     canViewNotifications: false,
   },
 };
+
+

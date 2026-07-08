@@ -43,3 +43,5 @@ const card: React.CSSProperties = {
 const dot:   React.CSSProperties = { width: 10, height: 10, borderRadius: "50%", flexShrink: 0 };
 const value: React.CSSProperties = { fontSize: 16, fontWeight: 700, color: "#111827", lineHeight: 1.1 };
 const label: React.CSSProperties = { fontSize: 12, fontWeight: 500, color: "#6b7280", marginTop: 2 };
+
+

@@ -26,3 +26,5 @@ export default function PaymentModal({ open, plan, cycle, onClose, onSuccess }: 
     />
   );
 }
+
+

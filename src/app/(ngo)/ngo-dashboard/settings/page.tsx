@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo-dashboard/NGOPageLayout";
-import { useNGOToast } from "@/components/ngo-dashboard/NGOPageLayout";
-import PermissionGate from "@/components/ngo-dashboard/rbac/PermissionGate";
+import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import { useNGOToast } from "@/components/ngo/NGOPageLayout";
+import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
 import { theme } from "@/styles/theme";
@@ -174,3 +174,5 @@ export default function NGOSettingsPage() {
     </ProtectedRoute>
   );
 }
+
+

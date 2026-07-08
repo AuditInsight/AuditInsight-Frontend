@@ -55,3 +55,5 @@ export default function ComplianceAlerts({ transactions }: Props) {
     </Card>
   );
 }
+
+

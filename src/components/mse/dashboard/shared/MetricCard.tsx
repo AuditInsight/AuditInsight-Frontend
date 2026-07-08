@@ -62,3 +62,5 @@ export default function MetricCard({ icon, value, label, trend, trendUp, color, 
     </div>
   );
 }
+
+

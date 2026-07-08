@@ -169,3 +169,5 @@ const s: Record<string, React.CSSProperties> = {
   resendBtn: { width: "100%", padding: "11px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontWeight: 500, fontSize: 14, cursor: "pointer", fontFamily: "inherit", marginTop: 10 },
   backLink: { display: "inline-flex", alignItems: "center", gap: 5, color: "#64748b", fontSize: 13, textDecoration: "none", fontWeight: 500 },
 };
+
+

@@ -15,3 +15,5 @@ export const Badge = ({ label, variant = 'success' }: BadgeProps) => {
     </span>
   );
 };
+
+

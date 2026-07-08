@@ -19,3 +19,5 @@ export interface OrganisationApiResponse {
   currencies: string[];
   createdAt: string;
 }
+
+

@@ -2,24 +2,24 @@
 
 import { useState } from "react";
 
-import SettingsSidebar from "@/components/settings/SettingsSidebar";
-import OrganizationProfileCard from "@/components/settings/organization/OrganizationProfileCard";
-import FiscalYearSettings from "@/components/settings/organization/FiscalYearSettings";
-import CurrencySettings from "@/components/settings/organization/CurrencySettings";
-import UsersTable from "@/components/settings/users/UsersTable";
-import InviteUserModal from "@/components/settings/users/InviteUserModal";
-import PermissionsMatrix from "@/components/settings/permissions/PermissionsMetrix";
-import WorkflowStatusesCard from "@/components/settings/workflow/WorkflowStatusesCard";
-import EscalationRulesCard from "@/components/settings/workflow/EscalationRulesCard";
-import AutoAssignmentCard from "@/components/settings/workflow/AutoAssignmentCard";
-import ApprovalLimitsCard from "@/components/settings/compliance/ApprovalLimitsCard";
-import SegregationRulesCard from "@/components/settings/compliance/SegregationRulesCard";
-import EvidenceRequirementsCard from "@/components/settings/compliance/EvidenceRequirementsCard";
-import SecuritySettingsCard from "@/components/settings/security/SecuritySettingsCard";
-import PasswordPolicyCard from "@/components/settings/security/PasswordPolicyCard";
-import SessionManagementCard from "@/components/settings/security/SessionManagmentCard";
-import AuditLogsTable from "@/components/settings/audit-logs/AuditLogsTable";
-import BillingSettingsCard from "@/components/settings/billing/BillingSettingsCard";
+import SettingsSidebar from "@/components/mse/settings/SettingsSidebar";
+import OrganizationProfileCard from "@/components/mse/settings/organization/OrganizationProfileCard";
+import FiscalYearSettings from "@/components/mse/settings/organization/FiscalYearSettings";
+import CurrencySettings from "@/components/mse/settings/organization/CurrencySettings";
+import UsersTable from "@/components/mse/settings/users/UsersTable";
+import InviteUserModal from "@/components/mse/settings/users/InviteUserModal";
+import PermissionsMatrix from "@/components/mse/settings/permissions/PermissionsMetrix";
+import WorkflowStatusesCard from "@/components/mse/settings/workflow/WorkflowStatusesCard";
+import EscalationRulesCard from "@/components/mse/settings/workflow/EscalationRulesCard";
+import AutoAssignmentCard from "@/components/mse/settings/workflow/AutoAssignmentCard";
+import ApprovalLimitsCard from "@/components/mse/settings/compliance/ApprovalLimitsCard";
+import SegregationRulesCard from "@/components/mse/settings/compliance/SegregationRulesCard";
+import EvidenceRequirementsCard from "@/components/mse/settings/compliance/EvidenceRequirementsCard";
+import SecuritySettingsCard from "@/components/mse/settings/security/SecuritySettingsCard";
+import PasswordPolicyCard from "@/components/mse/settings/security/PasswordPolicyCard";
+import SessionManagementCard from "@/components/mse/settings/security/SessionManagmentCard";
+import AuditLogsTable from "@/components/mse/settings/audit-logs/AuditLogsTable";
+import BillingSettingsCard from "@/components/mse/settings/billing/BillingSettingsCard";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
 
 import { theme } from "@/styles/theme";
@@ -163,3 +163,5 @@ const styles: Record<string, React.CSSProperties> = {
   sectionText: { marginTop: 4, color: "#6b7280", fontSize: 14 },
   primaryBtn: { height: 42, padding: "0 18px", border: "none", borderRadius: 10, background: "#1e3a8a", color: "#fff", cursor: "pointer", fontWeight: 600 },
 };
+
+

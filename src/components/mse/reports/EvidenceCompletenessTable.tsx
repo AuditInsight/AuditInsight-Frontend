@@ -58,3 +58,5 @@ const styles: Record<string, CSSProperties> = {
   td: { padding: "12px", borderBottom: "1px solid #f1f5f9", color: "#334155" },
   badge: { padding: "4px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700 },
 };
+
+

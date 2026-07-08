@@ -79,3 +79,5 @@ const primaryBtn: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 600,
 };
+
+

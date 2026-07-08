@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo-dashboard/NGOPageLayout";
-import { useNGOToast } from "@/components/ngo-dashboard/NGOPageLayout";
+import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import { useNGOToast } from "@/components/ngo/NGOPageLayout";
 import { ProtectedRoute } from "@/components/Guards";
 import { Users, Search, Download, Plus, MapPin, Phone } from "lucide-react";
 
@@ -133,3 +133,5 @@ export default function BeneficiariesPage() {
     </ProtectedRoute>
   );
 }
+
+

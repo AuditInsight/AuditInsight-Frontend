@@ -115,3 +115,5 @@ const s: Record<string, React.CSSProperties> = {
   badge:     { fontSize: 11, fontWeight: 600, color: "rgba(148,198,255,0.70)", background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)", padding: "3px 9px", borderRadius: 16 },
   madeWith:  { margin: 0, fontSize: 12, color: "rgba(255,255,255,0.25)" },
 };
+
+

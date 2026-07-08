@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo-dashboard/NGOPageLayout";
-import UploadEvidenceModal from "@/components/ngo-dashboard/UploadEvidenceModal";
-import PermissionGate from "@/components/ngo-dashboard/rbac/PermissionGate";
+import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
+import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC, useScopedData } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
 import type { NGOTransaction, DonorName } from "@/types/ngo";
@@ -181,3 +181,5 @@ export default function EvidencePage() {
     </ProtectedRoute>
   );
 }
+
+

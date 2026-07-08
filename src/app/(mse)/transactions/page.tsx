@@ -3,12 +3,12 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-import { TransactionsStats } from "@/components/transactions/TransactionsStats";
-import { TransactionsTable } from "@/components/transactions/TransactionsTable";
-import { TransactionsPagination } from "@/components/transactions/TransactionsPagination";
-import ViewTransactionModal from "@/components/transactions/modals/ViewTransactionModal";
-import { AddTransactionModal } from "@/components/transactions/modals/AddTransactionModal";
-import { ConfirmDeleteModal } from "@/components/transactions/modals/ConfirmDeleteModal";
+import { TransactionsStats } from "@/components/mse/transactions/TransactionsStats";
+import { TransactionsTable } from "@/components/mse/transactions/TransactionsTable";
+import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
+import ViewTransactionModal from "@/components/mse/transactions/modals/ViewTransactionModal";
+import { AddTransactionModal } from "@/components/mse/transactions/modals/AddTransactionModal";
+import { ConfirmDeleteModal } from "@/components/mse/transactions/modals/ConfirmDeleteModal";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
 
 import { theme } from "@/styles/theme";
@@ -200,3 +200,5 @@ const footer: React.CSSProperties = {
   color: theme.colors.textMuted,
   fontSize: theme.typography.sm,
 };
+
+

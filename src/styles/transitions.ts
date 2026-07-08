@@ -3,3 +3,5 @@ export const transitions = {
   normal: "all 0.25s ease",
   slow: "all 0.35s ease",
 };
+
+

@@ -204,3 +204,5 @@ const s: Record<string, React.CSSProperties> = {
   successIcon: { width: 52, height: 52, borderRadius: "50%", background: "#dcfce7", color: "#16a34a", fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" },
   successText: { fontSize: 15, color: "#374151", textAlign: "center" },
 };
+
+

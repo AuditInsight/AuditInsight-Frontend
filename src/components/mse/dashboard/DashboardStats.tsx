@@ -1,4 +1,4 @@
-import statsStyles from "@/components/dashboard/DashboardStats.styles";
+import statsStyles from "@/components/mse/dashboard/DashboardStats.styles";
 
 type Transaction = {
   id: string | number;
@@ -52,3 +52,5 @@ export default function DashboardStats({ transactions, evidence }: Props) {
     </div>
   );
 }
+
+

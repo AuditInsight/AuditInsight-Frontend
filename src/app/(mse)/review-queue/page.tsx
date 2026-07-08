@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
-import ReviewStats from "@/components/review-queue/ReviewStats";
-import ReviewFilters from "@/components/review-queue/ReviewFilters";
-import ReviewTable from "@/components/review-queue/ReviewTable";
-import ReviewPagination from "@/components/review-queue/ReviewPagination";
-import FlagIssueModal from "@/components/review-queue/FlagIssueModal";
-import ResolveIssueModal from "@/components/review-queue/ResolveIssueModal";
+import ReviewStats from "@/components/mse/review-queue/ReviewStats";
+import ReviewFilters from "@/components/mse/review-queue/ReviewFilters";
+import ReviewTable from "@/components/mse/review-queue/ReviewTable";
+import ReviewPagination from "@/components/mse/review-queue/ReviewPagination";
+import FlagIssueModal from "@/components/mse/review-queue/FlagIssueModal";
+import ResolveIssueModal from "@/components/mse/review-queue/ResolveIssueModal";
 
 import { theme } from "@/styles/theme";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
@@ -165,3 +165,5 @@ const s: Record<string, React.CSSProperties> = {
   issueTab:      { padding: "7px 14px", borderRadius: 20, border: "1px solid #e5e7eb", background: "#fff", fontSize: 12, fontWeight: 500, color: "#374151", cursor: "pointer", whiteSpace: "nowrap" as const },
   issueTabActive:{ background: "#1e3a8a", color: "#fff", border: "1px solid #1e3a8a", fontWeight: 600 },
 };
+
+

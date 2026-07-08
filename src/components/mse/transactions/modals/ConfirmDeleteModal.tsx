@@ -104,3 +104,5 @@ const deleteBtn: React.CSSProperties = {
   fontSize: theme.typography.sm,
   fontWeight: 600,
 };
+
+

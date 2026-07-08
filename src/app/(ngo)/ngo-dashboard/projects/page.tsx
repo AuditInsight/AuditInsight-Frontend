@@ -1,6 +1,6 @@
 "use client";
 
-import NGOPageLayout from "@/components/ngo-dashboard/NGOPageLayout";
+import NGOPageLayout from "@/components/ngo/NGOPageLayout";
 import { ProtectedRoute } from "@/components/Guards";
 import { NGO_TRANSACTIONS } from "@/mock/ngo.mock";
 import { FolderOpen, DollarSign, CheckCircle2, Clock, Users } from "lucide-react";
@@ -139,3 +139,5 @@ export default function ProjectsPage() {
     </ProtectedRoute>
   );
 }
+
+

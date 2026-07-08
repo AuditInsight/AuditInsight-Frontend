@@ -106,3 +106,5 @@ export function formatMonthLabel(ym: string): string {
   const d = new Date(Number(year), Number(month) - 1, 1);
   return d.toLocaleDateString("en-GB", { month: "short" });
 }
+
+

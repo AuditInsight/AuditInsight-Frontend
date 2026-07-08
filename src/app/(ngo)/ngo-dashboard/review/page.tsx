@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo-dashboard/NGOPageLayout";
-import NGOFlagIssueModal from "@/components/ngo-dashboard/NGOFlagIssueModal";
-import AuditSummaryPanel from "@/components/ngo-dashboard/rbac/AuditSummaryPanel";
-import PermissionGate from "@/components/ngo-dashboard/rbac/PermissionGate";
-import { useNGOToast } from "@/components/ngo-dashboard/NGOPageLayout";
+import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import NGOFlagIssueModal from "@/components/ngo/NGOFlagIssueModal";
+import AuditSummaryPanel from "@/components/ngo/rbac/AuditSummaryPanel";
+import PermissionGate from "@/components/ngo/rbac/PermissionGate";
+import { useNGOToast } from "@/components/ngo/NGOPageLayout";
 import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
@@ -191,3 +191,5 @@ export default function ReviewQueuePage() {
     </ProtectedRoute>
   );
 }
+
+

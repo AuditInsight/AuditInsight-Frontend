@@ -7,3 +7,5 @@ export type DashboardStat = {
   status: "success" | "warning" | "danger"
   icon: LucideIcon
 }
+
+

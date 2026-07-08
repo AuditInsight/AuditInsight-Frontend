@@ -111,3 +111,5 @@ const s: Record<string, React.CSSProperties> = {
   reportRow:   { padding: "14px 18px", borderBottom: "1px solid #f8fafc" },
   signBtn:     { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 },
 };
+
+

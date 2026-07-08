@@ -110,3 +110,5 @@ const deleteBtn: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 600,
 };
+
+
