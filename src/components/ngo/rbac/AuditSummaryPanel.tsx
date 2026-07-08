@@ -105,3 +105,5 @@ const s: Record<string, React.CSSProperties> = {
   metricCard:  { borderRadius: 10, padding: "12px 14px" },
   ctaBtn:      { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "10px", borderRadius: 10, background: "#0f172a", color: "#fff", fontSize: 12.5, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "inherit" },
 };
+
+
