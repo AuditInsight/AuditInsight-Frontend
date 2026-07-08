@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * PageLayout.tsx — Legacy shell kept for any remaining direct imports.
+ *
+ * NOTE: As of the route-group restructure, layout is handled by:
+ *   (auth)/layout.tsx   — auth pages
+ *   (mse)/layout.tsx    — private company pages
+ *   (ngo)/layout.tsx    — NGO portal pages
+ *   (admin)/layout.tsx  — system admin pages
+ *
+ * This file is no longer mounted in the root layout.
+ */
 import { usePathname } from "next/navigation";
 import Header from "@/components/layout/header/Header";
 import AppFooter from "@/components/layout/AppFooter";
@@ -18,10 +29,10 @@ const PUBLIC_PATHS = [
 
 export default function PageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isPublicPage = PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/ngo-dashboard");
-  const isDashboard = pathname === "/dashboard";
+  const isPublicPage =
+    PUBLIC_PATHS.includes(pathname) ||
+    pathname.startsWith("/ngo-dashboard");
 
-  // Enforces forced password reset for invited users (Story 2.1 / 3.1)
   usePasswordResetGuard();
 
   if (isPublicPage) return <>{children}</>;
@@ -37,22 +48,18 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
           radial-gradient(circle at bottom right, rgba(59,130,246,0.10), transparent 30%),
           ${theme.colors.appBackground}
         `,
-        position: "relative",
       }}
     >
       <Header title="AuditInsight" />
       <main
         style={{
           flex: 1,
-          padding: isDashboard ? 0 : theme.spacing.xl,
-          maxWidth: isDashboard ? "100%" : 1500,
+          padding: theme.spacing.xl,
+          maxWidth: 1500,
           width: "100%",
-          margin: isDashboard ? 0 : "0 auto",
-          position: "relative",
-          zIndex: 2,
+          margin: "0 auto",
           boxSizing: "border-box",
         }}
-        className={isDashboard ? "" : "page-padding"}
       >
         {children}
       </main>
@@ -60,3 +67,4 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
+
