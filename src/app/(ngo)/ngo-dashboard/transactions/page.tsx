@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo-dashboard/NGOPageLayout";
-import NGOTransactionTable from "@/components/ngo-dashboard/NGOTransactionTable";
-import NGOFlagIssueModal from "@/components/ngo-dashboard/NGOFlagIssueModal";
-import UploadEvidenceModal from "@/components/ngo-dashboard/UploadEvidenceModal";
-import EditTransactionModal from "@/components/ngo-dashboard/EditTransactionModal";
-import AddTransactionModal from "@/components/ngo-dashboard/AddTransactionModal";
-import PermissionGate from "@/components/ngo-dashboard/rbac/PermissionGate";
-import ActionItems from "@/components/ngo-dashboard/rbac/ActionItems";
-import AuditorAlertsPanel from "@/components/ngo-dashboard/rbac/AuditorAlertsPanel";
+import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import NGOTransactionTable from "@/components/ngo/NGOTransactionTable";
+import NGOFlagIssueModal from "@/components/ngo/NGOFlagIssueModal";
+import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
+import EditTransactionModal from "@/components/ngo/EditTransactionModal";
+import AddTransactionModal from "@/components/ngo/AddTransactionModal";
+import PermissionGate from "@/components/ngo/rbac/PermissionGate";
+import ActionItems from "@/components/ngo/rbac/ActionItems";
+import AuditorAlertsPanel from "@/components/ngo/rbac/AuditorAlertsPanel";
 import { useRBAC, useScopedData } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
 import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity, DonorName } from "@/types/ngo";
@@ -160,3 +160,5 @@ export default function TransactionsPage() {
     </ProtectedRoute>
   );
 }
+
+
