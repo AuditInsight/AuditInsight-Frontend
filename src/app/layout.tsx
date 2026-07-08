@@ -1,5 +1,4 @@
 import "./globals.css";
-import PageLayout from "@/components/layout/PageLayout/PageLayout";
 import { AuthProvider } from "@/context/AuthContext.production";
 import { Colors } from "@/styles/colors";
 import { seedNotificationsIfEmpty } from "@/mock/notifications.mock";
@@ -8,7 +7,10 @@ if (typeof window !== "undefined") {
   seedNotificationsIfEmpty();
 }
 
-export const metadata = { title: "AuditInsight", description: "Enterprise audit & compliance platform" };
+export const metadata = {
+  title: "AuditInsight",
+  description: "Enterprise audit & compliance platform",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,10 +26,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           fontFamily: "Inter, sans-serif",
         }}
       >
+        {/*
+          AuthProvider wraps the entire app.
+          Each route group ((auth), (mse), (ngo), (admin)) owns its own
+          layout shell — no global PageLayout wrapper needed here.
+        */}
         <AuthProvider>
-          <PageLayout>{children}</PageLayout>
+          {children}
         </AuthProvider>
       </body>
     </html>
   );
 }
+
+
