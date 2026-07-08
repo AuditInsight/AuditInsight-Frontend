@@ -15,7 +15,7 @@
 
 import { useState } from "react";
 import { Upload, Edit2, Flag, ChevronUp, ChevronDown, Lock } from "lucide-react";
-import PermissionGate from "@/components/ngo-dashboard/rbac/PermissionGate";
+import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
 import type { NGOTransaction, NGORole, NGOTransactionStatus, DonorName } from "@/types/ngo";
 
@@ -324,3 +324,5 @@ export default function NGOTransactionTable({
     </div>
   );
 }
+
+
