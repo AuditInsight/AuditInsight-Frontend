@@ -128,3 +128,5 @@ export function usePermissions(): Permissions {
   if (!role) return FALLBACK;
   return PERMISSIONS[role as FrontendRole] ?? FALLBACK;
 }
+
+

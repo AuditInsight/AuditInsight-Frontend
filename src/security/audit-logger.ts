@@ -52,3 +52,5 @@ export function appendAuditLog(entry: Omit<AuditEntry, "id" | "timestamp">): voi
   // Append only — no edit, no delete
   (_log as AuditEntry[]).push(newEntry);
 }
+
+

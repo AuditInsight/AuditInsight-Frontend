@@ -102,3 +102,5 @@ export function withRBACGuard<P extends object>(
   GuardedComponent.displayName = `withRBACGuard(${Component.displayName ?? Component.name})`;
   return GuardedComponent;
 }
+
+

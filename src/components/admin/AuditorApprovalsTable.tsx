@@ -73,3 +73,5 @@ const row: React.CSSProperties = { borderBottom: "1px solid #f1f5f9" };
 const td: React.CSSProperties = { padding: "12px 16px", color: "#1f2937" };
 const badge: React.CSSProperties = { padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600 };
 const btn: React.CSSProperties = { padding: "5px 14px", borderRadius: 8, border: "none", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 12 };
+
+

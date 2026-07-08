@@ -613,3 +613,5 @@ const receiptRow: React.CSSProperties = {
 
 const receiptLabel: React.CSSProperties = { fontSize: 13, color: "#64748b" };
 const receiptValue: React.CSSProperties = { fontSize: 13, color: "#0f172a" };
+
+

@@ -195,3 +195,5 @@ export function useRoleAccent(): { color: string; bg: string; border: string } {
   const { user } = useRBAC();
   return ROLE_ACCENTS[user.role];
 }
+
+

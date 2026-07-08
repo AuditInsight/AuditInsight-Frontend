@@ -99,3 +99,5 @@ export async function simulateMoMoPayment(
   const receiptId = `MOMO-${Date.now().toString(36).toUpperCase()}`;
   return { success: true, receiptId };
 }
+
+

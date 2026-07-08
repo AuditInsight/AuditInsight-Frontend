@@ -77,3 +77,5 @@ const s: Record<string, React.CSSProperties> = {
   cardTitle: { margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" },
   cardText:  { margin: 0, fontSize: 14, color: "#64748b", lineHeight: 1.65 },
 };
+
+

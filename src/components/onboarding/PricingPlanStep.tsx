@@ -148,3 +148,5 @@ const s: Record<string, React.CSSProperties> = {
   backBtn: { flex: "0 0 auto", padding: "13px 22px", borderRadius: 10, border: "1.5px solid #E2E8F0", background: "#fff", color: "#374151", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" },
   continueBtn: { flex: 1, padding: "13px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer", fontFamily: "inherit" },
 };
+
+

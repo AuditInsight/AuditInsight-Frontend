@@ -69,3 +69,5 @@ const s: Record<string, React.CSSProperties> = {
   name:    { margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a" },
   role:    { margin: 0, fontSize: 12, color: "#64748b" },
 };
+
+

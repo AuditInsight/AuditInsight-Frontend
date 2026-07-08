@@ -114,3 +114,5 @@ const s: Record<string, React.CSSProperties> = {
   activeDot: { width: 6, height: 6, borderRadius: "50%", marginLeft: "auto", opacity: 0.7 },
   logoutBtn: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", cursor: "pointer", color: "#64748b", fontFamily: "inherit", width: "100%", textAlign: "left", transition: "background 0.15s, color 0.15s" },
 };
+
+

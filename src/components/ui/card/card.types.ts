@@ -5,3 +5,5 @@ export interface CardProps {
 padding?: 'sm' | 'md' | 'lg';
 
 }
+
+

@@ -165,3 +165,5 @@ const s: Record<string, React.CSSProperties> = {
   currencyBtnActive: { border: "1.5px solid #1e3a8a", background: "rgba(30,58,138,0.07)", color: "#1e3a8a", fontWeight: 700 },
   btn: { width: "100%", padding: "13px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer", marginTop: 10, fontFamily: "inherit", letterSpacing: "0.2px", boxShadow: "0 4px 12px rgba(30,58,138,0.25)", transition: "opacity 0.15s" },
 };
+
+

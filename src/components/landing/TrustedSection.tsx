@@ -59,3 +59,5 @@ const s: Record<string, React.CSSProperties> = {
   tag:     { display: "flex", alignItems: "center", gap: 8, padding: "10px 18px" },
   tagText: { fontSize: 14, fontWeight: 600, color: "#374151", whiteSpace: "nowrap" },
 };
+
+

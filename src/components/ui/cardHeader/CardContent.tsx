@@ -7,3 +7,5 @@ interface CardContentProps {
 export function CardContent({ children }: CardContentProps) {
   return <div>{children}</div>
 }
+
+
