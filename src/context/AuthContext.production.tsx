@@ -124,8 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setState({ status: "authenticated", user });
           if (user.mustChangePassword)      return { redirectTo: "/reset-password" };
           if (user.role === "SYSTEM_ADMIN") return { redirectTo: "/admin/organizations" };
-          if (user.orgType === "NGO")       return { redirectTo: "/ngo-dashboard" };
-          return { redirectTo: "/dashboard" };
+          if (user.orgType === "NGO")       return { redirectTo: "/ngo-dashboard" };   // → (ngo) group
+          return { redirectTo: "/dashboard" };                                          // → (mse) group
         }
       }
 
@@ -159,8 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.mustChangePassword)      return { redirectTo: "/reset-password" };
       if (user.role === "SYSTEM_ADMIN") return { redirectTo: "/admin/organizations" };
-      if (user.orgType === "NGO")       return { redirectTo: "/ngo-dashboard" };
-      return { redirectTo: "/dashboard" };
+      if (user.orgType === "NGO")       return { redirectTo: "/ngo-dashboard" };   // → (ngo) group
+      return { redirectTo: "/dashboard" };                                          // → (mse) group
     },
     []
   );
@@ -215,3 +215,5 @@ export function useRequiredUser(): User {
   }
   return user;
 }
+
+
