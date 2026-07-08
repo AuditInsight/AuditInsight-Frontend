@@ -119,3 +119,5 @@ const s: Record<string, React.CSSProperties> = {
   footer:      { padding: "10px 18px", borderTop: "1px solid #f1f5f9", background: "#f8fafc" },
   footerBtn:   { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#1e3a8a", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 },
 };
+
+

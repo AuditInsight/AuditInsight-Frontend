@@ -107,3 +107,5 @@ const s: Record<string, React.CSSProperties> = {
   flagRow:     { padding: "14px 18px", borderBottom: "1px solid #f8fafc" },
   uploadBtn:   { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "9px", borderRadius: 10, background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "inherit" },
 };
+
+
