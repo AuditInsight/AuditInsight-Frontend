@@ -8,7 +8,7 @@ import NGOToast, { useToast } from "./NGOToast";
 import NGORoleSwitcher from "./rbac/NGORoleSwitcher";
 import AppFooter from "@/components/layout/AppFooter";
 import { useAuth } from "@/context/AuthContext.production";
-import { RBACProvider, useRoleAccent, useRoleLabel } from "@/context/RBACContext";
+import { useRoleAccent, useRoleLabel } from "@/context/RBACContext";
 import type { NGORole, NGONotification } from "@/types/ngo";
 import { NGO_NOTIFICATIONS } from "@/mock/ngo.mock";
 
@@ -124,13 +124,12 @@ function NGOPageLayoutInner({ pageTitle, pageSub, children }: Props) {
   );
 }
 
+// RBACProvider is mounted at (ngo)/layout.tsx — no need to re-wrap here.
 export default function NGOPageLayout({ pageTitle, pageSub, children }: Props) {
   return (
-    <RBACProvider>
-      <NGOPageLayoutInner pageTitle={pageTitle} pageSub={pageSub}>
-        {children}
-      </NGOPageLayoutInner>
-    </RBACProvider>
+    <NGOPageLayoutInner pageTitle={pageTitle} pageSub={pageSub}>
+      {children}
+    </NGOPageLayoutInner>
   );
 }
 
@@ -185,3 +184,5 @@ const tb: Record<string, React.CSSProperties> = {
     border: "1px solid #e2e8f0", zIndex: 200,
   },
 };
+
+
