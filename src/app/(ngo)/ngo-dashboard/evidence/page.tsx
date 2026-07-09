@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
 import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC, useScopedData } from "@/context/RBACContext";
@@ -175,9 +175,9 @@ function EvidenceContent() {
 export default function EvidencePage() {
   return (
     <ProtectedRoute>
-      <NGOPageLayout pageTitle="Evidence Vault" pageSub="Manage and verify supporting documents for all transactions.">
+      <NGODashboardShell>
         <EvidenceContent />
-      </NGOPageLayout>
+      </NGODashboardShell>
     </ProtectedRoute>
   );
 }
