@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard, CreditCard, FolderOpen,
   Flag, Settings, Bell, LogOut, Search,
-  ChevronDown, Shield,
+  ChevronDown, Shield, BarChart3,
 } from "lucide-react";
 import NGONotificationPanel from "@/components/ngo/NGONotificationPanel";
 import NGORoleSwitcher from "@/components/ngo/rbac/NGORoleSwitcher";
@@ -20,6 +20,7 @@ const TABS = [
   { label: "Transactions", path: "/ngo-dashboard/transactions", icon: <CreditCard size={15} />      },
   { label: "Evidence",     path: "/ngo-dashboard/evidence",     icon: <FolderOpen size={15} />      },
   { label: "Review Queue", path: "/ngo-dashboard/review",       icon: <Flag size={15} />            },
+  { label: "Reports",      path: "/ngo-dashboard/reports",      icon: <BarChart3 size={15} />       },
   { label: "Settings",     path: "/ngo-dashboard/settings",     icon: <Settings size={15} />        },
 ];
 
