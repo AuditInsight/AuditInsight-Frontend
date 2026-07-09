@@ -12,6 +12,7 @@ import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
 import { useRBAC, useScopedData } from "@/context/RBACContext";
 import { useAuth } from "@/context/AuthContext.production";
 import type { NGORole } from "@/types/ngo";
+import NGOActivityFeed from "@/components/ngo/dashboard/NGOActivityFeed";
 
 const ACCENT = "#0f172a";
 const CHART_BAR = "#cbd5e1";
@@ -364,6 +365,9 @@ export default function NGODashboardOverview() {
             })}
           </CardShell>
         </div>
+
+        {/* Activity feed */}
+        <NGOActivityFeed />
 
       </div>
 
