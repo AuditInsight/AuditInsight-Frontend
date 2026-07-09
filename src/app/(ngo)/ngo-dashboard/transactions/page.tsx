@@ -15,6 +15,7 @@ import { ProtectedRoute } from "@/components/Guards";
 import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity, DonorName } from "@/types/ngo";
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
 import { Plus, Download, TrendingUp, TrendingDown, AlertTriangle, Clock } from "lucide-react";
+import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 
 function StatCard({ label, value, sub, accent, icon }: {
   label: string; value: string | number; sub?: string; accent: string; icon: React.ReactNode;
@@ -68,8 +69,18 @@ function TransactionsContent() {
     ));
   };
 
+  const handleExport = () => {
+    const rows = [["ID","Project","Donor","Amount","Status"], ...scopedTxns.map((t) => [t.id, t.projectName, t.donor, t.amount, t.status])];
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "ngo-transactions.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <NGOPageHeader title="Transactions" subtitle="Record, review, and manage all project financial transactions." onExport={handleExport} />
 
       {/* Stats */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
