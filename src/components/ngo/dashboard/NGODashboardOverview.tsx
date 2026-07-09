@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext.production";
 import type { NGORole } from "@/types/ngo";
 import NGOActivityFeed from "@/components/ngo/dashboard/NGOActivityFeed";
 import NGOQuickActions from "@/components/ngo/dashboard/NGOQuickActions";
+import NGOComplianceScore from "@/components/ngo/dashboard/NGOComplianceScore";
 
 const ACCENT = "#0f172a";
 const CHART_BAR = "#cbd5e1";
@@ -367,8 +368,9 @@ export default function NGODashboardOverview() {
           </CardShell>
         </div>
 
-        {/* Quick actions + activity feed */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {/* Compliance score + quick actions + activity feed */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+          <NGOComplianceScore />
           <NGOQuickActions />
           <NGOActivityFeed />
         </div>
