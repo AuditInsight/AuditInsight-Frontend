@@ -132,7 +132,7 @@ export default function NGODashboardShell({ children }: Props) {
 
       <footer style={s.footer}>
         <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", textAlign: "center" }}>
-          AuditInsight NGO Portal · {orgName} · {new Date().getFullYear()}
+          AuditInsight NGO Portal · {orgName} · {new Date().getFullYear()} · <span style={{ color: "#cbd5e1" }}>v2.0</span>
         </p>
       </footer>
 
