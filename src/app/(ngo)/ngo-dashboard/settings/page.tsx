@@ -78,10 +78,24 @@ function SettingsContent() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xl }}>
       <NGOPageHeader title="Settings" subtitle="Manage your organisation profile, preferences, and security." />
-      <div style={{ display: "flex", gap: theme.spacing.xl, alignItems: "flex-start" }}>
+      <style>{`
+        .ngo-settings { display: flex; gap: 24px; align-items: flex-start; }
+        .ngo-settings-sidebar { width: 200px; flex-shrink: 0; }
+        .ngo-settings-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+        .ngo-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 768px) {
+          .ngo-settings { flex-direction: column; }
+          .ngo-settings-sidebar { width: 100%; display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; padding: 10px !important; }
+          .ngo-settings-sidebar button { flex: 1; min-width: 120px; }
+        }
+        @media (max-width: 480px) {
+          .ngo-field-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
+      <div className="ngo-settings">
 
       {/* Sidebar */}
-      <div style={{ width: 200, flexShrink: 0, background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, boxShadow: theme.shadows.sm, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
+      <div className="ngo-settings-sidebar" style={{ background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, boxShadow: theme.shadows.sm, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
         {visibleTabs.map((tab) => (
           <button key={tab} onClick={() => setActive(tab)} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 12px", borderRadius: theme.radius.md, border: "none", background: active === tab ? theme.colors.primarySoft : "transparent", color: active === tab ? theme.colors.primary : theme.colors.textSecondary, fontWeight: active === tab ? 600 : 400, fontSize: theme.typography.sm, cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left", transition: "all 0.15s" }}>
             <span style={{ color: active === tab ? theme.colors.primary : theme.colors.textMuted }}>{TAB_ICONS[tab]}</span>
@@ -91,7 +105,7 @@ function SettingsContent() {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: theme.spacing.lg }}>
+      <div className="ngo-settings-body">
 
         {active === "Organisation" && (
           <PermissionGate
@@ -104,7 +118,7 @@ function SettingsContent() {
             }
           >
             <Section title="Organisation Profile">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.spacing.lg }}>
+              <div className="ngo-field-grid">
                 <Field label="Organisation Name"   defaultValue="Rwanda Health Foundation" />
                 <Field label="Registration Number" defaultValue="NGO-RW-2019-0042" />
                 <Field label="Country"             defaultValue="Rwanda" />
@@ -124,7 +138,7 @@ function SettingsContent() {
                 <span style={{ fontSize: theme.typography.xs, color: "#5b21b6", fontWeight: 500 }}>Profile fields are read-only for Donor Representatives.</span>
               </div>
             )}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.spacing.lg }}>
+            <div className="ngo-field-grid">
               <Field label="Full Name"  defaultValue={user.fullName}  readOnly={isDonor} />
               <Field label="Job Title"  defaultValue={isDonor ? "Donor Representative" : "Finance Officer"} readOnly={isDonor} />
               <Field label="Email"      defaultValue={user.email}     type="email" readOnly={isDonor} />
