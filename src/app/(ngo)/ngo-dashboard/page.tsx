@@ -1,14 +1,15 @@
 "use client";
 
 import { ProtectedRoute } from "@/components/Guards";
-import NGODashboard from "@/components/ngo/NGODashboard";
+import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
+import NGODashboardOverview from "@/components/ngo/dashboard/NGODashboardOverview";
 
 export default function NGODashboardPage() {
   return (
     <ProtectedRoute>
-      <NGODashboard />
+      <NGODashboardShell>
+        <NGODashboardOverview />
+      </NGODashboardShell>
     </ProtectedRoute>
   );
 }
-
-
