@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
 import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC, useScopedData } from "@/context/RBACContext";
@@ -9,6 +9,9 @@ import { ProtectedRoute } from "@/components/Guards";
 import type { NGOTransaction, DonorName } from "@/types/ngo";
 import { NGO_TRANSACTIONS } from "@/mock/ngo.mock";
 import { Upload, FileText, CheckCircle2, AlertTriangle, Clock, Search, Lock } from "lucide-react";
+import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
+import NGOStatCard from "@/components/ngo/dashboard/NGOStatCard";
+import NGOEmptyState from "@/components/ngo/dashboard/NGOEmptyState";
 
 const STATUS_CFG = {
   COMPLETED: { label: "Verified", color: "#1e3a8a", bg: "rgba(30,58,138,0.07)", border: "rgba(30,58,138,0.2)" },
@@ -46,23 +49,14 @@ function EvidenceContent() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <NGOPageHeader title="Evidence Vault" subtitle="Manage and verify supporting documents for all transactions." />
 
       {/* Stats */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-        {([
-          { label: "Total Files",      value: totalFiles,    accent: "#1e3a8a", icon: <FileText size={16} />      },
-          { label: "Verified Records", value: verified,      accent: "#2563eb", icon: <CheckCircle2 size={16} />  },
-          { label: "Flagged Records",  value: flaggedCount,  accent: "#475569", icon: <AlertTriangle size={16} /> },
-          { label: "Pending Upload",   value: pendingUpload, accent: "#64748b", icon: <Clock size={16} />         },
-        ] as { label: string; value: number; accent: string; icon: React.ReactNode }[]).map(({ label, value, accent, icon }) => (
-          <div key={label} style={{ flex: 1, minWidth: 140, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 20, boxShadow: "0 1px 4px rgba(15,23,42,0.05)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>{label}</span>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: accent + "18", display: "flex", alignItems: "center", justifyContent: "center", color: accent }}>{icon}</div>
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.5px", lineHeight: 1 }}>{value}</div>
-          </div>
-        ))}
+        <NGOStatCard label="Total Files"      value={totalFiles}    accent="#1e3a8a" icon={<FileText size={16} />}      />
+        <NGOStatCard label="Verified Records" value={verified}      accent="#2563eb" icon={<CheckCircle2 size={16} />}  />
+        <NGOStatCard label="Flagged Records"  value={flaggedCount}  accent="#475569" icon={<AlertTriangle size={16} />} />
+        <NGOStatCard label="Pending Upload"   value={pendingUpload} accent="#64748b" icon={<Clock size={16} />}         />
       </div>
 
       {/* Upload drop zone — ACCOUNTANT only */}
@@ -118,7 +112,7 @@ function EvidenceContent() {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: "56px 24px", textAlign: "center", fontSize: 13.5, color: "#94a3b8" }}>No evidence records match your search.</td></tr>
+                <tr><td colSpan={7}><NGOEmptyState icon={<FileText size={24} />} title="No evidence records match your search." subtitle="Try adjusting your search terms." /></td></tr>
               ) : filtered.map((txn) => {
                 const cfg = STATUS_CFG[txn.status];
                 return (
@@ -175,9 +169,9 @@ function EvidenceContent() {
 export default function EvidencePage() {
   return (
     <ProtectedRoute>
-      <NGOPageLayout pageTitle="Evidence Vault" pageSub="Manage and verify supporting documents for all transactions.">
+      <NGODashboardShell>
         <EvidenceContent />
-      </NGOPageLayout>
+      </NGODashboardShell>
     </ProtectedRoute>
   );
 }
