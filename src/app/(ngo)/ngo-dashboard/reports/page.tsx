@@ -3,6 +3,7 @@
 import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 import NGOStatCard from "@/components/ngo/dashboard/NGOStatCard";
+import NGOEmptyState from "@/components/ngo/dashboard/NGOEmptyState";
 import { ProtectedRoute } from "@/components/Guards";
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
 import { FileText, Download, BarChart3, CheckCircle2, AlertTriangle, TrendingUp } from "lucide-react";
@@ -70,7 +71,9 @@ function ReportsContent() {
               </tr>
             </thead>
             <tbody>
-              {REPORTS.map((report) => {
+              {REPORTS.length === 0 ? (
+                <tr><td colSpan={6}><NGOEmptyState icon={<FileText size={24} />} title="No reports yet" subtitle="Reports will appear here once generated." /></td></tr>
+              ) : REPORTS.map((report) => {
                 const tc = TYPE_COLORS[report.type] ?? { color: "#64748b", bg: "#f8fafc" };
                 return (
                   <tr key={report.id} style={{ borderBottom: "1px solid #f8fafc" }}>
