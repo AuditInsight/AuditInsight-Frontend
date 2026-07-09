@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/Guards";
 import type { NGOTransaction, DonorName } from "@/types/ngo";
 import { NGO_TRANSACTIONS } from "@/mock/ngo.mock";
 import { Upload, FileText, CheckCircle2, AlertTriangle, Clock, Search, Lock } from "lucide-react";
+import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 
 const STATUS_CFG = {
   COMPLETED: { label: "Verified", color: "#1e3a8a", bg: "rgba(30,58,138,0.07)", border: "rgba(30,58,138,0.2)" },
@@ -46,6 +47,7 @@ function EvidenceContent() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <NGOPageHeader title="Evidence Vault" subtitle="Manage and verify supporting documents for all transactions." />
 
       {/* Stats */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>

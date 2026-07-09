@@ -12,6 +12,7 @@ import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
 import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity } from "@/types/ngo";
 import { theme } from "@/styles/theme";
 import { Flag, CheckCircle2, Clock, AlertTriangle, ShieldCheck } from "lucide-react";
+import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 
 const SEV_CFG = {
   CRITICAL: { color: theme.colors.danger,  bg: theme.colors.dangerBg,  border: "#fecaca" },
@@ -52,6 +53,7 @@ function ReviewQueueContent() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xl }}>
+      <NGOPageHeader title="Review Queue" subtitle="Inspect transactions, flag compliance issues, and track resolutions." />
 
       {/* Stats */}
       <div style={{ display: "flex", gap: theme.spacing.lg, flexWrap: "wrap" }}>
