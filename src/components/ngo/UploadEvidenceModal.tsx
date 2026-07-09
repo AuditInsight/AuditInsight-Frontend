@@ -2,7 +2,8 @@
 
 import { useState, useRef } from "react";
 import { X, Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react";
-import type { NGOTransaction } from "@/types/ngo";
+import type { NGOTransaction, NGOEvidenceCategory } from "@/types/ngo";
+import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
 
 interface Props {
   open: boolean;
@@ -18,7 +19,11 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
   const [success,    setSuccess]    = useState(false);
   const [error,      setError]      = useState("");
   const [dragOver,   setDragOver]   = useState(false);
+  const [category,   setCategory]   = useState<NGOEvidenceCategory | "">("");
+  const [docType,    setDocType]    = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const docTypes = category ? NGO_EVIDENCE_CATEGORIES[category] : [];
 
   if (!open || !transaction) return null;
 
@@ -34,6 +39,7 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
 
   const reset = () => {
     setFiles([]); setNotes(""); setError(""); setSuccess(false); setDragOver(false);
+    setCategory(""); setDocType("");
   };
 
   const handleClose = () => {
@@ -43,6 +49,8 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
   };
 
   const handleSubmit = async () => {
+    if (!category)          { setError("Please select an evidence category."); return; }
+    if (!docType)           { setError("Please select a document type."); return; }
     if (files.length === 0) { setError("Please attach at least one file."); return; }
     setError(""); setSubmitting(true);
     await new Promise((r) => setTimeout(r, 800));
@@ -78,6 +86,35 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
           </div>
         ) : (
           <>
+            {/* Evidence classification */}
+            <div style={{ padding: "14px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <label style={s2.label}>Evidence Category <span style={{ color: "#2563eb" }}>*</span></label>
+                <select
+                  style={s2.select}
+                  value={category}
+                  onChange={(e) => { setCategory(e.target.value as NGOEvidenceCategory | ""); setDocType(""); }}
+                >
+                  <option value="">Select category…</option>
+                  {(Object.keys(NGO_EVIDENCE_CATEGORIES) as NGOEvidenceCategory[]).map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={s2.label}>Document Type <span style={{ color: "#2563eb" }}>*</span></label>
+                <select
+                  style={{ ...s2.select, opacity: category ? 1 : 0.5 }}
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value)}
+                  disabled={!category}
+                >
+                  <option value="">Select type…</option>
+                  {docTypes.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            </div>
+
             {/* Context strip */}
             <div style={s.contextBanner}>
               {([
@@ -204,6 +241,11 @@ const s: Record<string, React.CSSProperties> = {
   successWrap:  { padding: "48px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 },
   successTitle: { fontSize: 17, fontWeight: 700, color: "#0f172a", margin: 0 },
   successSub:   { fontSize: 13.5, color: "#64748b", margin: 0 },
+};
+
+const s2: Record<string, React.CSSProperties> = {
+  label:  { display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 },
+  select: { width: "100%", padding: "9px 12px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 13.5, color: "#0f172a", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#f8fafc", cursor: "pointer" },
 };
 
 
