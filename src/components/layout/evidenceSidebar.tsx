@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, FolderOpen, FileText } from "lucide-react";
+import { ChevronDown, FolderOpen, FileText, Library } from "lucide-react";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
 
@@ -16,192 +16,219 @@ interface Props {
   onSelectItem: (category: string) => void;
 }
 
-export const Sidebar = ({
-  sections,
-  evidenceData,
-  onSelectItem,
-}: Props) => {
-  const [openSections, setOpenSections] = useState<string[]>([
-    "Financial Reporting",
-  ]);
-
+export const Sidebar = ({ sections, evidenceData, onSelectItem }: Props) => {
+  const [openSections, setOpenSections] = useState<string[]>(["Financial Reporting"]);
   const [activeItem, setActiveItem] = useState<string | null>(null);
 
   const toggleSection = (title: string) => {
     setOpenSections((prev) =>
-      prev.includes(title)
-        ? prev.filter((t) => t !== title)
-        : [...prev, title]
+      prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
     );
   };
 
-  // ✅ SAFE COUNT FUNCTION
-  const getItemCount = (subCategory: string) => {
-    return evidenceData.filter((doc) => {
-      if (!doc.subfolder) return false;
-      return doc.subfolder.trim().toLowerCase() === subCategory.trim().toLowerCase();
-    }).length;
-  };
+  const getCount = (sub: string) =>
+    evidenceData.filter((d) => d.subfolder?.trim().toLowerCase() === sub.trim().toLowerCase()).length;
+
+  const getSectionCount = (section: Section) =>
+    section.items.reduce((sum, item) => sum + getCount(item), 0);
+
+  const totalDocs = evidenceData.length;
 
   return (
     <div style={container}>
-      <div style={sidebarTitle}>Document Library</div>
+      {/* Header */}
+      <div style={headerRow}>
+        <div style={headerIcon}>
+          <Library size={16} color="#1e3a8a" />
+        </div>
+        <div>
+          <div style={headerTitle}>Document Library</div>
+          <div style={headerSub}>{totalDocs} documents</div>
+        </div>
+      </div>
 
-      {sections.map((section) => {
-        const isOpen = openSections.includes(section.title);
+      <div style={divider} />
 
-        return (
-          <div key={section.title} style={sectionCard}>
-            {/* HEADER */}
-            <div
-              onClick={() => toggleSection(section.title)}
-              style={sectionHeader}
-            >
-              <div style={headerLeft}>
-                <FolderOpen size={16} />
-                <span>{section.title}</span>
+      {/* Sections */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {sections.map((section) => {
+          const isOpen = openSections.includes(section.title);
+          const sectionCount = getSectionCount(section);
+
+          return (
+            <div key={section.title} style={sectionCard}>
+              <div onClick={() => toggleSection(section.title)} style={sectionHeader}>
+                <div style={headerLeft}>
+                  <FolderOpen size={14} color="#64748b" />
+                  <span style={sectionTitle}>{section.title}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {sectionCount > 0 && (
+                    <span style={sectionBadge}>{sectionCount}</span>
+                  )}
+                  <ChevronDown
+                    size={14}
+                    color="#94a3b8"
+                    style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "0.2s ease" }}
+                  />
+                </div>
               </div>
 
-              <ChevronDown
-                size={16}
-                style={{
-                  transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "0.25s ease",
-                }}
-              />
-            </div>
+              {isOpen && (
+                <div style={itemsWrapper}>
+                  {section.items.map((item) => {
+                    const isActive = activeItem === item;
+                    const count = getCount(item);
 
-            {/* ITEMS */}
-            {isOpen && (
-              <div style={itemsWrapper}>
-                {section.items.map((item) => {
-                  const isActive = activeItem === item;
-                  const count = getItemCount(item);
-
-                  return (
-                    <div
-                      key={item}
-                      onClick={() => {
-                        setActiveItem(item);
-                        onSelectItem(item);
-                      }}
-                      style={{
-                        ...itemStyle,
-                        background: isActive
-                          ? theme.colors.primary
-                          : "transparent",
-                        color: isActive
-                          ? "#fff"
-                          : theme.colors.textSecondary,
-                      }}
-                    >
-                      <div style={itemLeft}>
-                        <FileText size={14} />
-                        <span>{item}</span>
-                      </div>
-
-                      <span
+                    return (
+                      <div
+                        key={item}
+                        onClick={() => { setActiveItem(item); onSelectItem(item); }}
                         style={{
-                          ...countBadge,
-                          background: isActive
-                            ? "rgba(255,255,255,0.2)"
-                            : theme.colors.appBackground,
-                          color: isActive
-                            ? "#fff"
-                            : theme.colors.textMuted,
+                          ...itemStyle,
+                          background: isActive ? "#eff6ff" : "transparent",
+                          color: isActive ? "#1e3a8a" : theme.colors.textSecondary,
                         }}
                       >
-                        {count}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                        <div style={itemLeft}>
+                          <FileText size={12} color={isActive ? "#1e3a8a" : "#94a3b8"} />
+                          <span style={{ fontSize: 12.5, lineHeight: 1.4 }}>{item}</span>
+                        </div>
+                        <span style={{
+                          ...countBadge,
+                          background: isActive ? "#dbeafe" : "#f1f5f9",
+                          color: isActive ? "#1e3a8a" : theme.colors.textMuted,
+                        }}>
+                          {count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
 
-/* =========================
-   🎨 STYLES (FIXED)
-========================= */
-
 const container: React.CSSProperties = {
-  width: 300,
-  padding: 18,
-  background: "rgba(255,255,255,0.85)",
-  backdropFilter: "blur(12px)",
+  width: 272,
+  padding: "16px 14px",
+  background: "#fff",
   borderRight: `1px solid ${theme.colors.border}`,
   minHeight: "100vh",
+  overflowY: "auto",
 };
 
-const sidebarTitle: React.CSSProperties = {
-  fontSize: 18,
+const headerRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  marginBottom: 14,
+};
+
+const headerIcon: React.CSSProperties = {
+  width: 36,
+  height: 36,
+  borderRadius: 10,
+  background: "#eff6ff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const headerTitle: React.CSSProperties = {
+  fontSize: 14,
   fontWeight: 700,
-  marginBottom: 18,
   color: theme.colors.textPrimary,
 };
 
-const sectionCard: React.CSSProperties = {
+const headerSub: React.CSSProperties = {
+  fontSize: 11.5,
+  color: theme.colors.textMuted,
+  marginTop: 1,
+};
+
+const divider: React.CSSProperties = {
+  height: 1,
+  background: theme.colors.border,
   marginBottom: 12,
-  borderRadius: 14,
+};
+
+const sectionCard: React.CSSProperties = {
+  borderRadius: 10,
   overflow: "hidden",
   border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.Surface,
-  boxShadow: theme.shadows.sm,
+  background: "#fafafa",
 };
 
 const sectionHeader: React.CSSProperties = {
-  padding: "14px 16px",
+  padding: "10px 12px",
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   cursor: "pointer",
-  fontWeight: 600,
-  color: theme.colors.textPrimary,
 };
 
 const headerLeft: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
+  gap: 8,
+};
+
+const sectionTitle: React.CSSProperties = {
+  fontSize: 12.5,
+  fontWeight: 600,
+  color: theme.colors.textPrimary,
+};
+
+const sectionBadge: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  background: "#e2e8f0",
+  color: "#475569",
+  padding: "1px 6px",
+  borderRadius: 10,
 };
 
 const itemsWrapper: React.CSSProperties = {
-  padding: "8px",
+  padding: "6px",
   borderTop: `1px solid ${theme.colors.border}`,
+  background: "#fff",
 };
 
 const itemStyle: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "10px 12px",
-  borderRadius: 8,
-  fontSize: theme.typography.sm,
+  padding: "7px 10px",
+  borderRadius: 7,
   cursor: "pointer",
-  transition: "all 0.2s ease",
-  marginBottom: 4,
+  transition: "all 0.15s ease",
+  marginBottom: 2,
 };
 
 const itemLeft: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 8,
+  gap: 7,
+  flex: 1,
+  minWidth: 0,
 };
 
 const countBadge: React.CSSProperties = {
-  minWidth: 26,
-  height: 22,
-  borderRadius: 12,
+  minWidth: 22,
+  height: 20,
+  borderRadius: 10,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 12,
-  fontWeight: 600,
+  fontSize: 11,
+  fontWeight: 700,
+  flexShrink: 0,
+  padding: "0 5px",
 };
-
-

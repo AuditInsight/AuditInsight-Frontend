@@ -1,5 +1,6 @@
 "use client";
 
+import { Download, Plus, FileStack } from "lucide-react";
 import { theme } from "@/styles/theme";
 
 interface EvidenceHeaderProps {
@@ -7,77 +8,109 @@ interface EvidenceHeaderProps {
   onExport?: () => void;
 }
 
-export const EvidenceHeader = ({
-  onAdd,
-  onExport,
-}: EvidenceHeaderProps) => {
+export const EvidenceHeader = ({ onAdd, onExport }: EvidenceHeaderProps) => {
   return (
     <div style={wrapper}>
-      <div style={header}>
-        <h2 style={title}>Document Control Center</h2>
-
-        <div style={actions}>
-          <button type="button" style={secondaryBtn} onClick={onExport}>
-            Export
-          </button>
-
-          {onAdd && (
-            <button style={primaryBtn} onClick={onAdd}>
-              + Add Evidence
-            </button>
-          )}
+      <div style={left}>
+        <div style={iconWrap}>
+          <FileStack size={20} color="#1e3a8a" />
         </div>
+        <div>
+          <h2 style={title}>Document Control Center</h2>
+          <p style={subtitle}>Manage, upload and verify audit evidence</p>
+        </div>
+      </div>
+
+      <div style={actions}>
+        <button type="button" style={secondaryBtn} onClick={onExport}>
+          <Download size={14} />
+          Export CSV
+        </button>
+        {onAdd && (
+          <button style={primaryBtn} onClick={onAdd}>
+            <Plus size={14} />
+            Add Evidence
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
-/* 🎨 STYLES */
-
 const wrapper: React.CSSProperties = {
-  overflowX: "auto",
-  marginTop: 16,
-  marginBottom: theme.spacing.lg,
-  background: theme.colors.Surface,
-  borderRadius: theme.radius.lg,
-  border: `1px solid ${theme.colors.border}`,
-  padding: theme.spacing.md,
-};
-
-const header: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
+  flexWrap: "wrap",
+  gap: 16,
+  padding: "20px 24px",
+  background: "#fff",
+  borderRadius: theme.radius.lg,
+  border: `1px solid ${theme.colors.border}`,
+  boxShadow: "0 1px 4px rgba(15,23,42,0.05)",
+};
+
+const left: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+};
+
+const iconWrap: React.CSSProperties = {
+  width: 44,
+  height: 44,
+  borderRadius: 12,
+  background: "#eff6ff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
 };
 
 const title: React.CSSProperties = {
-  fontSize: 22,
-  fontWeight: 600,
+  margin: 0,
+  fontSize: 18,
+  fontWeight: 700,
   color: theme.colors.textPrimary,
+  letterSpacing: "-0.3px",
+};
+
+const subtitle: React.CSSProperties = {
+  margin: "2px 0 0",
+  fontSize: 12.5,
+  color: theme.colors.textMuted,
 };
 
 const actions: React.CSSProperties = {
   display: "flex",
-  gap: 10,
+  gap: 8,
+  alignItems: "center",
 };
 
 const secondaryBtn: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
   padding: "8px 14px",
   border: `1px solid ${theme.colors.border}`,
-  borderRadius: theme.radius.sm,
-  background: theme.colors.Surface,
+  borderRadius: theme.radius.md,
+  background: "#fff",
   cursor: "pointer",
   color: theme.colors.textPrimary,
+  fontSize: 13,
+  fontWeight: 500,
 };
 
 const primaryBtn: React.CSSProperties = {
-  padding: "8px 14px",
-  borderRadius: theme.radius.sm,
-  background: theme.colors.primary,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "8px 16px",
+  borderRadius: theme.radius.md,
+  background: "#1e3a8a",
   color: "#fff",
   border: "none",
   cursor: "pointer",
   fontWeight: 600,
+  fontSize: 13,
 };
-
-
