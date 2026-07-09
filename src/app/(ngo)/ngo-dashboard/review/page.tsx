@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
 import NGOFlagIssueModal from "@/components/ngo/NGOFlagIssueModal";
 import AuditSummaryPanel from "@/components/ngo/rbac/AuditSummaryPanel";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
@@ -185,9 +185,9 @@ function ReviewQueueContent() {
 export default function ReviewQueuePage() {
   return (
     <ProtectedRoute>
-      <NGOPageLayout pageTitle="Review Queue" pageSub="Inspect transactions, flag compliance issues, and track resolutions.">
+      <NGODashboardShell>
         <ReviewQueueContent />
-      </NGOPageLayout>
+      </NGODashboardShell>
     </ProtectedRoute>
   );
 }
