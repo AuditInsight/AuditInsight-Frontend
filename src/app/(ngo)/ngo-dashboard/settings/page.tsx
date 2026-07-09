@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo/NGOPageLayout";
-import { useNGOToast } from "@/components/ngo/NGOPageLayout";
+import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
+import { useToast } from "@/components/ngo/NGOToast";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
@@ -62,7 +62,7 @@ const TAB_ICONS: Record<Tab, React.ReactNode> = {
 
 function SettingsContent() {
   const { user, can } = useRBAC();
-  const toast = useNGOToast();
+  const toast = useToast();
   const isDonor = user.role === "DONOR_REPRESENTATIVE";
   const canEditProfile = can("settings:profile:edit");
 
@@ -168,9 +168,9 @@ function SettingsContent() {
 export default function NGOSettingsPage() {
   return (
     <ProtectedRoute>
-      <NGOPageLayout pageTitle="Settings" pageSub="Manage your organisation profile, preferences, and security.">
+      <NGODashboardShell>
         <SettingsContent />
-      </NGOPageLayout>
+      </NGODashboardShell>
     </ProtectedRoute>
   );
 }
