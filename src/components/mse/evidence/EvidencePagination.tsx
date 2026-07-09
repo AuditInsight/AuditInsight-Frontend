@@ -1,6 +1,7 @@
 "use client";
 
 import { theme } from "@/styles/theme";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface EvidencePaginationProps {
   page: number;
@@ -8,86 +9,112 @@ interface EvidencePaginationProps {
   totalPages: number;
 }
 
-export const EvidencePagination = ({
-  page,
-  setPage,
-  totalPages,
-}: EvidencePaginationProps) => {
+export const EvidencePagination = ({ page, setPage, totalPages }: EvidencePaginationProps) => {
+  if (totalPages <= 1) return null;
+
+  const getPages = (): (number | "...")[] => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | "...")[] = [1];
+    if (page > 3) pages.push("...");
+    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+    if (page < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  };
+
   return (
     <div style={container}>
-      {/* 🔹 LABEL (this is what you wanted to add) */}
-      <span style={label}>Page</span>
+      <span style={info}>Page {page} of {totalPages}</span>
 
-      {/* 🔹 PAGE BUTTONS (your existing logic untouched) */}
-      {Array.from({ length: totalPages }).map((_, i) => {
-        const currentPage = i + 1;
+      <div style={btnGroup}>
+        <button
+          style={{ ...navBtn, opacity: page === 1 ? 0.4 : 1 }}
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+        >
+          <ChevronLeft size={14} />
+        </button>
 
-        return (
-          <button
-            key={currentPage}
-            onClick={() => setPage(currentPage)}
-            style={{
-              ...button,
-              background:
-                page === currentPage
-                  ? theme.colors.primary
-                  : theme.colors.Surface,
-              color:
-                page === currentPage
-                  ? "#fff"
-                  : theme.colors.textPrimary,
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background =
-                page === currentPage
-                  ? theme.colors.primary
-                  : theme.colors.appBackground)
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background =
-                page === currentPage
-                  ? theme.colors.primary
-                  : theme.colors.Surface)
-            }
-          >
-            {currentPage}
-          </button>
-        );
-      })}
+        {getPages().map((p, i) =>
+          p === "..." ? (
+            <span key={`dots-${i}`} style={dots}>…</span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => setPage(p as number)}
+              style={{
+                ...pageBtn,
+                background: page === p ? "#1e3a8a" : "#fff",
+                color: page === p ? "#fff" : theme.colors.textPrimary,
+                borderColor: page === p ? "#1e3a8a" : theme.colors.border,
+                fontWeight: page === p ? 700 : 400,
+              }}
+            >
+              {p}
+            </button>
+          )
+        )}
 
-      {/* 🔹 OPTIONAL: DOTS LIKE "..." */}
-      {totalPages > 5 && <span style={dots}>...</span>}
+        <button
+          style={{ ...navBtn, opacity: page === totalPages ? 0.4 : 1 }}
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+        >
+          <ChevronRight size={14} />
+        </button>
+      </div>
     </div>
   );
 };
 
-/* 🎨 STYLES */
-
 const container: React.CSSProperties = {
-  marginTop: 16,
   display: "flex",
   alignItems: "center",
-  gap: 6,
+  justifyContent: "space-between",
+  padding: "12px 4px",
+  flexWrap: "wrap",
+  gap: 8,
 };
 
-const label: React.CSSProperties = {
-  fontSize: theme.typography.sm,
+const info: React.CSSProperties = {
+  fontSize: 13,
   color: theme.colors.textMuted,
-  marginRight: 6,
+};
+
+const btnGroup: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+};
+
+const pageBtn: React.CSSProperties = {
+  minWidth: 32,
+  height: 32,
+  padding: "0 8px",
+  borderRadius: 8,
+  border: "1px solid",
+  cursor: "pointer",
+  fontSize: 13,
+  fontFamily: "inherit",
+  transition: "all 0.15s",
+};
+
+const navBtn: React.CSSProperties = {
+  width: 32,
+  height: 32,
+  borderRadius: 8,
+  border: `1px solid ${theme.colors.border}`,
+  background: "#fff",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: theme.colors.textSecondary,
 };
 
 const dots: React.CSSProperties = {
-  padding: "0 6px",
+  padding: "0 4px",
   color: theme.colors.textMuted,
+  fontSize: 14,
+  lineHeight: "32px",
 };
-
-const button: React.CSSProperties = {
-  padding: "6px 10px",
-  borderRadius: theme.radius.sm,
-  border: `1px solid ${theme.colors.border}`,
-  cursor: "pointer",
-  background: theme.colors.Surface,
-  fontSize: theme.typography.sm,
-};
-
-
