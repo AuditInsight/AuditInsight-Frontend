@@ -16,21 +16,7 @@ import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity, DonorName 
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
 import { Plus, Download, TrendingUp, TrendingDown, AlertTriangle, Clock } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
-
-function StatCard({ label, value, sub, accent, icon }: {
-  label: string; value: string | number; sub?: string; accent: string; icon: React.ReactNode;
-}) {
-  return (
-    <div style={{ flex: 1, minWidth: 140, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: 20, boxShadow: "0 1px 4px rgba(15,23,42,0.05)", display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>{label}</span>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: accent + "18", display: "flex", alignItems: "center", justifyContent: "center", color: accent }}>{icon}</div>
-      </div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.5px", lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: "#94a3b8" }}>{sub}</div>}
-    </div>
-  );
-}
+import NGOStatCard from "@/components/ngo/dashboard/NGOStatCard";
 
 function TransactionsContent() {
   const { user } = useRBAC();
@@ -84,10 +70,10 @@ function TransactionsContent() {
 
       {/* Stats */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-        <StatCard label="Total Income"   value={`RWF ${(income / 1_000_000).toFixed(1)}M`}  sub={`${scopedTxns.filter((t) => t.type === "INCOME").length} receipts`}  accent="#1e3a8a" icon={<TrendingUp size={16} />}   />
-        <StatCard label="Total Expenses" value={`RWF ${(expense / 1_000_000).toFixed(1)}M`} sub={`${scopedTxns.filter((t) => t.type === "EXPENSE").length} payments`} accent="#2563eb" icon={<TrendingDown size={16} />} />
-        <StatCard label="Flagged"        value={flagged} sub="Require attention"             accent="#475569" icon={<AlertTriangle size={16} />} />
-        <StatCard label="Pending Evidence" value={pending} sub="Upload required"             accent="#64748b" icon={<Clock size={16} />} />
+        <NGOStatCard label="Total Income"     value={`RWF ${(income / 1_000_000).toFixed(1)}M`}  sub={`${scopedTxns.filter((t) => t.type === "INCOME").length} receipts`}  accent="#1e3a8a" icon={<TrendingUp size={16} />}   />
+        <NGOStatCard label="Total Expenses"   value={`RWF ${(expense / 1_000_000).toFixed(1)}M`} sub={`${scopedTxns.filter((t) => t.type === "EXPENSE").length} payments`} accent="#2563eb" icon={<TrendingDown size={16} />} />
+        <NGOStatCard label="Flagged"          value={flagged} sub="Require attention"             accent="#475569" icon={<AlertTriangle size={16} />} />
+        <NGOStatCard label="Pending Evidence" value={pending} sub="Upload required"               accent="#64748b" icon={<Clock size={16} />} />
       </div>
 
       {/* Action panels */}
