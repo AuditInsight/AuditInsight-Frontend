@@ -13,6 +13,7 @@ import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity } from "@/t
 import { theme } from "@/styles/theme";
 import { Flag, CheckCircle2, Clock, AlertTriangle, ShieldCheck } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
+import NGOStatCard from "@/components/ngo/dashboard/NGOStatCard";
 
 const SEV_CFG = {
   CRITICAL: { color: theme.colors.danger,  bg: theme.colors.dangerBg,  border: "#fecaca" },
@@ -57,20 +58,10 @@ function ReviewQueueContent() {
 
       {/* Stats */}
       <div style={{ display: "flex", gap: theme.spacing.lg, flexWrap: "wrap" }}>
-        {[
-          { label: "Open Flags",           value: openCount,                                                color: theme.colors.danger,  icon: <AlertTriangle size={16} /> },
-          { label: "Resolved",             value: resolvedCount,                                            color: theme.colors.success, icon: <CheckCircle2 size={16} />  },
-          { label: "Pending Review",       value: transactions.filter((t) => t.status === "PENDING").length, color: theme.colors.warning, icon: <Clock size={16} />         },
-          { label: "Flagged Transactions", value: transactions.filter((t) => t.status === "FLAGGED").length, color: "#7c3aed",            icon: <Flag size={16} />          },
-        ].map(({ label, value, color, icon }) => (
-          <div key={label} style={{ flex: 1, minWidth: 140, background: theme.colors.Surface, border: `1px solid ${theme.colors.border}`, borderRadius: theme.radius.lg, padding: theme.spacing.lg, boxShadow: theme.shadows.sm }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontSize: theme.typography.sm, color: theme.colors.textSecondary, fontWeight: 500 }}>{label}</span>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: color + "18", display: "flex", alignItems: "center", justifyContent: "center", color }}>{icon}</div>
-            </div>
-            <div style={{ fontSize: theme.typography.xxl, fontWeight: 700, color: theme.colors.textPrimary, letterSpacing: "-0.5px", lineHeight: 1 }}>{value}</div>
-          </div>
-        ))}
+        <NGOStatCard label="Open Flags"           value={openCount}                                                accent={theme.colors.danger}  icon={<AlertTriangle size={16} />} />
+        <NGOStatCard label="Resolved"             value={resolvedCount}                                            accent={theme.colors.success} icon={<CheckCircle2 size={16} />}  />
+        <NGOStatCard label="Pending Review"       value={transactions.filter((t) => t.status === "PENDING").length} accent={theme.colors.warning} icon={<Clock size={16} />}         />
+        <NGOStatCard label="Flagged Transactions" value={transactions.filter((t) => t.status === "FLAGGED").length} accent="#7c3aed"              icon={<Flag size={16} />}          />
       </div>
 
       {/* AUDITOR summary panel */}
