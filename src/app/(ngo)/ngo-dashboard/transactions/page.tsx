@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import NGOPageLayout from "@/components/ngo/NGOPageLayout";
+import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
 import NGOTransactionTable from "@/components/ngo/NGOTransactionTable";
 import NGOFlagIssueModal from "@/components/ngo/NGOFlagIssueModal";
 import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
@@ -154,9 +154,9 @@ function TransactionsContent() {
 export default function TransactionsPage() {
   return (
     <ProtectedRoute>
-      <NGOPageLayout pageTitle="Transactions" pageSub="Record, review, and manage all project financial transactions.">
+      <NGODashboardShell>
         <TransactionsContent />
-      </NGOPageLayout>
+      </NGODashboardShell>
     </ProtectedRoute>
   );
 }
