@@ -69,7 +69,17 @@ function TransactionsContent() {
       <NGOPageHeader title="Transactions" subtitle="Record, review, and manage all project financial transactions." onExport={handleExport} />
 
       {/* Stats */}
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+      <style>{`
+        .ngo-txn-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+        .ngo-txn-stats > * { flex: 1; min-width: 140px; }
+        .ngo-txn-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .ngo-txn-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 12px; }
+        .ngo-txn-btns { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        @media (max-width: 768px) {
+          .ngo-txn-panels { grid-template-columns: 1fr; }
+        }
+      `}</style>
+      <div className="ngo-txn-stats">
         <NGOStatCard label="Total Income"     value={`RWF ${(income / 1_000_000).toFixed(1)}M`}  sub={`${scopedTxns.filter((t) => t.type === "INCOME").length} receipts`}  accent="#1e3a8a" icon={<TrendingUp size={16} />}   />
         <NGOStatCard label="Total Expenses"   value={`RWF ${(expense / 1_000_000).toFixed(1)}M`} sub={`${scopedTxns.filter((t) => t.type === "EXPENSE").length} payments`} accent="#2563eb" icon={<TrendingDown size={16} />} />
         <NGOStatCard label="Flagged"          value={flagged} sub="Require attention"             accent="#475569" icon={<AlertTriangle size={16} />} />
@@ -78,7 +88,7 @@ function TransactionsContent() {
 
       {/* Action panels */}
       <PermissionGate component="panel:action_items">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="ngo-txn-panels">
           <ActionItems transactions={scopedTxns} onUploadEvidence={(txn) => setUploadTarget(txn)} />
           <AuditorAlertsPanel flags={flags} transactions={scopedTxns} onUploadEvidence={(txn) => setUploadTarget(txn)} />
         </div>
@@ -86,7 +96,7 @@ function TransactionsContent() {
 
       {/* Table */}
       <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(15,23,42,0.05)", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #f1f5f9", flexWrap: "wrap", gap: 12 }}>
+        <div className="ngo-txn-header">
           <div>
             <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
               {isDonor ? `${user.assignedDonorId} Transactions` : "All Transactions"}

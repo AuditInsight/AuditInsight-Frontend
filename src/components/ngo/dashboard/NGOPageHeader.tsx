@@ -41,16 +41,16 @@ export default function NGOPageHeader({ title, subtitle, onExport, action }: Pro
 const s: Record<string, React.CSSProperties> = {
   header: {
     display: "flex", alignItems: "flex-start", justifyContent: "space-between",
-    gap: 20, flexWrap: "wrap",
-    background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "22px 24px",
+    gap: 16, flexWrap: "wrap",
+    background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "20px 22px",
   },
-  eyebrow:  { margin: 0, fontSize: 13, color: "#64748b", fontWeight: 500 },
-  title:    { margin: "4px 0 0", fontSize: 24, fontWeight: 700, color: ACCENT, letterSpacing: "-0.4px" },
-  subtitle: { margin: "6px 0 0", fontSize: 13, color: "#64748b" },
+  eyebrow:  { margin: 0, fontSize: 12.5, color: "#64748b", fontWeight: 500 },
+  title:    { margin: "4px 0 0", fontSize: "clamp(18px, 3vw, 24px)", fontWeight: 700, color: ACCENT, letterSpacing: "-0.4px" },
+  subtitle: { margin: "6px 0 0", fontSize: 13, color: "#64748b", maxWidth: 480 },
   date:     { margin: "4px 0 0", fontSize: 12, color: "#94a3b8" },
   btn: {
     display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px",
     borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff",
-    color: ACCENT, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+    color: ACCENT, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
   },
 };
