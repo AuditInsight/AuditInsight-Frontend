@@ -8,6 +8,7 @@ import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
 import { theme } from "@/styles/theme";
 import { User, Lock, Bell, Building2 } from "lucide-react";
+import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 
 // ── Primitives ─────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,9 @@ function SettingsContent() {
   };
 
   return (
-    <div style={{ display: "flex", gap: theme.spacing.xl, alignItems: "flex-start" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xl }}>
+      <NGOPageHeader title="Settings" subtitle="Manage your organisation profile, preferences, and security." />
+      <div style={{ display: "flex", gap: theme.spacing.xl, alignItems: "flex-start" }}>
 
       {/* Sidebar */}
       <div style={{ width: 200, flexShrink: 0, background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, boxShadow: theme.shadows.sm, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
@@ -160,6 +163,7 @@ function SettingsContent() {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
