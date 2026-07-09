@@ -11,6 +11,7 @@ import { NGO_TRANSACTIONS } from "@/mock/ngo.mock";
 import { Upload, FileText, CheckCircle2, AlertTriangle, Clock, Search, Lock } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 import NGOStatCard from "@/components/ngo/dashboard/NGOStatCard";
+import NGOEmptyState from "@/components/ngo/dashboard/NGOEmptyState";
 
 const STATUS_CFG = {
   COMPLETED: { label: "Verified", color: "#1e3a8a", bg: "rgba(30,58,138,0.07)", border: "rgba(30,58,138,0.2)" },
@@ -111,7 +112,7 @@ function EvidenceContent() {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: "56px 24px", textAlign: "center", fontSize: 13.5, color: "#94a3b8" }}>No evidence records match your search.</td></tr>
+                <tr><td colSpan={7}><NGOEmptyState icon={<FileText size={24} />} title="No evidence records match your search." subtitle="Try adjusting your search terms." /></td></tr>
               ) : filtered.map((txn) => {
                 const cfg = STATUS_CFG[txn.status];
                 return (
