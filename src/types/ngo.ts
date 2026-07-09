@@ -1,4 +1,31 @@
-// ─── NGO-specific roles ──────────────────────────────────────────────────────
+// ─── Evidence categories & document types ───────────────────────────────────
+export const NGO_EVIDENCE_CATEGORIES = {
+  "Financial Reporting":        ["General Ledgers","Trial Balances","Financial Statements","Project Financial Reports","Donor Financial Reports"],
+  "Budget Management":          ["Approved Annual Budget","Project Budgets","Grant Budgets","Budget Revisions","Budget vs Actual Reports","Budget Approval Minutes"],
+  "Banking and Cash":           ["Bank Statements","Bank Reconciliations","Payment Confirmations","Cashbooks","Cash Count Sheets","Petty Cash Vouchers"],
+  "Payment Evidence":           ["Payment Vouchers","Signed Payment Requests","Electronic Transfer Confirmations","Cheque Copies","Mobile Money Confirmations","Payment Approval Forms"],
+  "Grants and Donor Agreements":["Grant Agreements","Funding Agreements","Donor Contracts","Grant Amendments","Donor Correspondence"],
+  "Donor Compliance":           ["Donor Guidelines","Reporting Requirements","Compliance Checklists","Donor Approvals","Waivers","Donor Monitoring Reports"],
+  "Project Documentation":      ["Project Proposals","Work Plans","Activity Reports","Project Completion Reports","Monitoring Reports"],
+  "Project Activities":         ["Training Reports","Workshop Reports","Workshop Agendas","Workshop Attendance Lists","Signed Attendance Sheets","Meeting Minutes","Evaluation Forms","Photographs"],
+  "Beneficiary Documentation":  ["Beneficiary Lists","Beneficiary Registration Forms","Beneficiary IDs","Distribution Lists","Acknowledgement Receipts","Consent Forms"],
+  "Procurement":                ["Purchase Requisitions","Purchase Orders","Supplier Quotations","Bid Evaluation Reports","Supplier Invoices","Goods Received Notes","Supplier Contracts"],
+  "Payroll and HR":             ["Payroll Registers","Employment Contracts","Timesheets","Leave Records","Staff Lists","Performance Contracts"],
+  "Travel":                     ["Travel Authorizations","Travel Expense Claims","Flight Tickets","Hotel Invoices"],
+  "Vehicles":                   ["Vehicle Logbooks","Fuel Records","Vehicle Maintenance Records","Vehicle Insurance","Vehicle Allocation Records"],
+  "Fixed Assets":               ["Asset Register","Asset Tags","Purchase Documents","Asset Transfer Forms","Asset Disposal Forms","Physical Verification Reports","Maintenance Records","Depreciation Schedules"],
+  "Inventory":                  ["Inventory Registers","Stock Count Sheets"],
+  "Compliance and Tax":         ["VAT Documents","PAYE Filings","RSSB Contributions","Tax Clearance Certificates","NGO Registration Certificates"],
+  "Legal and Governance":       ["Board Minutes","Management Meeting Minutes","Policies","Memorandums of Understanding","Contracts","Registration Documents"],
+  "Audit Evidence":             ["Audit Requests","Management Responses","Audit Reports","Management Letters","Corrective Action Plans"],
+  "IT and System Evidence":     ["Access Logs","Audit Trail Exports","Backup Reports"],
+  "Other Supporting Documents": ["Emails","Approval Letters","Miscellaneous"],
+} as const;
+
+export type NGOEvidenceCategory = keyof typeof NGO_EVIDENCE_CATEGORIES;
+export type NGOEvidenceDocType  = typeof NGO_EVIDENCE_CATEGORIES[NGOEvidenceCategory][number];
+
+// ─── NGO-specific roles ───────────────────────────────────────────────────────
 // These extend the base FrontendRole for NGO organisations.
 // DONOR_REPRESENTATIVE is NGO-only: scoped view to their donor's projects only.
 export type NGORole =
