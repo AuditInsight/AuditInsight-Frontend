@@ -42,10 +42,7 @@ const AuthContext = createContext<AuthContextValue>({
 // ── Helper ─────────────────────────────────────────────────────────
 
 function buildUserFromJwt(payload: JwtPayload & { orgType?: OrgType; donorScope?: string | null; fullName?: string }): User {
-  // MEMBER + donorScope present = DONOR_REPRESENTATIVE (NGO-only role)
-  const role = payload.role === "MEMBER" && payload.donorScope
-    ? "DONOR_REPRESENTATIVE" as const
-    : mapBackendRoleToFrontend(payload.role);
+  const role = mapBackendRoleToFrontend(payload.role);
   return {
     id: Number(payload.sub),
     email: payload.email,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { OrganisationMemberResponse, getOrganisationMembers, inviteMember as apiInviteMember, removeMember as apiRemoveMember } from "@/utils/api";
+import { OrganisationMemberResponse, getOrganisationMembers, inviteMember as apiInviteMember, removeMember as apiRemoveMember, BackendRole } from "@/utils/api";
 import { useOrganisation } from "./useOrganisation";
 import { useAuth } from "@/context/AuthContext.production";
 
@@ -30,7 +30,7 @@ export function useSettings() {
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
-  const inviteMember = async (email: string, role: string) => {
+  const inviteMember = async (email: string, role: BackendRole) => {
     if (!orgId) return;
     await apiInviteMember(orgId, email, role);
     await loadMembers();

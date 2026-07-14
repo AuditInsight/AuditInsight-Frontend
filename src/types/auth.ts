@@ -16,7 +16,7 @@ export type BackendRole = "CLIENT" | "MEMBER" | "AUDITOR" | "ADMIN";
 
 // ── Business-logical roles the UI uses everywhere ─────────────────
 // DONOR_REPRESENTATIVE is NGO-only — scoped view to a single donor's projects
-export type FrontendRole = "ORG_ADMIN" | "ACCOUNTANT" | "AUDITOR" | "SYSTEM_ADMIN" | "DONOR_REPRESENTATIVE";
+export type FrontendRole = "ORG_ADMIN" | "ACCOUNTANT" | "AUDITOR" | "SYSTEM_ADMIN";
 
 /**
  * Maps a backend JWT role to the UI-facing business role.
@@ -38,11 +38,10 @@ export function mapBackendRoleToFrontend(role: BackendRole): FrontendRole {
  */
 export function mapFrontendRoleToBackend(role: FrontendRole): BackendRole {
   const map: Record<FrontendRole, BackendRole> = {
-    ORG_ADMIN:            "CLIENT",
-    ACCOUNTANT:           "MEMBER",
-    AUDITOR:              "AUDITOR",
-    SYSTEM_ADMIN:         "ADMIN",
-    DONOR_REPRESENTATIVE: "MEMBER",  // NGO-only role — maps to MEMBER on backend
+    ORG_ADMIN:    "CLIENT",
+    ACCOUNTANT:   "MEMBER",
+    AUDITOR:      "AUDITOR",
+    SYSTEM_ADMIN: "ADMIN",
   };
   return map[role];
 }
@@ -68,7 +67,7 @@ export interface User {
   organisationId?: string;
   organisationName?: string;
   orgType?: OrgType;            // NGO or PRIVATE — set after org fetch post-login
-  donorScope?: string | null;   // NGO DONOR_REPRESENTATIVE only
+  donorScope?: string | null;
   mustChangePassword: boolean;
 }
 

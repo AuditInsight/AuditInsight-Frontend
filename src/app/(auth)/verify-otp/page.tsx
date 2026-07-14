@@ -5,22 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, MailCheck, RefreshCw, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { isAxiosError } from "axios";
-import { jwtDecode } from "jwt-decode";
 import { apiClient } from "@/api/client";
-import { tokenStorage } from "@/utils/tokenStorage";
 import {
   VerifyEmailRequest,
-  LoginApiResponse,
   ApiErrorResponse,
-  JwtPayload,
-  mapBackendRoleToFrontend,
 } from "@/types/auth";
 
 function VerifyOtpForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const emailParam   = searchParams.get("email") ?? "";
-  const nextPath     = searchParams.get("next") ?? "/dashboard";
 
   // Read sessionStorage only on the client to avoid SSR mismatch
   const [email] = useState<string>(() => {
@@ -70,23 +64,15 @@ function VerifyOtpForm() {
     setIsSubmitting(true);
     try {
       const payload: VerifyEmailRequest = { email, otp: code };
-      const { data } = await apiClient.post<LoginApiResponse>("/auth/verify-otp", payload);
-
-      tokenStorage.setTokens(data.token);
-
-      // Decode role to decide where to redirect
-      const decoded = jwtDecode<JwtPayload>(data.token);
-      const frontendRole = mapBackendRoleToFrontend(decoded.role);
+      // verifyOtp returns ResponseMessage (no token) — account is activated,
+      // user must now log in to receive their JWT.
+      await apiClient.post("/auth/verify-otp", payload);
 
       sessionStorage.removeItem("pending_email");
       sessionStorage.removeItem("pending_role");
 
-      // CLIENT goes to onboarding to create their org; others go to dashboard
-      if (frontendRole === "ORG_ADMIN") {
-        router.replace(nextPath);
-      } else {
-        router.replace("/dashboard");
-      }
+      // Redirect to login with a success flag so the login page shows a banner
+      router.replace(`/log-in?verified=1&email=${encodeURIComponent(email)}`);
     } catch (err: unknown) {
       if (isAxiosError<ApiErrorResponse>(err)) {
         const status = err.response?.status;

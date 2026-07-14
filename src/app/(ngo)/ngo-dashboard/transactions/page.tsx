@@ -12,18 +12,17 @@ import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
 import NGOFlagIssueModal from "@/components/ngo/NGOFlagIssueModal";
 
 import { TransactionsStats } from "@/components/mse/transactions/TransactionsStats";
-import { TransactionsTable } from "@/components/mse/transactions/TransactionsTable";
 import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
 import { AddTransactionModal } from "@/components/mse/transactions/modals/AddTransactionModal";
-import { ConfirmDeleteModal } from "@/components/mse/transactions/modals/ConfirmDeleteModal";
 import ViewTransactionModal from "@/components/mse/transactions/modals/ViewTransactionModal";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
+import NGOTransactionTable from "@/components/ngo/NGOTransactionTable";
 
-import { useRBAC, useScopedData } from "@/context/RBACContext";
+import { useRBAC } from "@/context/RBACContext";
 import { theme } from "@/styles/theme";
 import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
-import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity, DonorName } from "@/types/ngo";
+import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity } from "@/types/ngo";
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
 
 // ── Map NGOTransaction → Transaction so MSE components work unchanged ─────────
@@ -51,9 +50,8 @@ function TransactionsContent() {
   const transactionId = searchParams.get("transactionId");
 
   const { user, can } = useRBAC();
-  const canAdd    = can("transaction:create");
-  const canEdit   = can("transaction:edit");
-  const canDelete = can("transaction:create"); // same gate as create for NGO
+  const canAdd  = can("transaction:create");
+  const canEdit = can("transaction:edit");
 
   const [ngoTransactions, setNgoTransactions] = useState<NGOTransaction[]>(NGO_TRANSACTIONS);
   const [flags,           setFlags]           = useState<NGOFlag[]>(NGO_FLAGS);
@@ -61,8 +59,6 @@ function TransactionsContent() {
   const [uploadTarget,    setUploadTarget]    = useState<NGOTransaction | null>(null);
   const [isAddOpen,       setIsAddOpen]       = useState(false);
   const [editingTx,       setEditingTx]       = useState<Transaction | null>(null);
-  const [txToDelete,      setTxToDelete]      = useState<Transaction | null>(null);
-  const [isDeleting,      setIsDeleting]      = useState(false);
   const [search,          setSearch]          = useState("");
   const [startDate,       setStartDate]       = useState("");
   const [endDate,         setEndDate]         = useState("");
@@ -70,11 +66,7 @@ function TransactionsContent() {
 
   const pageSize = 25;
 
-  // Apply donor scope for DONOR_REPRESENTATIVE
-  const scopedNgo = useScopedData(ngoTransactions, (t) => t.donor);
-
-  // Map to Transaction shape for MSE components
-  const transactions = useMemo(() => scopedNgo.map(toTransaction), [scopedNgo]);
+  const scopedNgo = ngoTransactions;
 
   // Build a fake Evidence[] from evidenceCount so TransactionsStats works
   const evidences = useMemo<Evidence[]>(() =>
@@ -94,23 +86,34 @@ function TransactionsContent() {
     ),
   [scopedNgo]);
 
-  // Filtered + paginated
-  const filteredData = useMemo(() => {
-    return transactions.filter((t) => {
-      if (search && !(t.counterparty ?? t.name ?? "").toLowerCase().includes(search.toLowerCase())) return false;
+  // Filtered + paginated — filter directly on NGO fields
+  const filteredNgo = useMemo(() => {
+    return scopedNgo.filter((t) => {
+      if (search) {
+        const q = search.toLowerCase();
+        if (
+          !t.id.toLowerCase().includes(q) &&
+          !t.projectName.toLowerCase().includes(q) &&
+          !t.description.toLowerCase().includes(q) &&
+          !t.counterparty.toLowerCase().includes(q) &&
+          !t.budgetLine.toLowerCase().includes(q)
+        ) return false;
+      }
       if (startDate && new Date(t.date) < new Date(startDate)) return false;
       if (endDate   && new Date(t.date) > new Date(endDate))   return false;
       return true;
     });
-  }, [transactions, search, startDate, endDate]);
+  }, [scopedNgo, search, startDate, endDate]);
 
-  const totalPages    = Math.ceil(filteredData.length / pageSize);
-  const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
+  const filteredData = useMemo(() => filteredNgo.map(toTransaction), [filteredNgo]);
+
+  const totalPages    = Math.ceil(filteredNgo.length / pageSize);
+  const paginatedNgo  = filteredNgo.slice((page - 1) * pageSize, page * pageSize);
 
   const selectedTransaction = useMemo(() => {
     if (!transactionId) return null;
-    return transactions.find((t) => t.id === transactionId) ?? null;
-  }, [transactionId, transactions]);
+    return filteredData.find((t) => t.id === transactionId) ?? null;
+  }, [transactionId, filteredData]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -132,7 +135,6 @@ function TransactionsContent() {
       id:             `NGO-TXN-${Date.now()}`,
       organisationId: user.organisationId,
       projectName:    data.name,
-      donor:          "USAID",
       budgetLine:     "",
       description:    data.name,
       counterparty:   data.counterparty,
@@ -163,19 +165,10 @@ function TransactionsContent() {
     setEditingTx(null);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!txToDelete) return;
-    setIsDeleting(true);
-    setNgoTransactions((p) => p.filter((t) => t.id !== txToDelete.id));
-    if (transactionId === txToDelete.id) router.replace("/ngo-dashboard/transactions");
-    setTxToDelete(null);
-    setIsDeleting(false);
-  };
-
   const handleFlagSubmit = (flag: { transactionId: string; category: NGOFlagCategory; severity: FlagSeverity; notes: string }) => {
     setFlags((p) => [...p, {
       id: `FLAG-${Date.now()}`, transactionId: flag.transactionId,
-      projectName: flagTarget?.projectName ?? "", donor: flagTarget?.donor ?? "USAID",
+      projectName: flagTarget?.projectName ?? "",
       category: flag.category, severity: flag.severity, notes: flag.notes,
       flaggedBy: user.fullName, flaggedAt: new Date().toISOString(), status: "OPEN",
     }]);
@@ -192,9 +185,6 @@ function TransactionsContent() {
     );
   };
 
-  // Find the NGOTransaction for the upload/flag target from a Transaction id
-  const findNgo = (id: string) => ngoTransactions.find((t) => t.id === id) ?? null;
-
   return (
     <div style={pageStyles}>
       <style>{`
@@ -204,7 +194,7 @@ function TransactionsContent() {
         @media (max-width: 768px) { .ngo-txn-panels { grid-template-columns: 1fr; } }
       `}</style>
 
-      <TransactionsStats transactions={transactions} evidences={evidences} />
+      <TransactionsStats transactions={filteredData} evidences={evidences} />
 
       {/* NGO-specific action panels (auditor alerts + action items) */}
       <PermissionGate component="panel:action_items">
@@ -238,20 +228,18 @@ function TransactionsContent() {
         />
 
         <div className="txn-table-wrap">
-          <TransactionsTable
-            data={paginatedData}
-            evidences={evidences}
-            onRowClick={(t) => router.push(`/ngo-dashboard/transactions?transactionId=${t.id}`)}
-            onEdit={canEdit ? (t) => setEditingTx(t) : undefined}
-            onDelete={canDelete ? (t) => setTxToDelete(t) : undefined}
-            highlightId={transactionId ?? undefined}
+          <NGOTransactionTable
+            transactions={paginatedNgo}
+            onUploadEvidence={(txn) => setUploadTarget(txn)}
+            onEditTransaction={(txn) => setEditingTx(toTransaction(txn))}
+            onFlagIssue={(txn) => setFlagTarget(txn)}
           />
         </div>
 
         <div className="txn-footer">
           <span>
-            Showing {filteredData.length === 0 ? 0 : (page - 1) * pageSize + 1}–
-            {Math.min(page * pageSize, filteredData.length)} of {filteredData.length.toLocaleString()} transactions
+            Showing {filteredNgo.length === 0 ? 0 : (page - 1) * pageSize + 1}–
+            {Math.min(page * pageSize, filteredNgo.length)} of {filteredNgo.length.toLocaleString()} transactions
           </span>
           <TransactionsPagination page={page} setPage={setPage} totalPages={totalPages} />
         </div>
@@ -284,17 +272,6 @@ function TransactionsContent() {
           onSubmit={handleUpdate}
           transaction={editingTx}
           mode="edit"
-        />
-      )}
-
-      {/* Delete modal */}
-      {canDelete && (
-        <ConfirmDeleteModal
-          isOpen={!!txToDelete}
-          transaction={txToDelete}
-          onClose={() => setTxToDelete(null)}
-          onConfirm={handleConfirmDelete}
-          isDeleting={isDeleting}
         />
       )}
 

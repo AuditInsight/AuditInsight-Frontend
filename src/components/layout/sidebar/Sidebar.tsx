@@ -7,11 +7,10 @@ import { FrontendRole } from "@/types/auth";
 import { LogOut, Shield } from "lucide-react";
 
 const ROLE_CONFIG: Record<FrontendRole, { label: string; color: string; bg: string }> = {
-  ORG_ADMIN:            { label: "Org Admin",            color: "#1e3a8a", bg: "#eff6ff" },
-  ACCOUNTANT:           { label: "Accountant",           color: "#15803d", bg: "#f0fdf4" },
-  AUDITOR:              { label: "Auditor",              color: "#b45309", bg: "#fffbeb" },
-  SYSTEM_ADMIN:         { label: "Super Admin",          color: "#7c3aed", bg: "#faf5ff" },
-  DONOR_REPRESENTATIVE: { label: "Donor Representative", color: "#7c3aed", bg: "#faf5ff" },
+  ORG_ADMIN:    { label: "Org Admin",   color: "#1e3a8a", bg: "#eff6ff" },
+  ACCOUNTANT:   { label: "Accountant",  color: "#15803d", bg: "#f0fdf4" },
+  AUDITOR:      { label: "Auditor",     color: "#b45309", bg: "#fffbeb" },
+  SYSTEM_ADMIN: { label: "Super Admin", color: "#7c3aed", bg: "#faf5ff" },
 };
 
 export default function Sidebar() {

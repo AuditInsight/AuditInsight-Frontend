@@ -8,7 +8,7 @@ import {
   XCircle, DollarSign, Users, ShieldCheck,
 } from "lucide-react";
 import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
-import { useRBAC, useScopedData } from "@/context/RBACContext";
+import { useRBAC } from "@/context/RBACContext";
 import { useAuth } from "@/context/AuthContext.production";
 import type { NGORole } from "@/types/ngo";
 import NGOActivityFeed from "@/components/ngo/dashboard/NGOActivityFeed";
@@ -169,10 +169,9 @@ function Empty({ icon, msg }: { icon: React.ReactNode; msg: string }) {
 
 // ─── Role-aware header ────────────────────────────────────────────────────────
 const ROLE_META: Record<NGORole, { label: string; sub: string; color: string }> = {
-  ACCOUNTANT:           { label: "Finance Officer",      sub: "Record transactions and upload supporting evidence.",          color: "#1e3a8a" },
-  AUDITOR:              { label: "Auditor",              sub: "Review evidence, flag compliance issues, and track flags.",    color: "#15803d" },
-  ORG_ADMIN:            { label: "Executive Director",   sub: "Organisation-wide overview of financial health and compliance.", color: "#7c3aed" },
-  DONOR_REPRESENTATIVE: { label: "Donor Representative", sub: "Read-only view scoped to your donor's projects.",              color: "#d97706" },
+  ACCOUNTANT: { label: "Finance Officer",    sub: "Record transactions and upload supporting evidence.",            color: "#1e3a8a" },
+  AUDITOR:    { label: "Auditor",            sub: "Review evidence, flag compliance issues, and track flags.",     color: "#15803d" },
+  ORG_ADMIN:  { label: "Executive Director", sub: "Organisation-wide overview of financial health and compliance.", color: "#7c3aed" },
 };
 
 function Header({ name, org, role, onExport }: { name: string; org: string; role: NGORole; onExport: () => void }) {
@@ -204,12 +203,12 @@ export default function NGODashboardOverview() {
   const [loading, setLoading] = useState(false);
 
   const rawRole  = authUser?.role ?? "ORG_ADMIN";
-  const role     = (rawRole === "SYSTEM_ADMIN" ? "ORG_ADMIN" : rawRole) as NGORole;
+  const role     = (rawRole === "SYSTEM_ADMIN" || rawRole === "DONOR_REPRESENTATIVE" ? "ORG_ADMIN" : rawRole) as NGORole;
   const fullName = authUser?.fullName ?? rbacUser.fullName ?? "User";
   const orgName  = authUser?.organisationName ?? "Rwanda Health Foundation";
 
   const allTxns = NGO_TRANSACTIONS;
-  const scopedTxns = useScopedData(allTxns, (t) => t.donor);
+  const scopedTxns = allTxns;
   const flags   = NGO_FLAGS;
 
   const income   = scopedTxns.filter((t) => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
@@ -220,9 +219,7 @@ export default function NGODashboardOverview() {
   const completed    = scopedTxns.filter((t) => t.status === "COMPLETED");
   const completedPct = scopedTxns.length > 0 ? Math.round((completed.length / scopedTxns.length) * 100) : 0;
   const evidence     = scopedTxns.reduce((s, t) => s + t.evidenceCount, 0);
-  const donors       = new Set(scopedTxns.map((t) => t.donor)).size;
   const projects     = new Set(scopedTxns.map((t) => t.projectName)).size;
-  const burnPct      = income > 0 ? Math.round((expense / income) * 100) : 0;
 
   const txByMonth = Object.entries(
     scopedTxns.reduce<Record<string, number>>((acc, t) => { const m = t.date.slice(0, 7); acc[m] = (acc[m] ?? 0) + 1; return acc; }, {})
@@ -239,10 +236,10 @@ export default function NGODashboardOverview() {
   // Role-specific metric cards
   const metrics = (() => {
     if (role === "ACCOUNTANT") return [
-      { icon: <DollarSign size={18} />, value: `RWF ${(income / 1_000_000).toFixed(1)}M`, label: "Total Grant Funding", trend: `${burnPct}% used`, color: "#1e3a8a", path: "/ngo-dashboard/transactions" },
+      { icon: <DollarSign size={18} />, value: `RWF ${(income / 1_000_000).toFixed(1)}M`, label: "Total Grant Funding", trend: `${projects} projects`, color: "#1e3a8a", path: "/ngo-dashboard/transactions" },
       { icon: <XCircle size={18} />,    value: pending.length,                             label: "Pending Evidence",    trend: "upload required",  color: "#dc2626", path: "/ngo-dashboard/evidence"     },
       { icon: <FileText size={18} />,   value: evidence,                                   label: "Evidence Files",      trend: `${completed.length} verified`, color: "#2563eb", path: "/ngo-dashboard/evidence" },
-      { icon: <Users size={18} />,      value: donors,                                     label: "Active Donors",       trend: `${projects} projects`, color: "#475569", path: "/ngo-dashboard/transactions" },
+      { icon: <Users size={18} />,      value: projects,                                   label: "Active Projects",      trend: `${scopedTxns.length} transactions`, color: "#475569", path: "/ngo-dashboard/transactions" },
     ];
     if (role === "AUDITOR") return [
       { icon: <ShieldCheck size={18} />, value: openFlags,          label: "Open Audit Flags",    trend: openFlags > 0 ? "action needed" : "all clear", color: "#dc2626", path: "/ngo-dashboard/review"       },
@@ -250,15 +247,10 @@ export default function NGODashboardOverview() {
       { icon: <FileText size={18} />,    value: evidence,           label: "Evidence Files",       trend: `${completedPct}% coverage`, color: "#1e3a8a", path: "/ngo-dashboard/evidence" },
       { icon: <CheckCircle2 size={18} />,value: `${completedPct}%`, label: "Compliance Rate",      trend: `${completed.length} of ${scopedTxns.length}`, color: "#15803d", path: "/ngo-dashboard/review" },
     ];
-    if (role === "DONOR_REPRESENTATIVE") return [
-      { icon: <DollarSign size={18} />, value: `RWF ${(income / 1_000_000).toFixed(1)}M`, label: "Your Donor Funding", trend: `${burnPct}% utilised`, color: "#1e3a8a", path: "/ngo-dashboard/transactions" },
-      { icon: <FileText size={18} />,   value: evidence,                                   label: "Evidence Files",    trend: `${completed.length} verified`, color: "#2563eb", path: "/ngo-dashboard/evidence" },
-      { icon: <CheckCircle2 size={18} />,value: `${completedPct}%`, label: "Compliance Rate",     trend: `${completed.length} of ${scopedTxns.length}`, color: "#15803d", path: "/ngo-dashboard/transactions" },
-    ];
     // ORG_ADMIN
     return [
-      { icon: <DollarSign size={18} />,  value: `RWF ${(income / 1_000_000).toFixed(1)}M`, label: "Total Grant Funding",  trend: `${burnPct}% utilised`, color: "#1e3a8a", path: "/ngo-dashboard/transactions" },
-      { icon: <Users size={18} />,       value: donors,                                     label: "Active Donors",        trend: `${projects} projects`, color: "#2563eb", path: "/ngo-dashboard/transactions" },
+      { icon: <DollarSign size={18} />,  value: `RWF ${(income / 1_000_000).toFixed(1)}M`, label: "Total Grant Funding",  trend: `${projects} projects`, color: "#1e3a8a", path: "/ngo-dashboard/transactions" },
+      { icon: <Users size={18} />,       value: projects,                                     label: "Active Projects",        trend: `${scopedTxns.length} transactions`, color: "#2563eb", path: "/ngo-dashboard/transactions" },
       { icon: <ShieldCheck size={18} />, value: openFlags,                                  label: "Open Audit Flags",     trend: openFlags > 0 ? "action needed" : "all clear", color: "#dc2626", path: "/ngo-dashboard/review" },
       { icon: <CheckCircle2 size={18} />,value: `${completedPct}%`,                         label: "Compliance Rate",      trend: `${completed.length} of ${scopedTxns.length}`, color: "#15803d", path: "/ngo-dashboard/review" },
     ];
@@ -284,7 +276,7 @@ export default function NGODashboardOverview() {
             {pending.length === 0
               ? <Empty icon={<CheckCircle2 size={22} style={{ color: "#16a34a" }} />} msg="All transactions have evidence" />
               : pending.slice(0, 5).map((t) => (
-                  <ListItem key={t.id} icon={<AlertTriangle size={15} />} iconBg="#fef2f2" iconColor="#dc2626" title={t.projectName} subtitle={`${t.donor} · RWF ${t.amount.toLocaleString()}`} rightLabel="Pending" rightColor="#d97706" onClick={() => router.push("/ngo-dashboard/evidence")} />
+                  <ListItem key={t.id} icon={<AlertTriangle size={15} />} iconBg="#fef2f2" iconColor="#dc2626" title={t.projectName} subtitle={`${t.budgetLine} · RWF ${t.amount.toLocaleString()}`} rightLabel="Pending" rightColor="#d97706" onClick={() => router.push("/ngo-dashboard/evidence")} />
                 ))}
           </Card>
 
@@ -292,7 +284,7 @@ export default function NGODashboardOverview() {
             {flagged.length === 0
               ? <Empty icon={<CheckCircle2 size={22} style={{ color: "#16a34a" }} />} msg="No flagged transactions" />
               : flagged.slice(0, 5).map((t) => (
-                  <ListItem key={t.id} icon={<Copy size={15} />} iconBg="#fffbeb" iconColor="#d97706" title={t.projectName} subtitle={`${t.donor} · RWF ${t.amount.toLocaleString()}`} rightLabel="Flagged" rightColor="#d97706" onClick={() => router.push("/ngo-dashboard/review")} />
+                  <ListItem key={t.id} icon={<Copy size={15} />} iconBg="#fffbeb" iconColor="#d97706" title={t.projectName} subtitle={`${t.budgetLine} · RWF ${t.amount.toLocaleString()}`} rightLabel="Flagged" rightColor="#d97706" onClick={() => router.push("/ngo-dashboard/review")} />
                 ))}
           </Card>
 
@@ -300,7 +292,7 @@ export default function NGODashboardOverview() {
             {scopedTxns.length === 0
               ? <Empty icon={<FileText size={22} />} msg="No transactions yet" />
               : scopedTxns.slice(0, 5).map((t) => (
-                  <ListItem key={t.id} icon={<Paperclip size={15} />} iconBg="#f8fafc" iconColor="#475569" title={t.projectName} subtitle={`${t.donor} · ${t.budgetLine}`} rightLabel={t.status} rightColor={t.status === "COMPLETED" ? "#16a34a" : t.status === "FLAGGED" ? "#d97706" : "#94a3b8"} onClick={() => router.push("/ngo-dashboard/transactions")} />
+                  <ListItem key={t.id} icon={<Paperclip size={15} />} iconBg="#f8fafc" iconColor="#475569" title={t.projectName} subtitle={`${t.budgetLine}`} rightLabel={t.status} rightColor={t.status === "COMPLETED" ? "#16a34a" : t.status === "FLAGGED" ? "#d97706" : "#94a3b8"} onClick={() => router.push("/ngo-dashboard/transactions")} />
                 ))}
           </Card>
         </div>
@@ -329,11 +321,11 @@ export default function NGODashboardOverview() {
             <CatRow dot="#d97706" label="Flagged Records"               value={flagged.length} />
             <CatRow dot="#64748b" label="Completion Rate"               value={`${completedPct}%`} />
           </Card>
-          <Card title="Donor Funding Overview" onRefresh={refresh}>
-            {Array.from(new Set(scopedTxns.map((t) => t.donor))).map((donor) => {
-              const dt = scopedTxns.filter((t) => t.donor === donor);
-              const amt = dt.filter((t) => t.type === "INCOME").reduce((s, t) => s + t.amount, 0) || dt.filter((t) => t.type === "EXPENSE").reduce((s, t) => s + t.amount, 0);
-              return <CatRow key={donor} dot="#1e3a8a" label={`${donor} (${dt.length} txns)`} value={`RWF ${(amt / 1_000_000).toFixed(1)}M`} />;
+          <Card title="Projects Overview" onRefresh={refresh}>
+            {Array.from(new Set(scopedTxns.map((t) => t.projectName))).map((project) => {
+              const pt = scopedTxns.filter((t) => t.projectName === project);
+              const amt = pt.reduce((s, t) => s + t.amount, 0);
+              return <CatRow key={project} dot="#1e3a8a" label={`${project} (${pt.length} txns)`} value={`RWF ${(amt / 1_000_000).toFixed(1)}M`} />;
             })}
           </Card>
         </div>

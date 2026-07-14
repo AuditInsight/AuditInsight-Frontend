@@ -163,6 +163,7 @@ function LoginForm() {
   const inviteToken  = searchParams.get("inviteToken") ?? undefined;
   const suspended    = searchParams.get("suspended") === "1";
   const registered   = searchParams.get("registered");
+  const verified     = searchParams.get("verified") === "1";
 
   const [showPassword, setShowPassword] = useState(false);
   const [serverError,  setServerError]  = useState<string | null>(null);
@@ -273,6 +274,11 @@ function LoginForm() {
           {registered === "auditor" && (
             <div style={s.infoBanner}>
               Account created. Your auditor account is pending admin approval.
+            </div>
+          )}
+          {verified && (
+            <div style={{ ...s.infoBanner, borderColor: "#86efac", background: "#f0fdf4", color: "#15803d" }}>
+              ✓ Email verified successfully! You can now sign in.
             </div>
           )}
           {inviteToken && (

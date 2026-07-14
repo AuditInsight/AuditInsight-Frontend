@@ -17,19 +17,19 @@ import { useState } from "react";
 import { Upload, Edit2, Flag, ChevronUp, ChevronDown, Lock } from "lucide-react";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
-import type { NGOTransaction, NGORole, NGOTransactionStatus, DonorName } from "@/types/ngo";
+import type { NGOTransaction, NGORole, NGOTransactionStatus } from "@/types/ngo";
 
 interface Props {
   transactions: NGOTransaction[];
   /** Passed for legacy compatibility — RBAC role is read from context */
   role?: NGORole;
-  donorScope?: DonorName | null;
+  donorScope?: string | null;
   onUploadEvidence: (txn: NGOTransaction) => void;
   onEditTransaction: (txn: NGOTransaction) => void;
   onFlagIssue: (txn: NGOTransaction) => void;
 }
 
-type SortKey = "date" | "amount" | "projectName" | "donor" | "status";
+type SortKey = "date" | "amount" | "projectName" | "status";
 type SortDir = "asc" | "desc";
 
 const STATUS_CFG: Record<NGOTransactionStatus, {
@@ -126,43 +126,17 @@ export default function NGOTransactionTable({
 
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [filterStatus, setFilterStatus] = useState<NGOTransactionStatus | "ALL">("ALL");
-  const [filterDonor,  setFilterDonor]  = useState<DonorName | "ALL">("ALL");
-  const [search, setSearch] = useState("");
 
-  // Donor scoping — DONOR_REPRESENTATIVE only sees their donor
-  const scopedTxns = donorScope
-    ? transactions.filter((t) => t.donor === donorScope)
-    : transactions;
-
-  const filtered = scopedTxns.filter((t) => {
-    if (filterStatus !== "ALL" && t.status !== filterStatus) return false;
-    if (filterDonor  !== "ALL" && t.donor  !== filterDonor)  return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (
-        t.id.toLowerCase().includes(q) ||
-        t.projectName.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q) ||
-        t.counterparty.toLowerCase().includes(q) ||
-        t.budgetLine.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
-
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = [...transactions].sort((a, b) => {
     let cmp = 0;
     if (sortKey === "date")        cmp = a.date.localeCompare(b.date);
     if (sortKey === "amount")      cmp = a.amount - b.amount;
     if (sortKey === "projectName") cmp = a.projectName.localeCompare(b.projectName);
-    if (sortKey === "donor")       cmp = a.donor.localeCompare(b.donor);
     if (sortKey === "status")      cmp = a.status.localeCompare(b.status);
     return sortDir === "asc" ? cmp : -cmp;
   });
 
-  const uniqueDonors = Array.from(new Set(scopedTxns.map((t) => t.donor)));
-  const totalAmount  = sorted.reduce((s, t) => s + (t.type === "EXPENSE" ? -t.amount : t.amount), 0);
+  const totalAmount = sorted.reduce((s, t) => s + (t.type === "EXPENSE" ? -t.amount : t.amount), 0);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -184,41 +158,6 @@ export default function NGOTransactionTable({
 
   return (
     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(15,23,42,0.05)" }}>
-      {/* Toolbar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f1f5f9", flexWrap: "wrap" as const }}>
-        <input
-          style={{ flex: 1, minWidth: 200, padding: "8px 14px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13.5, color: "#0f172a", outline: "none", fontFamily: "inherit", background: "#f8fafc" }}
-          placeholder="Search transactions, projects, counterparties…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <select
-            style={{ padding: "7px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, color: "#475569", outline: "none", background: "#f8fafc", cursor: "pointer", fontFamily: "inherit" }}
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as NGOTransactionStatus | "ALL")}
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="COMPLETED">Complete</option>
-            <option value="PENDING">Pending</option>
-            <option value="FLAGGED">Flagged</option>
-          </select>
-          {!donorScope && (
-            <select
-              style={{ padding: "7px 12px", borderRadius: 9, border: "1px solid #e2e8f0", fontSize: 13, color: "#475569", outline: "none", background: "#f8fafc", cursor: "pointer", fontFamily: "inherit" }}
-              value={filterDonor}
-              onChange={(e) => setFilterDonor(e.target.value as DonorName | "ALL")}
-            >
-              <option value="ALL">All Donors</option>
-              {uniqueDonors.map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-          )}
-        </div>
-        <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500, whiteSpace: "nowrap" as const }}>
-          {sorted.length} transaction{sorted.length !== 1 ? "s" : ""}
-        </span>
-      </div>
-
       {/* Donor scope banner */}
       {donorScope && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "rgba(30,58,138,0.04)", borderBottom: "1px solid rgba(30,58,138,0.1)" }}>
@@ -243,10 +182,6 @@ export default function NGOTransactionTable({
               {/* Project — sortable */}
               <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("projectName")}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Project <SortIcon col="projectName" /></span>
-              </th>
-              {/* Donor — sortable */}
-              <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("donor")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Donor <SortIcon col="donor" /></span>
               </th>
               {/* Budget Line */}
               <th style={thStyle}>Budget Line</th>
@@ -294,12 +229,6 @@ export default function NGOTransactionTable({
                     <p style={{ fontSize: 13.5, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: 1.3 }}>{txn.projectName}</p>
                     <p style={{ fontSize: 12, color: "#94a3b8", margin: "3px 0 0", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{txn.description}</p>
                   </td>
-                  {/* Donor */}
-                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
-                    <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, background: "rgba(30,58,138,0.07)", color: "#1e3a8a", border: "1px solid rgba(30,58,138,0.15)" }}>
-                      {txn.donor}
-                    </span>
-                  </td>
                   {/* Budget Line */}
                   <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
                     <span style={{ fontSize: 12.5, color: "#64748b" }}>{txn.budgetLine}</span>
@@ -345,7 +274,7 @@ export default function NGOTransactionTable({
                 <td style={{ padding: "10px 16px", fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>
                   {totalAmount >= 0 ? "+" : ""}RWF {Math.abs(totalAmount).toLocaleString()}
                 </td>
-                <td colSpan={6} />
+                <td colSpan={5} />
               </tr>
             </tfoot>
           )}

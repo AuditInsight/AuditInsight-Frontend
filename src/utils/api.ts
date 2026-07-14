@@ -7,7 +7,7 @@
 import { apiClient } from "@/api/client";
 
 // ── Re-export types consumed by the rest of the app ───────────────
-export type { BackendRole as UserRole } from "@/types/auth";
+export type { BackendRole as UserRole, BackendRole } from "@/types/auth";
 
 /* =========================
    AUTH TYPES
@@ -256,7 +256,7 @@ export const getOrganisationMembers = (orgId: string) =>
     `/organisations/${orgId}/members`
   );
 
-export const inviteMember = (orgId: string, email: string, role: string) =>
+export const inviteMember = (orgId: string, email: string, role: BackendRole) =>
   apiClient.post<ResponseMessage>(
     `/organisations/${orgId}/members/invite`,
     { email, role }

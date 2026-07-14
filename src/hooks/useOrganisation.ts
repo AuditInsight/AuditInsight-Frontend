@@ -1,52 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Organisation } from "@/utils/api";
-import { MOCK_ORGANISATION } from "@/mock/organisation.mock";
-
-/*
- * ── REAL API (commented for RBAC UI testing) ─────────────────────
- * import { getMyOrganisations } from "@/utils/api";
- * ─────────────────────────────────────────────────────────────────
- */
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext.production";
+import { apiClient } from "@/api/client";
+import { OrganisationApiResponse } from "@/types/tenants";
+import { isAxiosError } from "axios";
 
 interface UseOrganisationReturn {
-  org: Organisation | null;
+  org: OrganisationApiResponse | null;
   orgId: string;
   loading: boolean;
+  error: string | null;
+  refetch: () => void;
 }
 
 export function useOrganisation(): UseOrganisationReturn {
-  const [org, setOrg] = useState<Organisation | null>(null);
+  const { user } = useAuth();
+  const [org, setOrg]         = useState<OrganisationApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+
+  const fetchOrg = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await apiClient.get<OrganisationApiResponse[]>("/organisations");
+      const list = Array.isArray(data) ? data : [];
+      // Pick the org matching the user's organisationId, or fall back to first
+      const match = user?.organisationId
+        ? (list.find((o) => o.id === user.organisationId) ?? list[0] ?? null)
+        : (list[0] ?? null);
+      setOrg(match);
+    } catch (err) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Failed to load organisation.");
+      } else {
+        setError("Failed to load organisation.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.organisationId]);
 
   useEffect(() => {
-    /*
-     * ── REAL API ─────────────────────────────────────────────────
-     * const cached = localStorage.getItem("organisationId");
-     * getMyOrganisations()
-     *   .then(({ data }) => {
-     *     if (data && data.length > 0) {
-     *       const selected = cached
-     *         ? (data.find((o) => o.id === cached) ?? data[0])
-     *         : data[0];
-     *       setOrg(selected);
-     *       localStorage.setItem("organisationId", selected.id);
-     *     }
-     *   })
-     *   .catch(() => {})
-     *   .finally(() => setLoading(false));
-     * ─────────────────────────────────────────────────────────────
-     */
+    if (user) fetchOrg();
+  }, [user, fetchOrg]);
 
-    // ── MOCK ─────────────────────────────────────────────────────
-    setOrg(MOCK_ORGANISATION);
-    setLoading(false);
-  }, []);
-
-  const orgId = org?.id ?? "";
-
-  return { org, orgId, loading };
+  return { org, orgId: org?.id ?? "", loading, error, refetch: fetchOrg };
 }
-
-

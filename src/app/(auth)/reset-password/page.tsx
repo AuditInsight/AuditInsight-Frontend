@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input/input";
 import { Colors } from "@/styles/colors";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { isAxiosError } from "axios";
+import { apiClient } from "@/api/client";
+import { ApiErrorResponse } from "@/types/auth";
 
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
@@ -20,10 +23,6 @@ export default function ResetPasswordPage() {
   const { user, status } = useAuth();
   const loading = status === "loading";
 
-  // completePasswordReset is a legacy mock helper — in production we call the API directly.
-  // After a successful password change, we just redirect to dashboard.
-  const completePasswordReset = (_newPassword?: string) => { /* no-op: API call handles this */ };
-
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/log-in");
@@ -33,26 +32,35 @@ export default function ResetPasswordPage() {
   const handleChangePassword = async () => {
     setError("");
 
-    if (!user) {
-      setError("You need to log in first.");
-      return;
-    }
+    if (!user) { setError("You need to log in first."); return; }
+    if (!currentPassword) { setError("Please enter your current password."); return; }
     if (!PASSWORD_PATTERN.test(newPassword)) {
-      setError(
-        "New password must be at least 8 characters and include uppercase, lowercase, a number, and a special character (@$!%*?&)"
-      );
+      setError("New password must be at least 8 characters and include uppercase, lowercase, a number, and a special character (@$!%*?&)");
       return;
     }
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+    if (newPassword !== confirmPassword) { setError("Passwords do not match."); return; }
 
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
-    completePasswordReset(newPassword);
-    router.replace("/dashboard");
-    setIsSubmitting(false);
+    try {
+      await apiClient.patch("/auth/change-password", { currentPassword, newPassword });
+      // Redirect based on role after forced password change
+      if (user.role === "SYSTEM_ADMIN") router.replace("/admin/organizations");
+      else if (user.orgType === "NGO")  router.replace("/ngo-dashboard");
+      else                              router.replace("/dashboard");
+    } catch (err: unknown) {
+      if (isAxiosError<ApiErrorResponse>(err)) {
+        const status = err.response?.status;
+        if (status === 400) {
+          setError(err.response?.data?.message ?? "Current password is incorrect.");
+        } else {
+          setError(err.response?.data?.message ?? "Failed to change password. Please try again.");
+        }
+      } else {
+        setError("Unable to reach the server. Check your connection.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
