@@ -26,18 +26,11 @@ export type NGOEvidenceCategory = keyof typeof NGO_EVIDENCE_CATEGORIES;
 export type NGOEvidenceDocType  = typeof NGO_EVIDENCE_CATEGORIES[NGOEvidenceCategory][number];
 
 // ─── NGO-specific roles ───────────────────────────────────────────────────────
-// These extend the base FrontendRole for NGO organisations.
-// DONOR_REPRESENTATIVE is NGO-only: scoped view to their donor's projects only.
-export type NGORole =
-  | "ORG_ADMIN"            // Executive Director — view only, receives flags
-  | "ACCOUNTANT"           // Finance Officer — record transactions, upload evidence
-  | "AUDITOR"              // External/Internal Auditor — view + flag issues
-  | "DONOR_REPRESENTATIVE"; // e.g. UNICEF rep — view only, scoped to their donor
+export type NGORole = "ORG_ADMIN" | "ACCOUNTANT" | "AUDITOR";
 
 // ─── Donors ─────────────────────────────────────────────────────────────────
-export type DonorName =
-  | "USAID" | "UNICEF" | "World Bank" | "EU" | "UNDP"
-  | "GIZ" | "DFID" | "Gates Foundation" | "One Acre Fund" | "Red Cross";
+// Kept for backward compatibility with existing data references
+export type DonorName = string;
 
 // ─── NGO Transaction ─────────────────────────────────────────────────────────
 // Extends the base Transaction with NGO-specific metadata fields
@@ -47,7 +40,6 @@ export interface NGOTransaction {
   id: string;
   organisationId: string;
   projectName: string;
-  donor: DonorName;
   budgetLine: string;
   description: string;
   counterparty: string;
@@ -85,7 +77,6 @@ export interface NGOFlag {
   id: string;
   transactionId: string;
   projectName: string;
-  donor: DonorName;
   category: NGOFlagCategory;
   severity: FlagSeverity;
   notes: string;
@@ -101,7 +92,6 @@ export interface NGONotification {
   flagId: string;
   transactionId: string;
   projectName: string;
-  donor: DonorName;
   message: string;
   auditorName: string;
   severity: FlagSeverity;
@@ -126,7 +116,6 @@ export interface NGOPermissions {
   canEditTransaction: boolean;
   canFlagIssue: boolean;
   canResolveFlag: boolean;
-  canViewAllDonors: boolean;   // false for DONOR_REPRESENTATIVE
   canManageOrg: boolean;
   canViewNotifications: boolean;
 }
@@ -137,8 +126,7 @@ export const NGO_PERMISSIONS: Record<NGORole, NGOPermissions> = {
     canUploadEvidence:    true,
     canEditTransaction:   true,
     canFlagIssue:         false,
-    canResolveFlag:       false,  // ACCOUNTANT fixes the evidence, does not resolve flags
-    canViewAllDonors:     true,
+    canResolveFlag:       false,
     canManageOrg:         false,
     canViewNotifications: true,
   },
@@ -146,9 +134,8 @@ export const NGO_PERMISSIONS: Record<NGORole, NGOPermissions> = {
     canRecordTransaction: false,
     canUploadEvidence:    false,
     canEditTransaction:   false,
-    canFlagIssue:         true,   // AUDITOR raises flags
-    canResolveFlag:       false,  // AUDITOR cannot resolve their own flags
-    canViewAllDonors:     true,
+    canFlagIssue:         true,
+    canResolveFlag:       false,
     canManageOrg:         false,
     canViewNotifications: false,
   },
@@ -157,21 +144,9 @@ export const NGO_PERMISSIONS: Record<NGORole, NGOPermissions> = {
     canUploadEvidence:    false,
     canEditTransaction:   false,
     canFlagIssue:         false,
-    canResolveFlag:       true,   // ORG_ADMIN receives flags and resolves them
-    canViewAllDonors:     true,
+    canResolveFlag:       true,
     canManageOrg:         true,
     canViewNotifications: true,
   },
-  DONOR_REPRESENTATIVE: {
-    canRecordTransaction: false,
-    canUploadEvidence:    false,
-    canEditTransaction:   false,
-    canFlagIssue:         false,
-    canResolveFlag:       false,
-    canViewAllDonors:     false,
-    canManageOrg:         false,
-    canViewNotifications: false,
-  },
 };
-
 
