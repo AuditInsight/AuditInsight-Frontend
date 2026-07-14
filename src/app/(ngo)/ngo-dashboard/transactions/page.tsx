@@ -10,6 +10,7 @@ import ActionItems from "@/components/ngo/rbac/ActionItems";
 import AuditorAlertsPanel from "@/components/ngo/rbac/AuditorAlertsPanel";
 import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
 import NGOFlagIssueModal from "@/components/ngo/NGOFlagIssueModal";
+import NGOAddTransactionModal from "@/components/ngo/AddTransactionModal";
 
 import { TransactionsStats } from "@/components/mse/transactions/TransactionsStats";
 import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
@@ -19,11 +20,12 @@ import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
 import NGOTransactionTable from "@/components/ngo/NGOTransactionTable";
 
 import { useRBAC } from "@/context/RBACContext";
+import { useTransactions } from "@/hooks/useTransactions";
 import { theme } from "@/styles/theme";
 import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
 import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity } from "@/types/ngo";
-import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
+import { NGO_FLAGS } from "@/mock/ngo.mock";
 
 // ── Map NGOTransaction → Transaction so MSE components work unchanged ─────────
 function toTransaction(t: NGOTransaction): Transaction {
@@ -53,7 +55,30 @@ function TransactionsContent() {
   const canAdd  = can("transaction:create");
   const canEdit = can("transaction:edit");
 
-  const [ngoTransactions, setNgoTransactions] = useState<NGOTransaction[]>(NGO_TRANSACTIONS);
+  const { transactions: rawTransactions } = useTransactions();
+
+  // Map real Transaction[] → NGOTransaction[] for NGO-specific components
+  const ngoTransactions = useMemo<NGOTransaction[]>(() =>
+    rawTransactions.map((t) => ({
+      id:             t.id,
+      organisationId: t.organisationId ?? "",
+      projectName:    t.name,
+      donor:          (t as Transaction & { donor?: string }).donor ?? "",
+      budgetLine:     (t as Transaction & { budgetLine?: string }).budgetLine ?? "",
+      description:    t.name,
+      counterparty:   t.counterparty,
+      date:           t.date,
+      amount:         t.amount,
+      currency:       "RWF",
+      paymentMethod:  t.paymentMethod,
+      type:           t.type,
+      status:         t.status === "PENDING" ? "PENDING" : "COMPLETED",
+      evidenceCount:  t.evidenceCount ?? 0,
+      createdBy:      t.createdBy ?? "",
+      createdAt:      t.createdAt ?? "",
+      notes:          t.notes,
+    })),
+  [rawTransactions]);
   const [flags,           setFlags]           = useState<NGOFlag[]>(NGO_FLAGS);
   const [flagTarget,      setFlagTarget]      = useState<NGOTransaction | null>(null);
   const [uploadTarget,    setUploadTarget]    = useState<NGOTransaction | null>(null);
@@ -68,7 +93,7 @@ function TransactionsContent() {
 
   const scopedNgo = ngoTransactions;
 
-  // Build a fake Evidence[] from evidenceCount so TransactionsStats works
+  // Build Evidence[] from evidenceCount so TransactionsStats works
   const evidences = useMemo<Evidence[]>(() =>
     scopedNgo.flatMap((t) =>
       Array.from({ length: t.evidenceCount }, (_, i) => ({
@@ -130,38 +155,13 @@ function TransactionsContent() {
     URL.revokeObjectURL(url);
   };
 
-  const handleCreate = (data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
-    const newNgo: NGOTransaction = {
-      id:             `NGO-TXN-${Date.now()}`,
-      organisationId: user.organisationId,
-      projectName:    data.name,
-      budgetLine:     "",
-      description:    data.name,
-      counterparty:   data.counterparty,
-      date:           data.date,
-      amount:         data.amount,
-      currency:       "RWF",
-      paymentMethod:  data.paymentMethod,
-      type:           data.type,
-      status:         "PENDING",
-      evidenceCount:  0,
-      createdBy:      data.createdBy ?? user.fullName,
-      createdAt:      new Date().toISOString(),
-      notes:          data.notes,
-    };
-    setNgoTransactions((p) => [newNgo, ...p]);
+  const handleCreate = (_txn: NGOTransaction) => {
+    // NGO modal already called the API — just close
     setIsAddOpen(false);
   };
 
-  const handleUpdate = (data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
-    if (!editingTx) return;
-    setNgoTransactions((p) =>
-      p.map((t) =>
-        t.id === editingTx.id
-          ? { ...t, description: data.name, counterparty: data.counterparty, date: data.date, amount: data.amount, type: data.type, paymentMethod: data.paymentMethod, notes: data.notes }
-          : t
-      )
-    );
+  const handleUpdate = (_data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
+    // Backend has no full-update endpoint — status-only PATCH is handled by useTransactions
     setEditingTx(null);
   };
 
@@ -172,17 +172,12 @@ function TransactionsContent() {
       category: flag.category, severity: flag.severity, notes: flag.notes,
       flaggedBy: user.fullName, flaggedAt: new Date().toISOString(), status: "OPEN",
     }]);
-    setNgoTransactions((p) => p.map((t) => t.id === flag.transactionId ? { ...t, status: "FLAGGED" as const } : t));
     setFlagTarget(null);
   };
 
-  const handleUploadSubmit = (transactionId: string, fileCount: number) => {
-    setNgoTransactions((p) =>
-      p.map((t) => t.id === transactionId ? { ...t, status: "COMPLETED" as const, evidenceCount: t.evidenceCount + fileCount } : t)
-    );
-    setFlags((p) =>
-      p.map((f) => f.transactionId === transactionId ? { ...f, status: "RESOLVED" as const, resolvedAt: new Date().toISOString() } : f)
-    );
+  const handleUploadSubmit = (_transactionId: string, _fileCount: number) => {
+    // Evidence upload is handled by the evidence module — no local state mutation needed
+    setUploadTarget(null);
   };
 
   return (
@@ -254,13 +249,12 @@ function TransactionsContent() {
         />
       )}
 
-      {/* Add modal */}
+      {/* Add modal — NGO-specific modal with donor/budgetLine/projectName fields */}
       {canAdd && (
-        <AddTransactionModal
-          isOpen={isAddOpen}
+        <NGOAddTransactionModal
+          open={isAddOpen}
           onClose={() => setIsAddOpen(false)}
           onSubmit={handleCreate}
-          mode="add"
         />
       )}
 

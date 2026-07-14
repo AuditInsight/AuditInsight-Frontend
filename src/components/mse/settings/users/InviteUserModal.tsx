@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { isAxiosError } from "axios";
+import type { BackendRole } from "@/utils/api";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onInvite?: (email: string, role: string, message?: string) => void;
+  onInvite?: (email: string, role: BackendRole) => Promise<void>;
 }
 
-const ROLES = [
-  { value: "AUDITOR", label: "Auditor", desc: "Can review transactions, flag issues, and manage audit queues", icon: "🔍" },
-  { value: "MEMBER", label: "Accountant", desc: "Can upload evidence and manage financial records", icon: "📊" },
+const ROLES: { value: BackendRole; label: string; desc: string; icon: string }[] = [
+  { value: "AUDITOR", label: "Auditor",     desc: "Can review transactions, flag issues, and manage audit queues", icon: "🔍" },
+  { value: "MEMBER",  label: "Accountant",  desc: "Can upload evidence and manage financial records",             icon: "📊" },
 ];
 
 function validateEmail(email: string) {
@@ -18,38 +20,43 @@ function validateEmail(email: string) {
 }
 
 export default function InviteUserModal({ open, onClose, onInvite }: Props) {
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("AUDITOR");
-  const [message, setMessage] = useState("");
+  const [email,   setEmail]   = useState("");
+  const [role,    setRole]    = useState<BackendRole>("AUDITOR");
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
+  const [sent,    setSent]    = useState(false);
+  const [error,   setError]   = useState("");
 
   if (!open) return null;
 
   const handleInvite = async () => {
     setError("");
-    if (!email.trim()) { setError("Email address is required."); return; }
-    if (!validateEmail(email.trim())) { setError("Please enter a valid email address."); return; }
+    if (!email.trim())                    { setError("Email address is required."); return; }
+    if (!validateEmail(email.trim()))     { setError("Please enter a valid email address."); return; }
 
     setSending(true);
-    // MOCK: simulate sending invite
-    await new Promise(r => setTimeout(r, 900));
-    setSending(false);
-    setSent(true);
-    onInvite?.(email.trim(), role, message.trim() || undefined);
-    setTimeout(() => {
-      setSent(false);
-      setEmail("");
-      setMessage("");
-      setRole("AUDITOR");
-      onClose();
-    }, 1500);
+    try {
+      await onInvite?.(email.trim(), role);
+      setSent(true);
+      setTimeout(() => {
+        setSent(false);
+        setEmail("");
+        setRole("AUDITOR");
+        onClose();
+      }, 1500);
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Failed to send invitation. Please try again.");
+      } else {
+        setError("Unable to reach the server. Check your connection.");
+      }
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleClose = () => {
     if (sending) return;
-    setEmail(""); setRole("AUDITOR"); setMessage(""); setError(""); setSent(false);
+    setEmail(""); setRole("AUDITOR"); setError(""); setSent(false);
     onClose();
   };
 
@@ -117,23 +124,10 @@ export default function InviteUserModal({ open, onClose, onInvite }: Props) {
               </div>
             </div>
 
-            {/* optional message */}
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Personal message <span style={s.optional}>(optional)</span></label>
-              <textarea
-                style={s.textarea}
-                placeholder="Add a note to your invite…"
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                rows={3}
-                disabled={sending}
-                onFocus={e => Object.assign(e.currentTarget.style, { borderColor: "#1e3a8a", boxShadow: "0 0 0 3px rgba(30,58,138,0.10)" })}
-                onBlur={e => Object.assign(e.currentTarget.style, { borderColor: "#E2E8F0", boxShadow: "none" })}
-              />
-            </div>
+            {/* optional message — removed: backend InviteMemberRequest only accepts email + role */}
 
             <div style={s.infoNote}>
-              🔒 The invitee will receive a secure link. Access is granted only after they accept.
+              🔒 They’ll receive an email with their credentials and an invitation token to activate their account.
             </div>
           </div>
         )}

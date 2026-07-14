@@ -7,7 +7,7 @@ import {
   getTransactions,
   getEvidence,
   createTransaction as apiCreateTransaction,
-  updateTransaction as apiUpdateTransaction,
+  updateTransactionStatus as apiUpdateStatus,
   deleteTransaction as apiDeleteTransaction,
   CreateTransactionRequest,
 } from "@/utils/api";
@@ -66,6 +66,7 @@ export function useTransactions() {
   const addTransaction = async (
     data: Omit<Transaction, "id" | "status" | "evidenceCount">
   ) => {
+    const isNgo = user?.orgType === "NGO";
     const req: CreateTransactionRequest = {
       organisationId: user?.organisationId ?? "",
       name:          data.name,
@@ -74,32 +75,35 @@ export function useTransactions() {
       amount:        data.amount,
       type:          data.type,
       paymentMethod: data.paymentMethod,
-      notes:         data.notes,
+      // NGO critical rule: include donor + budgetLine only for NGO orgs
+      ...(isNgo && { donor: (data as Transaction & { donor?: string }).donor ?? "" }),
+      ...(isNgo && { budgetLine: (data as Transaction & { budgetLine?: string }).budgetLine ?? "" }),
     };
     const { data: created } = await apiCreateTransaction(req);
-    // Map API response back to Transaction shape
     const newTx: Transaction = {
       id:            created.id,
       name:          created.name,
       counterparty:  created.counterparty ?? "",
-      date:          created.date,
-      amount:        created.amount,
+      date:          String(created.date),
+      amount:        Number(created.amount),
       type:          created.type,
       paymentMethod: created.paymentMethod,
       status:        created.status,
       evidenceCount: 0,
       createdBy:     created.createdBy,
-      createdAt:     created.createdAt,
-      notes:         created.notes,
+      createdAt:     String(created.createdAt),
     };
     setTransactions((prev) => withMeta([newTx, ...prev], evidences));
   };
 
+  // Backend only supports status updates via PATCH — no full edit endpoint
   const updateTransaction = async (
     id: string,
-    data: Partial<Omit<Transaction, "id" | "status" | "evidenceCount">>
+    data: Partial<Omit<Transaction, "id" | "evidenceCount">>
   ) => {
-    await apiUpdateTransaction(id, data);
+    if (data.status) {
+      await apiUpdateStatus(id, data.status);
+    }
     setTransactions((prev) => {
       const updated = prev.map((t) => (t.id === id ? { ...t, ...data } : t));
       return withMeta(updated, evidences);

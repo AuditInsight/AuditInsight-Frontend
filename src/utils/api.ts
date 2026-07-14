@@ -93,12 +93,14 @@ export interface TransactionResponse {
 export interface CreateTransactionRequest {
   organisationId: string;
   name: string;
-  counterparty?: string;
-  date: string;
+  counterparty: string;         // required by backend
+  date: string;                 // ISO date string e.g. "2024-01-15"
   amount: number;
   type: TransactionType;
   paymentMethod: PaymentMethod;
-  notes?: string;
+  // NGO-only — MUST be included for NGO orgs, MUST NOT be sent for PRIVATE
+  donor?: string;
+  budgetLine?: string;
 }
 
 /* =========================
@@ -115,6 +117,7 @@ export const getTransactionById = (txnId: string) =>
 export const createTransaction = (data: CreateTransactionRequest) =>
   apiClient.post<TransactionResponse>("/transactions", data);
 
+// Backend only supports PATCH /{txnId} for status updates — no full PUT endpoint
 export const updateTransactionStatus = (
   txnId: string,
   status: TransactionStatus
@@ -123,11 +126,6 @@ export const updateTransactionStatus = (
 
 export const deleteTransaction = (txnId: string) =>
   apiClient.delete<ResponseMessage>(`/transactions/${txnId}`);
-
-export const updateTransaction = (
-  txnId: string,
-  data: Partial<CreateTransactionRequest>
-) => apiClient.put<TransactionResponse>(`/transactions/${txnId}`, data);
 
 /* =========================
    EVIDENCE TYPES

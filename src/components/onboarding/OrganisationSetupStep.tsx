@@ -5,9 +5,8 @@ import { Building2, AlertCircle } from "lucide-react";
 
 interface OrgData {
   orgName: string;
-  industry: string;
-  orgType: "NGO" | "PRIVATE";
-  employeeCount: string;
+  industry: "NGO" | "PRIVATE";
+  size: string;
   fiscalYearStart: string;
   fiscalYearEnd: string;
   currencies: string[];
@@ -50,7 +49,7 @@ export default function OrganisationSetupStep({ onNext }: Props) {
     if (!employeeCount.trim())         { setError("Number of employees is required."); return; }
     if (currencies.length === 0)        { setError("Please select at least one currency."); return; }
     setError("");
-    onNext({ orgName: orgName.trim(), industry, orgType: industry.toLowerCase().includes("ngo") ? "NGO" : "PRIVATE", employeeCount: employeeCount.trim(), fiscalYearStart, fiscalYearEnd, currencies });
+    onNext({ orgName: orgName.trim(), industry: industry.toLowerCase().includes("ngo") ? "NGO" : "PRIVATE", size: employeeCount.trim(), fiscalYearStart, fiscalYearEnd, currencies });
   };
 
   return (
