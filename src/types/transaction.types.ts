@@ -22,6 +22,10 @@ export interface Transaction {
   createdBy?: string;
   createdAt?: string;
   notes?: string;
+  // NGO-specific fields — present only for NGO org transactions
+  donor?: string;
+  budgetLine?: string;
+  projectName?: string;
 }
 
 

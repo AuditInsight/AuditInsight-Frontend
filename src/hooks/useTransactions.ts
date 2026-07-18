@@ -92,6 +92,10 @@ export function useTransactions() {
       evidenceCount: 0,
       createdBy:     created.createdBy,
       createdAt:     String(created.createdAt),
+      // Preserve NGO fields from the request so the table renders them immediately
+      donor:         req.donor,
+      budgetLine:    req.budgetLine,
+      projectName:   req.name,
     };
     setTransactions((prev) => withMeta([newTx, ...prev], evidences));
   };
