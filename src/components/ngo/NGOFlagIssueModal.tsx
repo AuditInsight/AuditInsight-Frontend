@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { Flag, X, AlertCircle, CheckCircle, Bell } from "lucide-react";
+import { isAxiosError } from "axios";
+import { useReviewQueue } from "@/hooks/useReviewQueue";
+import { useRBAC } from "@/context/RBACContext";
 import type { NGOTransaction, NGOFlagCategory, FlagSeverity } from "@/types/ngo";
+import type { IssueType } from "@/utils/api";
 
 interface Props {
   open: boolean;
@@ -41,6 +45,8 @@ const SEVERITIES: { value: FlagSeverity; label: string; color: string; bg: strin
 ];
 
 export default function NGOFlagIssueModal({ open, transaction, auditorName, onClose, onSubmit }: Props) {
+  const { flagIssue } = useReviewQueue();
+  const { user }      = useRBAC();
   const [category, setCategory] = useState<NGOFlagCategory | "">("");
   const [severity, setSeverity] = useState<FlagSeverity | "">("");
   const [notes, setNotes]       = useState("");
@@ -50,25 +56,50 @@ export default function NGOFlagIssueModal({ open, transaction, auditorName, onCl
 
   if (!open || !transaction) return null;
 
+  // Map NGO category → backend IssueType
+  const toIssueType = (cat: NGOFlagCategory): IssueType => {
+    if (cat.toLowerCase().includes("evidence") || cat.toLowerCase().includes("voucher") || cat.toLowerCase().includes("document") || cat.toLowerCase().includes("attendance") || cat.toLowerCase().includes("beneficiary") || cat.toLowerCase().includes("reconciliation") || cat.toLowerCase().includes("activity") || cat.toLowerCase().includes("grant") || cat.toLowerCase().includes("approval")) return "MISSING_EVIDENCE";
+    if (cat.toLowerCase().includes("compliance") || cat.toLowerCase().includes("budget") || cat.toLowerCase().includes("cash")) return "COMPLIANCE_ISSUE";
+    if (cat.toLowerCase().includes("duplicate") || cat.toLowerCase().includes("supplier")) return "RISK_FLAG";
+    return "VERIFICATION_PROBLEM";
+  };
+
   const handleSubmit = async () => {
     setError("");
     if (!category) { setError("Please select an issue category."); return; }
     if (!severity) { setError("Please select a severity level."); return; }
 
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
-    onSubmit({
-      transactionId: transaction.id,
-      category: category as NGOFlagCategory,
-      severity: severity as FlagSeverity,
-      notes: notes.trim(),
-    });
-    setSuccess(true);
-    setTimeout(() => {
-      setSuccess(false); setCategory(""); setSeverity(""); setNotes(""); setError("");
-      onClose();
-    }, 1600);
-    setSubmitting(false);
+    try {
+      await flagIssue({
+        transactionId: transaction.id,
+        type:          toIssueType(category as NGOFlagCategory),
+        description:   notes.trim() || (category as string),
+        status:        "Open",
+        flaggedBy:     user.fullName,
+        createdAt:     new Date().toISOString(),
+        risk:          severity === "CRITICAL" || severity === "HIGH" ? "High" : "Medium",
+      });
+      onSubmit({
+        transactionId: transaction.id,
+        category:      category as NGOFlagCategory,
+        severity:      severity as FlagSeverity,
+        notes:         notes.trim(),
+      });
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false); setCategory(""); setSeverity(""); setNotes(""); setError("");
+        onClose();
+      }, 1600);
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Failed to submit flag. Please try again.");
+      } else {
+        setError("Unable to reach the server. Check your connection.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
