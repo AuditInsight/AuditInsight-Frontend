@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { X, Edit2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { isAxiosError } from "axios";
+import { useTransactions } from "@/hooks/useTransactions";
 import type { NGOTransaction, DonorName } from "@/types/ngo";
 
 interface Props {
@@ -15,6 +17,7 @@ const DONORS: DonorName[] = ["USAID", "UNICEF", "World Bank", "EU", "UNDP", "GIZ
 const BUDGET_LINES = ["Medical Supplies", "Training & Workshops", "Scholarships", "Staff Costs", "Infrastructure", "Procurement", "Beneficiary Support", "Monitoring & Evaluation", "Grant Receipt", "Administration", "Other"];
 
 export default function EditTransactionModal({ open, transaction, onClose, onSubmit }: Props) {
+  const { updateTransaction } = useTransactions();
   const [projectName,   setProjectName]   = useState("");
   const [donor,         setDonor]         = useState<DonorName | "">("");
   const [budgetLine,    setBudgetLine]    = useState("");
@@ -65,25 +68,33 @@ export default function EditTransactionModal({ open, transaction, onClose, onSub
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) { setError("Enter a valid amount."); return; }
 
     setError(""); setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-
-    onSubmit({
-      ...transaction,
-      projectName:   projectName.trim(),
-      donor:         donor as DonorName,
-      budgetLine,
-      description:   description.trim(),
-      counterparty:  counterparty.trim(),
-      date,
-      amount:        Number(amount),
-      currency,
-      paymentMethod,
-      type,
-    });
-
-    setSubmitting(false);
-    setSuccess(true);
-    setTimeout(() => { setSuccess(false); onClose(); }, 1200);
+    try {
+      // Backend only supports status PATCH — update local state for other fields
+      await updateTransaction(transaction!.id, { counterparty: counterparty.trim() });
+      onSubmit({
+        ...transaction!,
+        projectName:   projectName.trim(),
+        donor:         donor as DonorName,
+        budgetLine,
+        description:   description.trim(),
+        counterparty:  counterparty.trim(),
+        date,
+        amount:        Number(amount),
+        currency,
+        paymentMethod,
+        type,
+      });
+      setSuccess(true);
+      setTimeout(() => { setSuccess(false); onClose(); }, 1200);
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Failed to save changes. Please try again.");
+      } else {
+        setError("Unable to reach the server. Check your connection.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
