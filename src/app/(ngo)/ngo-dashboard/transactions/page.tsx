@@ -21,11 +21,11 @@ import NGOTransactionTable from "@/components/ngo/NGOTransactionTable";
 
 import { useRBAC } from "@/context/RBACContext";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { theme } from "@/styles/theme";
 import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
-import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity } from "@/types/ngo";
-import { NGO_FLAGS } from "@/mock/ngo.mock";
+import type { NGOTransaction, NGOFlagCategory, FlagSeverity } from "@/types/ngo";
 
 // ── Map NGOTransaction → Transaction so MSE components work unchanged ─────────
 function toTransaction(t: NGOTransaction): Transaction {
