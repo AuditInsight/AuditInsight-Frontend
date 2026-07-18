@@ -4,7 +4,7 @@ import { useState } from "react";
 import { X, Plus, AlertCircle } from "lucide-react";
 import { isAxiosError } from "axios";
 import { useAuth } from "@/context/AuthContext.production";
-import { createTransaction } from "@/utils/api";
+import { useTransactions } from "@/hooks/useTransactions";
 import type { NGOTransaction, DonorName } from "@/types/ngo";
 
 interface Props {
@@ -18,6 +18,7 @@ const BUDGET_LINES = ["Medical Supplies", "Training & Workshops", "Scholarships"
 
 export default function AddTransactionModal({ open, onClose, onSubmit }: Props) {
   const { user } = useAuth();
+  const { addTransaction } = useTransactions();
 
   const [projectName,   setProjectName]   = useState("");
   const [donor,         setDonor]         = useState<DonorName | "">("");
@@ -52,36 +53,36 @@ export default function AddTransactionModal({ open, onClose, onSubmit }: Props) 
     setError("");
     setSubmitting(true);
     try {
-      const { data: created } = await createTransaction({
-        organisationId: user?.organisationId ?? "",
-        name:           projectName.trim(),
-        counterparty:   counterparty.trim(),
+      await addTransaction({
+        name:          projectName.trim(),
+        counterparty:  counterparty.trim(),
         date,
-        amount:         Number(amount),
+        amount:        Number(amount),
         type,
         paymentMethod,
-        donor:          donor as DonorName,
+        donor:         donor as DonorName,
         budgetLine,
-        // description goes into notes — backend has no separate description field
+        projectName:   projectName.trim(),
       });
 
+      // Build NGOTransaction for the parent callback (UI optimistic update)
       const newTxn: NGOTransaction = {
-        id:             created.id,
-        organisationId: created.organisationId,
+        id:             `temp-${Date.now()}`,
+        organisationId: user?.organisationId ?? "",
         projectName:    projectName.trim(),
         donor:          donor as DonorName,
         budgetLine,
         description:    description.trim(),
-        counterparty:   created.counterparty ?? counterparty.trim(),
-        date:           String(created.date),
-        amount:         Number(created.amount),
+        counterparty:   counterparty.trim(),
+        date,
+        amount:         Number(amount),
         currency:       "RWF",
-        paymentMethod:  created.paymentMethod,
-        type:           created.type,
+        paymentMethod,
+        type,
         status:         "PENDING",
         evidenceCount:  0,
-        createdBy:      created.createdBy ?? user?.fullName ?? "",
-        createdAt:      String(created.createdAt),
+        createdBy:      user?.fullName ?? "",
+        createdAt:      new Date().toISOString(),
       };
 
       onSubmit(newTxn);
