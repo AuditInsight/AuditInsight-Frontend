@@ -19,18 +19,18 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
     setLoading(true);
     getEvidence(user?.organisationId)
       .then(({ data }) => {
-        // Map API response to Evidence shape
         const mapped: Evidence[] = (data ?? []).map((e) => ({
           id:            e.id,
           transactionId: e.transactionId,
           documentName:  e.documentName,
+          folder:        e.folder,
+          subfolder:     e.subfolder,
+          fileUpload:    e.fileUpload,
           fileType:      e.fileType,
-          fileUrl:       e.fileUpload,
           notes:         e.notes,
           uploadedBy:    String(e.uploadedBy),
           uploadedAt:    e.uploadedAt,
-          status:        "COMPLETE" as const,
-          // amount and counterparty are enriched from the transaction in the UI
+          status:        "Verified" as const,
         }));
         setDocuments(mapped);
       })
@@ -83,5 +83,3 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
 
   return { documents, loading, error, saveEvidence, deleteEvidence, exportCSV };
 }
-
-

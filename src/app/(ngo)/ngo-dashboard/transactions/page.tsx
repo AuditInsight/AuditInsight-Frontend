@@ -240,10 +240,12 @@ function TransactionsContent() {
         transactionId: flag.transactionId,
         type:          flag.category,
         description:   flag.notes || flag.category,
-        status:        "Open",
+        status:        "Open" as const,
         flaggedBy:     user.fullName,
         createdAt:     new Date().toISOString(),
-        risk:          flag.severity === "CRITICAL" || flag.severity === "HIGH" ? "High" : "Medium",
+        risk:          (flag.severity === "CRITICAL" || flag.severity === "HIGH") ? "Critical" : "Medium",
+        amount:        "",
+        due:           new Date().toISOString(),
       });
     } catch {
       // Non-fatal — flag modal shows its own error
@@ -347,7 +349,7 @@ function TransactionsContent() {
       {/* View modal */}
       {selectedTransaction && (
         <ViewTransactionModal
-          transaction={{ ...selectedTransaction, isDuplicate: false }}
+          transaction={{ ...selectedTransaction, evidenceCount: selectedTransaction.evidenceCount ?? 0, isDuplicate: false }}
           evidence={evidences}
           onClose={() => router.replace("/ngo-dashboard/transactions")}
         />

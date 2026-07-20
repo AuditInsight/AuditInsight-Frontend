@@ -47,7 +47,11 @@ export function useTransactions() {
       ]);
       const ev = evRes.data ?? [];
       setEvidences(ev);
-      setTransactions(withMeta(txRes.data ?? [], ev));
+      const txns = (txRes.data ?? []).map((t) => ({
+        ...t,
+        counterparty: t.counterparty ?? "",
+      }));
+      setTransactions(withMeta(txns, ev));
     } catch (err) {
       console.error("useTransactions load error", err);
       setError("Failed to load transactions.");

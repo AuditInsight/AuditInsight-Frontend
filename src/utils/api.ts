@@ -5,6 +5,7 @@
  */
 
 import { apiClient } from "@/api/client";
+import type { BackendRole } from "@/types/auth";
 
 // ── Re-export types consumed by the rest of the app ───────────────
 export type { BackendRole as UserRole, BackendRole } from "@/types/auth";
@@ -93,12 +94,11 @@ export interface TransactionResponse {
 export interface CreateTransactionRequest {
   organisationId: string;
   name: string;
-  counterparty: string;         // required by backend
-  date: string;                 // ISO date string e.g. "2024-01-15"
+  counterparty: string;
+  date: string;
   amount: number;
   type: TransactionType;
   paymentMethod: PaymentMethod;
-  // NGO-only — MUST be included for NGO orgs, MUST NOT be sent for PRIVATE
   donor?: string;
   budgetLine?: string;
 }
@@ -117,7 +117,6 @@ export const getTransactionById = (txnId: string) =>
 export const createTransaction = (data: CreateTransactionRequest) =>
   apiClient.post<TransactionResponse>("/transactions", data);
 
-// Backend only supports PATCH /{txnId} for status updates — no full PUT endpoint
 export const updateTransactionStatus = (
   txnId: string,
   status: TransactionStatus
@@ -268,7 +267,7 @@ export const removeMember = (orgId: string, userId: number) =>
 /* =========================
    REVIEW QUEUE TYPES
 ========================= */
-export type IssueType   = "MISSING_EVIDENCE" | "COMPLIANCE_ISSUE" | "RISK_FLAG" | "VERIFICATION_PROBLEM";
+export type IssueType    = "MISSING_EVIDENCE" | "COMPLIANCE_ISSUE" | "RISK_FLAG" | "VERIFICATION_PROBLEM";
 export type ReviewStatus = "OPEN" | "RESOLVED" | "ESCALATED";
 
 export interface ReviewQueueResponse {
@@ -312,5 +311,3 @@ export const getClientProfile  = () => apiClient.get("/client/profile");
 export const getAuditorProfile = () => apiClient.get("/auditor/profile");
 
 export default apiClient;
-
-

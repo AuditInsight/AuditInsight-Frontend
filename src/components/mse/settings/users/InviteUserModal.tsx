@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { isAxiosError } from "axios";
 import type { BackendRole } from "@/utils/api";
+import { useAuth } from "@/context/AuthContext.production";
 
 interface Props {
   open: boolean;
@@ -10,17 +11,22 @@ interface Props {
   onInvite?: (email: string, role: BackendRole) => Promise<void>;
 }
 
-const ROLES: { value: BackendRole; label: string; desc: string; icon: string }[] = [
-  { value: "AUDITOR", label: "Auditor",     desc: "Can review transactions, flag issues, and manage audit queues", icon: "🔍" },
-  { value: "MEMBER",  label: "Accountant",  desc: "Can upload evidence and manage financial records",             icon: "📊" },
-];
 
 function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export default function InviteUserModal({ open, onClose, onInvite }: Props) {
+  const { user } = useAuth();
+  const isNgo = user?.orgType === "NGO";
+
+  const roles: { value: BackendRole; label: string; desc: string; icon: string }[] = [
+    { value: "AUDITOR", label: "Auditor",     desc: "Can review transactions, flag issues, and manage audit queues", icon: "🔍" },
+    { value: "MEMBER",  label: isNgo ? "Finance Officer" : "Accountant",  desc: "Can upload evidence and manage financial records",             icon: "📊" },
+  ];
+
   const [email,   setEmail]   = useState("");
+
   const [role,    setRole]    = useState<BackendRole>("AUDITOR");
   const [sending, setSending] = useState(false);
   const [sent,    setSent]    = useState(false);

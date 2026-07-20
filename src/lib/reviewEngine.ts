@@ -4,15 +4,18 @@ import { findDuplicateIds } from "@/lib/transactionMetrics";
 
 export interface ReviewItem {
   id: string;
-  type: "Missing Evidence" | "Duplicate Transaction" | "Verification Problems";
+  type: string;
   transactionId: string | number;
   counterparty?: string;
-  amount: string;
-  risk: "Critical" | "Medium" | "Low";
-  severity?: "Critical" | "Medium" | "Low";
-  due: string;
+  amount?: string;
+  risk: "Critical" | "Medium" | "Low" | "High";
+  severity?: "Critical" | "Medium" | "Low" | "High";
+  due?: string;
   status: "Open" | "In Review" | "Resolved" | "Escalated";
   transactionType?: string;
+  description?: string;
+  flaggedBy?: string;
+  createdAt?: string;
 }
 
 function mapSeverity(risk: ReviewItem["risk"]) {

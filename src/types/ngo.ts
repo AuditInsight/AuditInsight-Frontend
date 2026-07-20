@@ -26,7 +26,7 @@ export type NGOEvidenceCategory = keyof typeof NGO_EVIDENCE_CATEGORIES;
 export type NGOEvidenceDocType  = typeof NGO_EVIDENCE_CATEGORIES[NGOEvidenceCategory][number];
 
 // ─── NGO-specific roles ───────────────────────────────────────────────────────
-export type NGORole = "ORG_ADMIN" | "ACCOUNTANT" | "AUDITOR";
+export type NGORole = "ORG_ADMIN" | "ACCOUNTANT" | "AUDITOR" | "DONOR_REPRESENTATIVE";
 
 // ─── Donors ─────────────────────────────────────────────────────────────────
 // Kept for backward compatibility with existing data references
@@ -40,6 +40,7 @@ export interface NGOTransaction {
   id: string;
   organisationId: string;
   projectName: string;
+  donor: string;
   budgetLine: string;
   description: string;
   counterparty: string;
@@ -121,6 +122,15 @@ export interface NGOPermissions {
 }
 
 export const NGO_PERMISSIONS: Record<NGORole, NGOPermissions> = {
+  DONOR_REPRESENTATIVE: {
+    canRecordTransaction: false,
+    canUploadEvidence:    false,
+    canEditTransaction:   false,
+    canFlagIssue:         false,
+    canResolveFlag:       false,
+    canManageOrg:         false,
+    canViewNotifications: false,
+  },
   ACCOUNTANT: {
     canRecordTransaction: true,
     canUploadEvidence:    true,
