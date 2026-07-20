@@ -17,7 +17,7 @@ import { evidenceMatchesSearch } from "@/lib/evidenceSearch";
 import { exportEvidenceCSV } from "@/utils/export";
 import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
 import { useRBAC } from "@/context/RBACContext";
-import { MOCK_EVIDENCE } from "@/mock/evidence.mock";
+import { useEvidence } from "@/hooks/useEvidence";
 
 type EvidenceSection = { title: string; items: string[] };
 
@@ -28,10 +28,10 @@ const sections: EvidenceSection[] = (
 function EvidenceContent() {
   const { can } = useRBAC();
   const canUpload = can("evidence:upload");
-  const canEdit   = can("evidence:upload");   // same permission gate as upload
+  const canEdit   = can("evidence:upload");
   const canDelete = can("evidence:upload");
 
-  const [evidences, setEvidences] = useState<Evidence[]>(MOCK_EVIDENCE);
+  const { documents, loading, error, saveEvidence, deleteEvidence: apiDeleteEvidence } = useEvidence();
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab]           = useState<EvidenceTab>("All");
@@ -50,60 +50,55 @@ function EvidenceContent() {
 
   const pageSize = 25;
 
-  const saveEvidence = (saved: Evidence) => {
-    setEvidences((prev) =>
-      prev.some((e) => e.id === saved.id)
-        ? prev.map((e) => (e.id === saved.id ? saved : e))
-        : [saved, ...prev]
-    );
+  const handleSave = (saved: Evidence) => {
+    saveEvidence(saved);
   };
 
-  const deleteEvidence = (id: string) => {
-    setEvidences((prev) => prev.filter((e) => e.id !== id));
+  const handleConfirmDelete = async () => {
+    if (!evidenceToDelete) return;
+    setIsDeleting(true);
+    try {
+      await apiDeleteEvidence(evidenceToDelete.id);
+      if (viewingEvidence?.id === evidenceToDelete.id) setViewingEvidence(null);
+    } finally {
+      setEvidenceToDelete(null);
+      setIsDeleting(false);
+    }
   };
 
   const filteredData = useMemo(() => {
-    return evidences.filter((e) => {
+    return documents.filter((e) => {
       if (categoryFilter !== "All" && e.folder !== categoryFilter) return false;
       if (statusFilter !== "All" && e.status !== statusFilter) return false;
       if (yearFilter !== "All") {
         const year = e.uploadedAt ? e.uploadedAt.slice(0, 4) : "";
         if (year !== yearFilter) return false;
       }
-      if (activeCategory && e.subfolder && e.subfolder !== activeCategory) return false;
-      if (activeCategory && !e.subfolder) return false;
+      // Only show items that belong to the selected subfolder.
+      if (activeCategory && e.subfolder !== activeCategory) return false;
       if (activeTab === "Pending"  && e.status !== "Pending")  return false;
       if (activeTab === "Complete" && e.status !== "Verified") return false;
       if (search && !evidenceMatchesSearch(e, search)) return false;
       return true;
     });
-  }, [evidences, activeCategory, activeTab, search, categoryFilter, statusFilter, yearFilter]);
+  }, [documents, activeCategory, activeTab, search, categoryFilter, statusFilter, yearFilter]);
 
   const categoryOptions = useMemo(() => {
-    const values = Array.from(new Set(evidences.map((d) => d.folder).filter(Boolean))) as string[];
+    const values = Array.from(new Set(documents.map((d) => d.folder).filter(Boolean))) as string[];
     values.sort((a, b) => a.localeCompare(b));
     return ["All", ...values];
-  }, [evidences]);
+  }, [documents]);
 
   const yearOptions = useMemo(() => {
     const years = Array.from(
-      new Set(evidences.map((d) => (d.uploadedAt ? d.uploadedAt.slice(0, 4) : "")).filter((y) => /^\d{4}$/.test(y)))
+      new Set(documents.map((d) => (d.uploadedAt ? d.uploadedAt.slice(0, 4) : "")).filter((y) => /^\d{4}$/.test(y)))
     );
     years.sort((a, b) => b.localeCompare(a));
     return ["All", ...years];
-  }, [evidences]);
+  }, [documents]);
 
   const totalPages    = Math.ceil(filteredData.length / pageSize);
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
-
-  const handleConfirmDelete = async () => {
-    if (!evidenceToDelete) return;
-    setIsDeleting(true);
-    deleteEvidence(evidenceToDelete.id);
-    if (viewingEvidence?.id === evidenceToDelete.id) setViewingEvidence(null);
-    setEvidenceToDelete(null);
-    setIsDeleting(false);
-  };
 
   return (
     <div style={s.page}>
@@ -118,16 +113,20 @@ function EvidenceContent() {
           .ev-sidebar-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 8px 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: #374151; }
           .ev-main { padding: 16px; }
         }
-        @media (max-width: 600px) {
-          .ev-main { padding: 12px; }
-        }
+        @media (max-width: 600px) { .ev-main { padding: 12px; } }
       `}</style>
+
+      {error && (
+        <div style={{ padding: "12px 16px", background: "rgba(30,58,138,0.06)", border: "1px solid rgba(30,58,138,0.2)", borderRadius: 10, color: "#1e3a8a", fontSize: 13.5, margin: "16px" }}>
+          {error}
+        </div>
+      )}
 
       <div className="ev-layout">
         <div className={`ev-sidebar${sidebarOpen ? " open" : ""}`}>
           <Sidebar
             sections={sections}
-            evidenceData={evidences}
+            evidenceData={documents}
             onSelectItem={(v) => { setActiveCategory(v); setPage(1); setSidebarOpen(false); }}
           />
         </div>
@@ -142,31 +141,39 @@ function EvidenceContent() {
             onExport={() => exportEvidenceCSV(filteredData)}
           />
 
-          <EvidenceFilters
-            activeTab={activeTab}
-            setActiveTab={(tab) => { setActiveTab(tab); setPage(1); }}
-            search={search}
-            setSearch={(v) => { setSearch(v); setPage(1); }}
-            categoryFilter={categoryFilter}
-            setCategoryFilter={(v) => { setCategoryFilter(v); setPage(1); }}
-            statusFilter={statusFilter}
-            setStatusFilter={(v) => { setStatusFilter(v); setPage(1); }}
-            yearFilter={yearFilter}
-            setYearFilter={(v) => { setYearFilter(v); setPage(1); }}
-            categoryOptions={categoryOptions}
-            yearOptions={yearOptions}
-            total={filteredData.length}
-            setPage={setPage}
-          />
+          {loading ? (
+            <div style={{ padding: "48px 16px", textAlign: "center", color: "#94a3b8", fontSize: 13.5 }}>
+              Loading evidence…
+            </div>
+          ) : (
+            <>
+              <EvidenceFilters
+                activeTab={activeTab}
+                setActiveTab={(tab) => { setActiveTab(tab); setPage(1); }}
+                search={search}
+                setSearch={(v) => { setSearch(v); setPage(1); }}
+                categoryFilter={categoryFilter}
+                setCategoryFilter={(v) => { setCategoryFilter(v); setPage(1); }}
+                statusFilter={statusFilter}
+                setStatusFilter={(v) => { setStatusFilter(v); setPage(1); }}
+                yearFilter={yearFilter}
+                setYearFilter={(v) => { setYearFilter(v); setPage(1); }}
+                categoryOptions={categoryOptions}
+                yearOptions={yearOptions}
+                total={filteredData.length}
+                setPage={setPage}
+              />
 
-          <EvidenceTable
-            data={paginatedData}
-            onView={setViewingEvidence}
-            onEdit={canEdit ? setEditingEvidence : undefined}
-            onDelete={canDelete ? setEvidenceToDelete : undefined}
-          />
+              <EvidenceTable
+                data={paginatedData}
+                onView={setViewingEvidence}
+                onEdit={canEdit ? setEditingEvidence : undefined}
+                onDelete={canDelete ? setEvidenceToDelete : undefined}
+              />
 
-          <EvidencePagination page={page} setPage={setPage} totalPages={totalPages} />
+              <EvidencePagination page={page} setPage={setPage} totalPages={totalPages} />
+            </>
+          )}
         </div>
       </div>
 
@@ -181,7 +188,7 @@ function EvidenceContent() {
         <EvidenceUploadModal
           isOpen={uploadOpen}
           onClose={() => setUploadOpen(false)}
-          onSave={(saved) => { saveEvidence(saved); setUploadOpen(false); setPage(1); }}
+          onSave={(saved) => { handleSave(saved); setUploadOpen(false); setPage(1); }}
           sections={sections}
           mode="add"
         />
@@ -190,7 +197,7 @@ function EvidenceContent() {
         <EvidenceUploadModal
           isOpen={!!editingEvidence}
           onClose={() => setEditingEvidence(null)}
-          onSave={(saved) => { saveEvidence(saved); setEditingEvidence(null); }}
+          onSave={(saved) => { handleSave(saved); setEditingEvidence(null); }}
           sections={sections}
           mode="edit"
           evidence={editingEvidence}

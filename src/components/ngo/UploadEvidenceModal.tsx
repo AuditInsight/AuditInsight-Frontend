@@ -2,6 +2,10 @@
 
 import { useState, useRef } from "react";
 import { X, Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { isAxiosError } from "axios";
+import { useAuth } from "@/context/AuthContext.production";
+import { uploadEvidence } from "@/utils/api";
+import type { Evidence } from "@/types/evidence.types";
 import type { NGOTransaction, NGOEvidenceCategory } from "@/types/ngo";
 import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
 
@@ -9,10 +13,11 @@ interface Props {
   open: boolean;
   transaction: NGOTransaction | null;
   onClose: () => void;
-  onSubmit: (transactionId: string, fileCount: number) => void;
+  onSubmit: (saved: Evidence) => void;
 }
 
 export default function UploadEvidenceModal({ open, transaction, onClose, onSubmit }: Props) {
+  const { user } = useAuth();
   const [files,      setFiles]      = useState<File[]>([]);
   const [notes,      setNotes]      = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -53,11 +58,44 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
     if (!docType)           { setError("Please select a document type."); return; }
     if (files.length === 0) { setError("Please attach at least one file."); return; }
     setError(""); setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 800));
-    onSubmit(transaction.id, files.length);
-    setSubmitting(false);
-    setSuccess(true);
-    setTimeout(() => { reset(); onClose(); }, 1500);
+    try {
+      // Upload each file sequentially; call onSubmit with the last saved Evidence
+      let lastSaved: Evidence | null = null;
+      for (const file of files) {
+        const { data } = await uploadEvidence(file, {
+          organisationId: user?.organisationId ?? "",
+          transactionId:  transaction.id,
+          documentName:   file.name,
+          folder:         category as string,
+          subfolder:      docType,
+          notes:          notes.trim() || undefined,
+        });
+        lastSaved = {
+          id:            data.id,
+          transactionId: data.transactionId,
+          documentName:  data.documentName,
+          folder:        data.folder,
+          subfolder:     data.subfolder,
+          fileUpload:    data.fileUpload,
+          fileType:      data.fileType,
+          notes:         data.notes,
+          uploadedBy:    String(data.uploadedBy),
+          uploadedAt:    data.uploadedAt,
+          status:        "Verified" as const,
+        };
+      }
+      if (lastSaved) onSubmit(lastSaved);
+      setSuccess(true);
+      setTimeout(() => { reset(); onClose(); }, 1500);
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Upload failed. Please try again.");
+      } else {
+        setError("Unable to reach the server. Check your connection.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const fmt = (b: number) => b < 1048576 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1048576).toFixed(1)} MB`;

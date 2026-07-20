@@ -24,7 +24,8 @@ export function useDashboardData() {
     Promise.all([getTransactions(orgId), getEvidence(orgId)])
       .then(([txRes, evRes]) => {
         const ev       = evRes.data ?? [];
-        const enriched = enrichTransactions(txRes.data ?? [], ev);
+        const txns     = (txRes.data ?? []).map((t) => ({ ...t, counterparty: t.counterparty ?? "" }));
+        const enriched = enrichTransactions(txns, ev);
         const dupes    = findDuplicateIds(enriched);
         setTransactions(
           enriched.map((t) => ({ ...t, isDuplicate: dupes.has(t.id) }))

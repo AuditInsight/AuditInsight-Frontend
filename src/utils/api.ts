@@ -5,6 +5,7 @@
  */
 
 import { apiClient } from "@/api/client";
+import type { BackendRole } from "@/types/auth";
 
 // ── Re-export types consumed by the rest of the app ───────────────
 export type { BackendRole as UserRole, BackendRole } from "@/types/auth";
@@ -93,12 +94,13 @@ export interface TransactionResponse {
 export interface CreateTransactionRequest {
   organisationId: string;
   name: string;
-  counterparty?: string;
+  counterparty: string;
   date: string;
   amount: number;
   type: TransactionType;
   paymentMethod: PaymentMethod;
-  notes?: string;
+  donor?: string;
+  budgetLine?: string;
 }
 
 /* =========================
@@ -123,11 +125,6 @@ export const updateTransactionStatus = (
 
 export const deleteTransaction = (txnId: string) =>
   apiClient.delete<ResponseMessage>(`/transactions/${txnId}`);
-
-export const updateTransaction = (
-  txnId: string,
-  data: Partial<CreateTransactionRequest>
-) => apiClient.put<TransactionResponse>(`/transactions/${txnId}`, data);
 
 /* =========================
    EVIDENCE TYPES
@@ -270,7 +267,7 @@ export const removeMember = (orgId: string, userId: number) =>
 /* =========================
    REVIEW QUEUE TYPES
 ========================= */
-export type IssueType   = "MISSING_EVIDENCE" | "COMPLIANCE_ISSUE" | "RISK_FLAG" | "VERIFICATION_PROBLEM";
+export type IssueType    = "MISSING_EVIDENCE" | "COMPLIANCE_ISSUE" | "RISK_FLAG" | "VERIFICATION_PROBLEM";
 export type ReviewStatus = "OPEN" | "RESOLVED" | "ESCALATED";
 
 export interface ReviewQueueResponse {
@@ -314,5 +311,3 @@ export const getClientProfile  = () => apiClient.get("/client/profile");
 export const getAuditorProfile = () => apiClient.get("/auditor/profile");
 
 export default apiClient;
-
-

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Transaction } from "@/types/transaction.types";
 import { X, AlertCircle } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
+import { useAuth } from "@/context/AuthContext.production";
 
 interface Props {
   isOpen: boolean;
@@ -21,6 +22,8 @@ type FormData = {
   type: "EXPENSE" | "INCOME";
   paymentMethod: Transaction["paymentMethod"];
   notes: string;
+  donor: string;
+  budgetLine: string;
 };
 
 const emptyForm = (): FormData => ({
@@ -31,19 +34,26 @@ const emptyForm = (): FormData => ({
   type: "EXPENSE",
   paymentMethod: "BANK",
   notes: "",
+  donor: "",
+  budgetLine: "",
 });
 
-function validate(form: FormData): Record<string, string> {
+function validate(form: FormData, isNgo: boolean): Record<string, string> {
   const errs: Record<string, string> = {};
-  if (!form.name.trim()) errs.name = "Transaction name is required.";
-  if (!form.date) errs.date = "Date is required.";
+  if (!form.name.trim())        errs.name        = "Transaction name is required.";
+  if (!form.date)               errs.date        = "Date is required.";
   if (!form.counterparty.trim()) errs.counterparty = "Counterparty name is required.";
   const amt = Number(form.amount);
   if (!form.amount || isNaN(amt) || amt <= 0) errs.amount = "Amount must be a positive number.";
+  if (isNgo && !form.donor.trim())      errs.donor      = "Donor is required for NGO transactions.";
+  if (isNgo && !form.budgetLine.trim()) errs.budgetLine = "Budget line is required for NGO transactions.";
   return errs;
 }
 
 export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = null, mode = "add" }: Props) {
+  const { user } = useAuth();
+  const isNgo = user?.orgType === "NGO";
+
   const [form, setForm] = useState<FormData>(emptyForm());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -52,13 +62,15 @@ export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = n
     if (!isOpen) return;
     if (mode === "edit" && transaction) {
       setForm({
-        name: transaction.name,
-        date: transaction.date,
-        amount: String(transaction.amount),
-        counterparty: transaction.counterparty ?? "",
-        type: transaction.type,
+        name:          transaction.name,
+        date:          transaction.date,
+        amount:        String(transaction.amount),
+        counterparty:  transaction.counterparty ?? "",
+        type:          transaction.type,
         paymentMethod: transaction.paymentMethod,
-        notes: transaction.notes ?? "",
+        notes:         transaction.notes ?? "",
+        donor:         (transaction as Transaction & { donor?: string }).donor ?? "",
+        budgetLine:    (transaction as Transaction & { budgetLine?: string }).budgetLine ?? "",
       });
     } else {
       setForm(emptyForm());
@@ -70,29 +82,31 @@ export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = n
   if (!isOpen) return null;
 
   const set = (field: keyof FormData, value: string) => {
-    setForm((p) => ({ ...p, [field]: value }));
-    setTouched((p) => ({ ...p, [field]: true }));
     const next = { ...form, [field]: value };
-    setErrors(validate(next));
+    setForm(next);
+    setTouched((p) => ({ ...p, [field]: true }));
+    setErrors(validate(next, isNgo));
   };
 
   const handleSubmit = () => {
     const allTouched = Object.fromEntries(Object.keys(form).map((k) => [k, true]));
     setTouched(allTouched);
-    const errs = validate(form);
+    const errs = validate(form, isNgo);
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
     onSubmit({
-      name: form.name.trim(),
-      date: form.date,
-      amount: Number(form.amount),
-      counterparty: form.counterparty.trim(),
-      type: form.type,
+      name:          form.name.trim(),
+      date:          form.date,
+      amount:        Number(form.amount),
+      counterparty:  form.counterparty.trim(),
+      type:          form.type,
       paymentMethod: form.paymentMethod,
-      notes: form.notes || undefined,
-      organisationId: "org-001",
-      createdBy: "Eric Bizimana",
-    });
+      notes:         form.notes.trim() || undefined,
+      organisationId: user?.organisationId ?? "",
+      createdBy:     user?.fullName ?? "",
+      // NGO-only fields — only included when orgType is NGO
+      ...(isNgo && { donor: form.donor.trim(), budgetLine: form.budgetLine.trim() }),
+    } as Omit<Transaction, "id" | "status" | "evidenceCount">);
     onClose();
   };
 
@@ -162,6 +176,25 @@ export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = n
             <label style={s.label}>Notes <span style={s.optional}>(optional)</span></label>
             <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} style={{ ...inputStyle("notes"), resize: "vertical" as const }} rows={2} placeholder="Any additional context…" />
           </div>
+
+          {/* NGO-only fields */}
+          {isNgo && (
+            <>
+              <div style={{ padding: "10px 12px", background: "#f0fdf4", borderRadius: 10, border: "1px solid #86efac", fontSize: 12.5, color: "#15803d", fontWeight: 500 }}>
+                NGO transaction — donor and budget line are required.
+              </div>
+              <div>
+                <label style={s.label}>Donor <span style={s.req}>*</span></label>
+                <input placeholder="e.g. USAID, World Bank" value={form.donor} onChange={(e) => set("donor", e.target.value)} style={inputStyle("donor")} />
+                {touched.donor && errors.donor && <p style={s.err}><AlertCircle size={11} /> {errors.donor}</p>}
+              </div>
+              <div>
+                <label style={s.label}>Budget Line <span style={s.req}>*</span></label>
+                <input placeholder="e.g. Health Programme Q1" value={form.budgetLine} onChange={(e) => set("budgetLine", e.target.value)} style={inputStyle("budgetLine")} />
+                {touched.budgetLine && errors.budgetLine && <p style={s.err}><AlertCircle size={11} /> {errors.budgetLine}</p>}
+              </div>
+            </>
+          )}
         </div>
 
         <div style={s.footer}>

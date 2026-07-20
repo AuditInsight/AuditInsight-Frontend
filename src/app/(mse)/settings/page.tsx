@@ -142,7 +142,7 @@ export default function SettingsPage() {
       <InviteUserModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        onInvite={(email, role) => { inviteMember(email, role); setInviteOpen(false); }}
+        onInvite={async (email, role) => { await inviteMember(email, role); setInviteOpen(false); }}
       />
     </div>
   );

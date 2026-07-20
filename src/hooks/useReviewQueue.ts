@@ -10,7 +10,6 @@ import {
 } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext.production";
 
-// Map API response to the ReviewItem shape the UI uses
 function mapToReviewItem(r: {
   id: string;
   transactionId: string;
@@ -29,6 +28,8 @@ function mapToReviewItem(r: {
     flaggedBy:     r.flaggedBy,
     createdAt:     r.createdAt,
     risk:          "Medium",
+    amount:        "",
+    due:           r.createdAt,
   };
 }
 
@@ -56,14 +57,12 @@ export function useReviewQueue() {
 
   useEffect(() => { load(); }, [load]);
 
-  const flagIssue = async (
-    item: Omit<ReviewItem, "id">,
-  ) => {
+  const flagIssue = async (item: Omit<ReviewItem, "id">) => {
     await apiFlagIssue({
       organisationId: orgId,
       transactionId:  String(item.transactionId),
       issueType:      item.type as IssueType,
-      description:    item.description,
+      description:    item.description ?? item.type,
     });
     await load();
   };
@@ -75,7 +74,5 @@ export function useReviewQueue() {
     );
   };
 
-  return { items, loading, error, flagIssue, resolveIssue };
+  return { items, loading, error, flagIssue, resolveIssue, refresh: load };
 }
-
-

@@ -14,7 +14,7 @@
  */
 
 import { useState } from "react";
-import { Upload, Edit2, Flag, ChevronUp, ChevronDown, Lock } from "lucide-react";
+import { Upload, Edit2, Flag, ChevronUp, ChevronDown, Lock, Trash2 } from "lucide-react";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
 import type { NGOTransaction, NGORole, NGOTransactionStatus } from "@/types/ngo";
@@ -27,6 +27,7 @@ interface Props {
   onUploadEvidence: (txn: NGOTransaction) => void;
   onEditTransaction: (txn: NGOTransaction) => void;
   onFlagIssue: (txn: NGOTransaction) => void;
+  onDeleteTransaction?: (id: string) => void;
 }
 
 type SortKey = "date" | "amount" | "projectName" | "status";
@@ -57,15 +58,17 @@ function ActionCell({
   onUpload,
   onEdit,
   onFlag,
+  onDelete,
 }: {
   txn: NGOTransaction;
   onUpload: () => void;
   onEdit: () => void;
   onFlag: () => void;
+  onDelete?: () => void;
 }) {
   const { canSee } = useRBAC();
 
-  // ACCOUNTANT — Upload Evidence (primary CTA) + Edit
+  // ACCOUNTANT — Upload Evidence (primary CTA) + Edit + Delete
   if (canSee("txn:upload_btn")) {
     const needsEvidence = txn.status === "PENDING" || txn.status === "FLAGGED";
     return (
@@ -85,6 +88,17 @@ function ActionCell({
             <Edit2 size={12} /> Edit
           </button>
         </PermissionGate>
+        {onDelete && (
+          <PermissionGate component="txn:edit_btn">
+            <button
+              onClick={() => { if (window.confirm(`Delete transaction ${txn.id}?`)) onDelete(); }}
+              title="Delete transaction"
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: 8, background: "#fff", color: "#94a3b8", border: "1px solid #e2e8f0", cursor: "pointer" }}
+            >
+              <Trash2 size={12} />
+            </button>
+          </PermissionGate>
+        )}
       </div>
     );
   }
@@ -121,6 +135,7 @@ export default function NGOTransactionTable({
   onUploadEvidence,
   onEditTransaction,
   onFlagIssue,
+  onDeleteTransaction,
 }: Props) {
   const { user } = useRBAC();
 
@@ -259,7 +274,7 @@ export default function NGOTransactionTable({
                   </td>
                   {/* Actions */}
                   <td style={{ padding: "12px 16px" }}>
-                    <ActionCell txn={txn} onUpload={() => onUploadEvidence(txn)} onEdit={() => onEditTransaction(txn)} onFlag={() => onFlagIssue(txn)} />
+                    <ActionCell txn={txn} onUpload={() => onUploadEvidence(txn)} onEdit={() => onEditTransaction(txn)} onFlag={() => onFlagIssue(txn)} onDelete={onDeleteTransaction ? () => onDeleteTransaction(txn.id) : undefined} />
                   </td>
                 </tr>
               ))

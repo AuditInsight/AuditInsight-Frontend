@@ -1,10 +1,24 @@
 "use client";
 
 import { Flag, Upload, Clock, CheckCircle2 } from "lucide-react";
-import type { NGOFlag, NGOTransaction } from "@/types/ngo";
+import type { NGOTransaction } from "@/types/ngo";
+
+// Minimal flag shape — accepts both NGOFlag and ReviewItem-mapped objects
+interface FlagLike {
+  id: string;
+  transactionId: string;
+  projectName: string;
+  category: string;
+  severity: string;
+  notes: string;
+  flaggedBy: string;
+  flaggedAt: string;
+  status: string;
+  donor?: string;
+}
 
 interface Props {
-  flags: NGOFlag[];
+  flags: FlagLike[];
   transactions: NGOTransaction[];
   onUploadEvidence: (txn: NGOTransaction) => void;
 }
@@ -17,7 +31,7 @@ const SEV: Record<string, { dot: string; color: string; bg: string; border: stri
 };
 
 export default function AuditorAlertsPanel({ flags, transactions, onUploadEvidence }: Props) {
-  const openFlags = flags.filter((f) => f.status === "OPEN");
+  const openFlags = flags.filter((f) => f.status === "OPEN" || f.status === "Open");
   const enriched  = openFlags.map((flag) => ({
     flag,
     txn: transactions.find((t) => t.id === flag.transactionId) ?? null,
