@@ -310,10 +310,10 @@ function LoginForm() {
                 type="email"
                 placeholder="you@company.com"
                 autoComplete="email"
+                {...usernameField}
                 style={{ ...s.input, ...(errors.username ? s.inputError : {}) }}
                 onFocus={(e) => Object.assign(e.currentTarget.style, s.inputFocus)}
                 onBlur={(e) => { Object.assign(e.currentTarget.style, s.input); usernameField.onBlur(e); }}
-                {...usernameField}
               />
               {errors.username && (
                 <span style={s.fieldError} role="alert">{errors.username.message}</span>
@@ -329,10 +329,10 @@ function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   autoComplete="current-password"
+                  {...passwordField}
                   style={{ ...s.input, paddingRight: 44, ...(errors.password ? s.inputError : {}) }}
                   onFocus={(e) => Object.assign(e.currentTarget.style, { ...s.inputFocus, paddingRight: "44px" })}
                   onBlur={(e) => { Object.assign(e.currentTarget.style, { ...s.input, paddingRight: "44px" }); passwordField.onBlur(e); }}
-                  {...passwordField}
                 />
                 <button
                   type="button"

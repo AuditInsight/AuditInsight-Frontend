@@ -12,12 +12,14 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSubmit: (txn: NGOTransaction) => void;
+  createdBy?: string;
+  organisationId?: string;
 }
 
 const DONORS: DonorName[] = ["USAID", "UNICEF", "World Bank", "EU", "UNDP", "GIZ", "DFID", "Gates Foundation", "One Acre Fund", "Red Cross"];
 const BUDGET_LINES = ["Medical Supplies", "Training & Workshops", "Scholarships", "Staff Costs", "Infrastructure", "Procurement", "Beneficiary Support", "Monitoring & Evaluation", "Grant Receipt", "Administration", "Other"];
 
-export default function AddTransactionModal({ open, onClose, onSubmit }: Props) {
+export default function AddTransactionModal({ open, onClose, onSubmit, createdBy, organisationId }: Props) {
   const { user } = useAuth();
   const { addTransaction } = useTransactions();
 
@@ -54,7 +56,7 @@ export default function AddTransactionModal({ open, onClose, onSubmit }: Props) 
     setError("");
     setSubmitting(true);
     try {
-      const orgId = normalizeOrganisationId(user?.organisationId);
+      const orgId = normalizeOrganisationId(organisationId ?? user?.organisationId);
       if (!orgId) {
         throw new Error("Organisation is not selected.");
       }
@@ -87,7 +89,7 @@ export default function AddTransactionModal({ open, onClose, onSubmit }: Props) 
         type,
         status:         "PENDING",
         evidenceCount:  0,
-        createdBy:      user?.fullName ?? "",
+        createdBy:      createdBy ?? user?.fullName ?? "",
         createdAt:      new Date().toISOString(),
       };
 

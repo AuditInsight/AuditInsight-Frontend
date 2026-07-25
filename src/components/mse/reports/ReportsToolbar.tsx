@@ -20,8 +20,9 @@ interface Props {
 function getFiltered(severity: string, dateFrom: string, dateTo: string) {
   return MOCK_REVIEW_QUEUE.filter((r) => {
     if (severity !== "All" && r.risk !== severity) return false;
-    if (dateFrom && r.due < dateFrom) return false;
-    if (dateTo && r.due > dateTo) return false;
+    const due = r.due ?? "";
+    if (dateFrom && due < dateFrom) return false;
+    if (dateTo && due > dateTo) return false;
     return true;
   });
 }

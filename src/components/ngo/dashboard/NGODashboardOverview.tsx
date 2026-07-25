@@ -169,9 +169,10 @@ function Empty({ icon, msg }: { icon: React.ReactNode; msg: string }) {
 
 // ─── Role-aware header ────────────────────────────────────────────────────────
 const ROLE_META: Record<NGORole, { label: string; sub: string; color: string }> = {
-  ACCOUNTANT: { label: "Finance Officer",    sub: "Record transactions and upload supporting evidence.",            color: "#1e3a8a" },
-  AUDITOR:    { label: "Auditor",            sub: "Review evidence, flag compliance issues, and track flags.",     color: "#15803d" },
-  ORG_ADMIN:  { label: "Executive Director", sub: "Organisation-wide overview of financial health and compliance.", color: "#7c3aed" },
+  ACCOUNTANT:           { label: "Finance Officer",      sub: "Record transactions and upload supporting evidence.",            color: "#1e3a8a" },
+  AUDITOR:              { label: "Auditor",              sub: "Review evidence, flag compliance issues, and track flags.",     color: "#15803d" },
+  ORG_ADMIN:            { label: "Executive Director",   sub: "Organisation-wide overview of financial health and compliance.", color: "#7c3aed" },
+  DONOR_REPRESENTATIVE: { label: "Donor Representative", sub: "View donor-scoped transactions and evidence.",                   color: "#6d28d9" },
 };
 
 function Header({ name, org, role, onExport }: { name: string; org: string; role: NGORole; onExport: () => void }) {

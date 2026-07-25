@@ -38,7 +38,7 @@ export default function NGORoleSwitcher() {
     const account = ROLE_ACCOUNTS[role];
     setLoading(role);
     try {
-      await login(account.email, account.password);
+      await login({ username: account.email, password: account.password });
       router.refresh();
     } catch {
       // silently ignore — dev tool only

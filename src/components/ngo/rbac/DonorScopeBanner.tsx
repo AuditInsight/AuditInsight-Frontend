@@ -3,9 +3,10 @@
 import { Lock } from "lucide-react";
 import { useRBAC } from "@/context/RBACContext";
 
-export default function DonorScopeBanner() {
+export default function DonorScopeBanner({ donorName }: { donorName?: string }) {
   const { user } = useRBAC();
-  if (user.role !== "DONOR_REPRESENTATIVE" || !user.assignedDonorId) return null;
+  const donor = donorName ?? user.assignedDonorId;
+  if (user.role !== "DONOR_REPRESENTATIVE" || !donor) return null;
 
   return (
     <div style={s.banner}>
@@ -13,7 +14,7 @@ export default function DonorScopeBanner() {
         <Lock size={14} color="#1e3a8a" />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={s.title}>Scoped Access — {user.assignedDonorId} Portfolio Only</p>
+        <p style={s.title}>Scoped Access — {donor} Portfolio Only</p>
         <p style={s.sub}>
           You are viewing data exclusively scoped to your organisation&apos;s funding pool.
           Other donors&apos; data is not accessible from this account.

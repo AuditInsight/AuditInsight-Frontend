@@ -14,6 +14,7 @@ import {
   type Permission,
   type ComponentKey,
   type NGOUserRole,
+  type DataScope,
 } from "@/types/rbac";
 
 // ── Context shape ──────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ interface RBACContextValue {
   user: RBACUser;
   can: (permission: Permission) => boolean;
   canSee: (component: ComponentKey) => boolean;
+  scopeData: <T>(items: T[], accessor: (item: T) => unknown) => T[];
 }
 
 // ── Defaults ───────────────────────────────────────────────────────────────────
@@ -31,9 +33,10 @@ const NOOP_USER: RBACUser = buildRBACUser(
 );
 
 const RBACContext = createContext<RBACContextValue>({
-  user:   NOOP_USER,
-  can:    () => false,
-  canSee: () => false,
+  user:     NOOP_USER,
+  can:      () => false,
+  canSee:   () => false,
+  scopeData: (items) => items,
 });
 
 // ── Provider ───────────────────────────────────────────────────────────────────
@@ -66,6 +69,11 @@ export function RBACProvider({ children }: { children: ReactNode }) {
     user: rbacUser,
     can:    (permission: Permission) => rbacUser.permissions.has(permission),
     canSee: (component: ComponentKey) => COMPONENT_GATE[component].includes(rbacUser.role),
+    scopeData: <T,>(items: T[], accessor: (item: T) => unknown) => {
+      const scope = rbacUser.dataScope;
+      if (scope.isGlobal || !scope.donorScope) return items;
+      return items.filter((item) => accessor(item) === scope.donorScope);
+    },
   }), [rbacUser]);
 
   return (
@@ -91,18 +99,25 @@ export function useComponentGate(component: ComponentKey): boolean {
   return canSee(component);
 }
 
+export function useScopedData<T>(items: T[], accessor: (item: T) => unknown): T[] {
+  const { scopeData } = useRBAC();
+  return scopeData(items, accessor);
+}
+
 // ── Role metadata helpers ──────────────────────────────────────────────────────
 
 const ROLE_LABELS: Record<NGOUserRole, string> = {
   ACCOUNTANT: "Finance Officer",
   AUDITOR:    "Auditor",
   ORG_ADMIN:  "Executive Director",
+  DONOR_REPRESENTATIVE: "Donor Representative",
 };
 
 const ROLE_ACCENTS: Record<NGOUserRole, { color: string; bg: string; border: string }> = {
   ACCOUNTANT: { color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0" },
   AUDITOR:    { color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
   ORG_ADMIN:  { color: "#1e3a8a", bg: "#eff6ff", border: "#bfdbfe" },
+  DONOR_REPRESENTATIVE: { color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe" },
 };
 
 export function useRoleLabel(): string {

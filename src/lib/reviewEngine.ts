@@ -5,7 +5,7 @@ import { findDuplicateIds } from "@/lib/transactionMetrics";
 export interface ReviewItem {
   id: string;
   type: string;
-  transactionId: string | number;
+  transactionId: string;
   counterparty?: string;
   amount?: string;
   risk: "Critical" | "Medium" | "Low" | "High";
@@ -37,7 +37,7 @@ export function buildReviewQueue(
       reviews.push({
         id: `missing-${tx.id}`,
         type: "Missing Evidence",
-        transactionId: tx.id,
+        transactionId: String(tx.id),
         counterparty: tx.counterparty,
         amount: `RWF ${tx.amount.toLocaleString()}`,
         risk,
@@ -54,7 +54,7 @@ export function buildReviewQueue(
       reviews.push({
         id: `verify-${tx.id}`,
         type: "Verification Problems",
-        transactionId: tx.id,
+        transactionId: String(tx.id),
         counterparty: tx.counterparty,
         amount: `RWF ${tx.amount.toLocaleString()}`,
         risk,
@@ -70,7 +70,7 @@ export function buildReviewQueue(
       reviews.push({
         id: `duplicate-${tx.id}`,
         type: "Duplicate Transaction",
-        transactionId: tx.id,
+        transactionId: String(tx.id),
         counterparty: tx.counterparty,
         amount: `RWF ${tx.amount.toLocaleString()}`,
         risk,

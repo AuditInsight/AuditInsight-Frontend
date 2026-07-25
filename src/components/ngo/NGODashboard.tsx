@@ -210,7 +210,7 @@ function NGODashboardInner() {
   const { user: rbacUser, scopeData } = useRBAC();
 
   const rawRole = authUser?.role ?? "ORG_ADMIN";
-  const activeRole = (rawRole === "SYSTEM_ADMIN" ? "ORG_ADMIN" : rawRole) as NGORole;
+  const activeRole = ((rawRole === "SYSTEM_ADMIN" ? "ORG_ADMIN" : rawRole) as NGORole);
   const mockUser = NGO_MOCK_USERS[activeRole];
   const user = {
     fullName: authUser?.fullName ?? mockUser.fullName,
@@ -218,7 +218,7 @@ function NGODashboardInner() {
     role: activeRole,
     organisationId: authUser?.organisationId ?? mockUser.organisationId,
     organisationName: authUser?.organisationName ?? mockUser.organisationName,
-    donorScope: (authUser?.donorScope ?? mockUser.donorScope) as DonorName | null,
+    donorScope: (authUser?.donorScope ?? mockUser.donorScope ?? null) as DonorName | null,
   };
   const perms = NGO_PERMISSIONS[activeRole];
 
@@ -437,7 +437,9 @@ function NGODashboardInner() {
       <UploadEvidenceModal
         open={uploadTarget !== null} transaction={uploadTarget}
         onClose={() => setUploadTarget(null)}
-        onSubmit={handleUploadSubmit}
+        onSubmit={(saved) => {
+          handleUploadSubmit(saved.transactionId, 1);
+        }}
       />
       <EditTransactionModal
         open={editTarget !== null} transaction={editTarget}
