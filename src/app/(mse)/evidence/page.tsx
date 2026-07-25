@@ -18,22 +18,8 @@ import { exportEvidenceCSV } from "@/utils/export";
 
 type EvidenceSection = { title: string; items: string[] };
 
-const sections: EvidenceSection[] = [
-  { title: "Financial Reporting",     items: ["Financial statements", "Trial balance", "General ledger extracts"] },
-  { title: "Banking & Cash",          items: ["Bank statements", "Bank reconciliations", "Payment confirmations"] },
-  { title: "Sales Evidence",          items: ["Sales invoices", "Receipts", "Credit notes"] },
-  { title: "Purchases & Procurement", items: ["Purchase orders", "Supplier invoices", "Goods received notes", "Supplier contracts", "Tender documents", "Approval memos"] },
-  { title: "Payroll & HR",            items: ["Payroll registers", "Employment contracts", "Leave records", "Staff ID documents", "Salary change approvals", "Timesheets", "Pension contribution records"] },
-  { title: "Tax & Compliance",        items: ["VAT returns", "PAYE filings", "Corporate tax returns", "Tax clearance certificates", "RRA correspondence", "Withholding tax records", "Compliance licenses"] },
-  { title: "Inventory & Assets",      items: ["Stock count sheets", "Asset register", "Purchase records", "Disposal approvals", "Depreciation schedules", "Warehouse reports", "Transfer forms"] },
-  { title: "Policies & Procedures",   items: ["Accounting policies", "Procurement policies", "HR policies", "Internal control manuals", "Approval workflows", "Risk management policies"] },
-  { title: "Legal & Governance",      items: ["Board meeting minutes", "Shareholder resolutions", "Company registration documents", "Litigation records", "Contracts & agreements", "Regulatory correspondence"] },
-  { title: "IT & Systems Evidence",   items: ["System access logs", "User permissions reports", "Audit trail exports", "Backup reports", "Security incident logs", "ERP transaction logs"] },
-  { title: "Other Supporting Docs",   items: ["Emails", "Documentation", "Screenshots", "Supporting schedules"] },
-];
-
 export default function EvidencePage() {
-  const { evidences, saveEvidence, deleteEvidence } = useTransactions();
+  const { transactions, evidences, saveEvidence, deleteEvidence } = useTransactions();
   const documents = evidences;
   const { canUploadEvidence, canEditEvidence, canDeleteEvidence } = usePermissions();
 
@@ -81,6 +67,21 @@ export default function EvidencePage() {
     const years = Array.from(new Set(documents.map((d) => (d.uploadedAt ? d.uploadedAt.slice(0, 4) : "")).filter((y) => /^\d{4}$/.test(y))));
     years.sort((a, b) => b.localeCompare(a));
     return ["All", ...years];
+  }, [documents]);
+
+  const sections = useMemo(() => {
+    const folderMap = documents.reduce<Record<string, Set<string>>>((acc, document) => {
+      const folder = document.folder?.trim();
+      const subfolder = document.subfolder?.trim();
+      if (!folder) return acc;
+      if (!acc[folder]) acc[folder] = new Set();
+      if (subfolder) acc[folder].add(subfolder);
+      return acc;
+    }, {});
+
+    return Object.entries(folderMap)
+      .map(([title, items]) => ({ title, items: Array.from(items).sort((a, b) => a.localeCompare(b)) }))
+      .sort((a, b) => a.title.localeCompare(b));
   }, [documents]);
 
   const totalPages   = Math.ceil(filteredData.length / pageSize);
@@ -173,6 +174,7 @@ export default function EvidencePage() {
           onClose={() => setUploadOpen(false)}
           onSave={(saved) => { saveEvidence(saved); setUploadOpen(false); setPage(1); }}
           sections={sections}
+          transactions={transactions}
           mode="add"
         />
       )}
@@ -182,6 +184,7 @@ export default function EvidencePage() {
           onClose={() => setEditingEvidence(null)}
           onSave={(saved) => { saveEvidence(saved); setEditingEvidence(null); }}
           sections={sections}
+          transactions={transactions}
           mode="edit"
           evidence={editingEvidence}
         />
