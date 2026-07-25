@@ -38,10 +38,17 @@ export const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    // Skip auth header for auth endpoints — they don't need a token
-    const isAuthEndpoint = config.url?.includes("/auth/") ?? false;
+    const url = config.url ?? "";
 
-    if (!isAuthEndpoint) {
+    // Only omit the auth header for public auth endpoints.
+    // Protected auth endpoints like change-password still need the token.
+    const isPublicAuthEndpoint =
+      url.includes("/auth/login") ||
+      url.includes("/auth/sign-up") ||
+      url.includes("/auth/verify-otp") ||
+      url.includes("/auth/resend-otp");
+
+    if (!isPublicAuthEndpoint) {
       const token = tokenStorage.getAccessToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

@@ -6,6 +6,7 @@ import { isAxiosError } from "axios";
 import { useAuth } from "@/context/AuthContext.production";
 import { useTransactions } from "@/hooks/useTransactions";
 import type { NGOTransaction, DonorName } from "@/types/ngo";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 interface Props {
   open: boolean;
@@ -53,6 +54,11 @@ export default function AddTransactionModal({ open, onClose, onSubmit }: Props) 
     setError("");
     setSubmitting(true);
     try {
+      const orgId = normalizeOrganisationId(user?.organisationId);
+      if (!orgId) {
+        throw new Error("Organisation is not selected.");
+      }
+
       await addTransaction({
         name:          projectName.trim(),
         counterparty:  counterparty.trim(),
@@ -68,7 +74,7 @@ export default function AddTransactionModal({ open, onClose, onSubmit }: Props) 
       // Build NGOTransaction for the parent callback (UI optimistic update)
       const newTxn: NGOTransaction = {
         id:             `temp-${Date.now()}`,
-        organisationId: user?.organisationId ?? "",
+        organisationId: orgId,
         projectName:    projectName.trim(),
         donor:          donor as DonorName,
         budgetLine,

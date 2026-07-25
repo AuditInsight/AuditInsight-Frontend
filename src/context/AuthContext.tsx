@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => { initializeAuth(); }, [initializeAuth]);
+  useEffect(() => { queueMicrotask(() => initializeAuth()); }, [initializeAuth]);
 
   // ── login ──────────────────────────────────────────────────────
 

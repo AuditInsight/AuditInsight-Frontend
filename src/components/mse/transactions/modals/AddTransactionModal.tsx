@@ -5,6 +5,7 @@ import { Transaction } from "@/types/transaction.types";
 import { X, AlertCircle } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { useAuth } from "@/context/AuthContext.production";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 interface Props {
   isOpen: boolean;
@@ -57,26 +58,28 @@ export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = n
   const [form, setForm] = useState<FormData>(emptyForm());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     if (mode === "edit" && transaction) {
-      setForm({
-        name:          transaction.name,
-        date:          transaction.date,
-        amount:        String(transaction.amount),
-        counterparty:  transaction.counterparty ?? "",
-        type:          transaction.type,
-        paymentMethod: transaction.paymentMethod,
-        notes:         transaction.notes ?? "",
-        donor:         (transaction as Transaction & { donor?: string }).donor ?? "",
-        budgetLine:    (transaction as Transaction & { budgetLine?: string }).budgetLine ?? "",
+      queueMicrotask(() => {
+        setForm({
+          name:          transaction.name,
+          date:          transaction.date,
+          amount:        String(transaction.amount),
+          counterparty:  transaction.counterparty ?? "",
+          type:          transaction.type,
+          paymentMethod: transaction.paymentMethod,
+          notes:         transaction.notes ?? "",
+          donor:         (transaction as Transaction & { donor?: string }).donor ?? "",
+          budgetLine:    (transaction as Transaction & { budgetLine?: string }).budgetLine ?? "",
+        });
       });
     } else {
-      setForm(emptyForm());
+      queueMicrotask(() => setForm(emptyForm()));
     }
-    setErrors({});
-    setTouched({});
+    queueMicrotask(() => { setErrors({}); setTouched({}); });
   }, [isOpen, mode, transaction]);
 
   if (!isOpen) return null;
@@ -86,6 +89,7 @@ export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = n
     setForm(next);
     setTouched((p) => ({ ...p, [field]: true }));
     setErrors(validate(next, isNgo));
+    setFormError(null);
   };
 
   const handleSubmit = () => {
@@ -94,6 +98,17 @@ export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = n
     const errs = validate(form, isNgo);
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
+
+    const orgId = normalizeOrganisationId(user?.organisationId);
+    if (!orgId) {
+      setFormError(
+        "Unable to save transaction: your account is not connected to an organisation. Please contact your administrator."
+      );
+      return;
+    }
+
+    setFormError(null);
+
     onSubmit({
       name:          form.name.trim(),
       date:          form.date,
@@ -102,7 +117,7 @@ export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = n
       type:          form.type,
       paymentMethod: form.paymentMethod,
       notes:         form.notes.trim() || undefined,
-      organisationId: user?.organisationId ?? "",
+      organisationId: orgId,
       createdBy:     user?.fullName ?? "",
       // NGO-only fields — only included when orgType is NGO
       ...(isNgo && { donor: form.donor.trim(), budgetLine: form.budgetLine.trim() }),
@@ -129,6 +144,7 @@ export function AddTransactionModal({ isOpen, onClose, onSubmit, transaction = n
         </div>
 
         <div style={s.body}>
+          {formError && <div style={s.formError}>{formError}</div>}
           <div>
             <label style={s.label}>Transaction Name <span style={s.req}>*</span></label>
             <input placeholder="e.g. Office Supplies – ABC Ltd" value={form.name} onChange={(e) => set("name", e.target.value)} style={inputStyle("name")} />
@@ -221,6 +237,7 @@ const s: Record<string, React.CSSProperties> = {
   optional: { fontSize: 11, color: "#94a3b8", fontWeight: 400 },
   err: { display: "flex", alignItems: "center", gap: 4, margin: "4px 0 0", fontSize: 11.5, color: "#ef4444", fontWeight: 500 },
   footer: { padding: "14px 24px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", gap: 10, background: "#fafafa", flexShrink: 0 },
+  formError: { marginBottom: 12, padding: "12px 14px", borderRadius: 12, background: "#fff1f2", border: "1px solid #fecaca", color: "#b91c1c", fontSize: 13, lineHeight: 1.5 },
   cancelBtn: { padding: "10px 20px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 500, fontFamily: "inherit" },
   submitBtn: { padding: "10px 24px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "inherit" },
 };

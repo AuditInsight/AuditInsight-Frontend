@@ -6,6 +6,7 @@
 
 import { apiClient } from "@/api/client";
 import type { BackendRole } from "@/types/auth";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 // ── Re-export types consumed by the rest of the app ───────────────
 export type { BackendRole as UserRole, BackendRole } from "@/types/auth";
@@ -66,9 +67,16 @@ export const changePassword = (
     newPassword,
   });
 
+export const updateClientProfile = (data: {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+}) => apiClient.patch<ResponseMessage>("/client/profile", data);
+
 /* =========================
    TRANSACTION TYPES
-========================= */
+======================== */
 export type TransactionType   = "INCOME" | "EXPENSE";
 export type PaymentMethod     = "BANK" | "MOBILE_MONEY" | "CASH";
 export type TransactionStatus = "PENDING" | "COMPLETED";
@@ -106,10 +114,12 @@ export interface CreateTransactionRequest {
 /* =========================
    TRANSACTIONS API
 ========================= */
-export const getTransactions = (organisationId?: string) =>
-  apiClient.get<TransactionResponse[]>("/transactions", {
-    params: organisationId ? { organisationId } : {},
+export const getTransactions = (organisationId?: string) => {
+  const safeOrgId = normalizeOrganisationId(organisationId);
+  return apiClient.get<TransactionResponse[]>("/transactions", {
+    params: safeOrgId ? { organisationId: safeOrgId } : {},
   });
+};
 
 export const getTransactionById = (txnId: string) =>
   apiClient.get<TransactionResponse>(`/transactions/${txnId}`);
@@ -146,10 +156,12 @@ export interface EvidenceResponse {
 /* =========================
    EVIDENCE API
 ========================= */
-export const getEvidence = (organisationId?: string) =>
-  apiClient.get<EvidenceResponse[]>("/evidence", {
-    params: organisationId ? { organisationId } : {},
+export const getEvidence = (organisationId?: string) => {
+  const safeOrgId = normalizeOrganisationId(organisationId);
+  return apiClient.get<EvidenceResponse[]>("/evidence", {
+    params: safeOrgId ? { organisationId: safeOrgId } : {},
   });
+};
 
 export const getEvidenceById = (evidenceId: string) =>
   apiClient.get<EvidenceResponse>(`/evidence/${evidenceId}`);
@@ -177,9 +189,7 @@ export const uploadEvidence = (
   formData.append("subfolder", data.subfolder);
   if (data.notes) formData.append("notes", data.notes);
 
-  return apiClient.post<EvidenceResponse>("/evidence", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  return apiClient.post<EvidenceResponse>("/evidence", formData);
 };
 
 export const deleteEvidence = (evidenceId: string) =>
@@ -226,8 +236,11 @@ export interface OrganisationMemberResponse {
 export const getMyOrganisations = () =>
   apiClient.get<Organisation[]>("/organisations");
 
-export const getOrganisation = (orgId: string) =>
-  apiClient.get<OrganisationResponse>(`/organisations/${orgId}`);
+export const getOrganisation = (orgId: string) => {
+  const safeOrgId = normalizeOrganisationId(orgId);
+  if (!safeOrgId) throw new Error("Invalid organisation id.");
+  return apiClient.get<OrganisationResponse>(`/organisations/${safeOrgId}`);
+};
 
 export const createOrganisation = (data: {
   name: string;
@@ -248,21 +261,30 @@ export const updateOrganisation = (
   }
 ) => apiClient.put<OrganisationResponse>(`/organisations/${orgId}`, data);
 
-export const getOrganisationMembers = (orgId: string) =>
-  apiClient.get<OrganisationMemberResponse[]>(
-    `/organisations/${orgId}/members`
+export const getOrganisationMembers = (orgId: string) => {
+  const safeOrgId = normalizeOrganisationId(orgId);
+  if (!safeOrgId) throw new Error("Invalid organisation id.");
+  return apiClient.get<OrganisationMemberResponse[]>(
+    `/organisations/${safeOrgId}/members`
   );
+};
 
-export const inviteMember = (orgId: string, email: string, role: BackendRole) =>
-  apiClient.post<ResponseMessage>(
-    `/organisations/${orgId}/members/invite`,
+export const inviteMember = (orgId: string, email: string, role: BackendRole) => {
+  const safeOrgId = normalizeOrganisationId(orgId);
+  if (!safeOrgId) throw new Error("Invalid organisation id.");
+  return apiClient.post<ResponseMessage>(
+    `/organisations/${safeOrgId}/members/invite`,
     { email, role }
   );
+};
 
-export const removeMember = (orgId: string, userId: number) =>
-  apiClient.delete<ResponseMessage>(
-    `/organisations/${orgId}/members/${userId}`
+export const removeMember = (orgId: string, userId: number) => {
+  const safeOrgId = normalizeOrganisationId(orgId);
+  if (!safeOrgId) throw new Error("Invalid organisation id.");
+  return apiClient.delete<ResponseMessage>(
+    `/organisations/${safeOrgId}/members/${userId}`
   );
+};
 
 /* =========================
    REVIEW QUEUE TYPES
@@ -287,10 +309,12 @@ export interface ReviewQueueResponse {
 /* =========================
    REVIEW QUEUE API
 ========================= */
-export const getReviewQueue = (organisationId: string) =>
-  apiClient.get<ReviewQueueResponse[]>("/review-queue", {
-    params: { organisationId },
+export const getReviewQueue = (organisationId?: string) => {
+  const safeOrgId = normalizeOrganisationId(organisationId);
+  return apiClient.get<ReviewQueueResponse[]>("/review-queue", {
+    params: safeOrgId ? { organisationId: safeOrgId } : {},
   });
+};
 
 export const flagIssue = (data: {
   organisationId: string;

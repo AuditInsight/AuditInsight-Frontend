@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext.production";
 import { apiClient } from "@/api/client";
 import { CreateOrganisationRequest, OrganisationApiResponse } from "@/types/tenants";
 import { ApiErrorResponse } from "@/types/auth";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 type Step = "org-setup" | "pricing";
 
@@ -30,7 +31,7 @@ const STEPS: { id: Step; label: string }[] = [
 
 export default function OnboardingPage() {
   const router      = useRouter();
-  const { user }    = useAuth();
+  const { user, completeOnboarding } = useAuth();
 
   const [step, setStep]         = useState<Step>("org-setup");
   const [orgData, setOrgData]   = useState<OrgData | null>(null);
@@ -61,14 +62,28 @@ export default function OnboardingPage() {
       };
 
       // Create the organisation — backend links it to the authenticated user
-      await apiClient.post<OrganisationApiResponse>("/organisations", payload);
+      const { data } = await apiClient.post<OrganisationApiResponse>("/organisations", payload);
 
-      // For paid plans, billing integration would go here.
-      // For now we store the selection and proceed.
+      const orgId = normalizeOrganisationId(String(data.organisationId ?? data.id ?? ""));
+      if (!orgId) {
+        throw new Error("Organisation create response did not contain a valid organisation id.");
+      }
+
+      // Update the authenticated user's org metadata immediately.
+      completeOnboarding({
+        organisationId: orgId,
+        organisationName: data.name,
+        orgType: data.industry ?? data.orgType ?? "PRIVATE",
+      });
+
       sessionStorage.setItem("selected_plan",  plan);
       sessionStorage.setItem("selected_cycle", cycle);
 
-      router.replace("/dashboard");
+      if ((data.industry ?? data.orgType) === "NGO") {
+        router.replace("/ngo-dashboard");
+      } else {
+        router.replace("/dashboard");
+      }
     } catch (err: unknown) {
       setCompleting(false);
       if (isAxiosError<ApiErrorResponse>(err)) {

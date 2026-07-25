@@ -6,6 +6,7 @@ import { Evidence } from "@/types/evidence.types";
 import { getTransactions, getEvidence } from "@/utils/api";
 import { enrichTransactions, findDuplicateIds } from "@/lib/transactionMetrics";
 import { useAuth } from "@/context/AuthContext.production";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 export interface EnrichedTransaction extends Transaction {
   evidenceCount: number;
@@ -20,7 +21,17 @@ export function useDashboardData() {
   const [error,        setError]        = useState<string | null>(null);
 
   useEffect(() => {
-    const orgId = user?.organisationId;
+    const orgId = normalizeOrganisationId(user?.organisationId);
+    if (!orgId) {
+      queueMicrotask(() => {
+        setTransactions([]);
+        setEvidence([]);
+        setError(null);
+        setLoading(false);
+      });
+      return;
+    }
+
     Promise.all([getTransactions(orgId), getEvidence(orgId)])
       .then(([txRes, evRes]) => {
         const ev       = evRes.data ?? [];

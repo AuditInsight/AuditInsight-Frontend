@@ -167,6 +167,7 @@ function LoginForm() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [serverError,  setServerError]  = useState<string | null>(null);
+  const [manualInviteToken, setManualInviteToken] = useState<string>("");
 
   const IS_DEV = process.env.NEXT_PUBLIC_DEV_AUTH === "true";
 
@@ -186,10 +187,11 @@ function LoginForm() {
   const onSubmit = async (values: LoginFormValues) => {
     setServerError(null);
     try {
+      const inviteTokenToSend = inviteToken ?? (manualInviteToken?.trim() || undefined);
       const { redirectTo } = await login({
         username: values.username.trim().toLowerCase(),
         password: values.password,
-        inviteToken,
+        inviteToken: inviteTokenToSend,
       });
       router.replace(redirectTo);
     } catch (err: unknown) {
@@ -277,12 +279,12 @@ function LoginForm() {
             </div>
           )}
           {verified && (
-            <div style={{ ...s.infoBanner, borderColor: "#86efac", background: "#f0fdf4", color: "#15803d" }}>
+              <div style={{ ...s.infoBanner, border: "1px solid #86efac", background: "#f0fdf4", color: "#15803d" }}>
               ✓ Email verified successfully! You can now sign in.
             </div>
           )}
           {inviteToken && (
-            <div style={{ ...s.infoBanner, borderColor: "#c7d2fe", background: "#eef2ff", color: "#1d4ed8" }}>
+              <div style={{ ...s.infoBanner, border: "1px solid #c7d2fe", background: "#eef2ff", color: "#1d4ed8" }}>
               Invite detected — sign in with the invited email to accept.
             </div>
           )}
@@ -307,9 +309,7 @@ function LoginForm() {
                 style={{ ...s.input, ...(errors.username ? s.inputError : {}) }}
                 onFocus={(e) => Object.assign(e.currentTarget.style, s.inputFocus)}
                 onBlur={(e) => { Object.assign(e.currentTarget.style, s.input); usernameField.onBlur(e); }}
-                name={usernameField.name}
-                ref={usernameField.ref}
-                onChange={usernameField.onChange}
+                {...usernameField}
               />
               {errors.username && (
                 <span style={s.fieldError} role="alert">{errors.username.message}</span>
@@ -328,9 +328,7 @@ function LoginForm() {
                   style={{ ...s.input, paddingRight: 44, ...(errors.password ? s.inputError : {}) }}
                   onFocus={(e) => Object.assign(e.currentTarget.style, { ...s.inputFocus, paddingRight: "44px" })}
                   onBlur={(e) => { Object.assign(e.currentTarget.style, { ...s.input, paddingRight: "44px" }); passwordField.onBlur(e); }}
-                  name={passwordField.name}
-                  ref={passwordField.ref}
-                  onChange={passwordField.onChange}
+                  {...passwordField}
                 />
                 <button
                   type="button"
@@ -346,6 +344,25 @@ function LoginForm() {
                 <span style={s.fieldError} role="alert">{errors.password.message}</span>
               )}
             </div>
+
+            {/* Optional invite token input for users who received credentials by email */}
+            {!inviteToken && (
+              <div style={{ marginBottom: 12 }}>
+                <label htmlFor="inviteToken" style={s.label}>Invite token (optional)</label>
+                <input
+                  id="inviteToken"
+                  type="text"
+                  placeholder="Paste invite token from your invitation email"
+                  value={manualInviteToken}
+                  onChange={(e) => setManualInviteToken(e.target.value)}
+                  style={s.input}
+                  disabled={isSubmitting}
+                />
+                <p style={{ margin: "8px 0 0", fontSize: 12, color: "#94a3b8" }}>
+                  Paste the token from your invitation email if you were given credentials directly.
+                </p>
+              </div>
+            )}
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 22 }}>
               <Link href="/forgot-password" style={s.forgotLink}>Forgot password?</Link>
@@ -448,7 +465,7 @@ const s: Record<string, React.CSSProperties> = {
     boxSizing: "border-box", fontFamily: "inherit",
     boxShadow: "0 0 0 3px rgba(30,58,138,0.10)",
   },
-  inputError: { borderColor: "#fca5a5" },
+  inputError: { border: "1.5px solid #fca5a5" },
   fieldError:  { display: "block", fontSize: 12, color: "#dc2626", marginTop: 5 },
   eyeBtn: {
     position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",

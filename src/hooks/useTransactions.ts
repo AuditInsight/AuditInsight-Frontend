@@ -13,6 +13,7 @@ import {
 } from "@/utils/api";
 import { enrichTransactions, findDuplicateIds } from "@/lib/transactionMetrics";
 import { useAuth } from "@/context/AuthContext.production";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 export interface TransactionWithMeta extends Transaction {
   evidenceCount: number;
@@ -37,10 +38,18 @@ export function useTransactions() {
   const [error,        setError]        = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    const orgId = normalizeOrganisationId(user?.organisationId);
+    if (!orgId) {
+      setTransactions([]);
+      setEvidences([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const orgId = user?.organisationId;
       const [txRes, evRes] = await Promise.all([
         getTransactions(orgId),
         getEvidence(orgId),
@@ -60,7 +69,19 @@ export function useTransactions() {
     }
   }, [user?.organisationId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const orgId = normalizeOrganisationId(user?.organisationId);
+    if (!orgId) {
+      queueMicrotask(() => {
+        setTransactions([]);
+        setEvidences([]);
+        setError(null);
+        setLoading(false);
+      });
+      return;
+    }
+    load();
+  }, [user?.organisationId, load]);
 
   const refreshStatuses = useCallback((updatedEvidence: Evidence[]) => {
     setEvidences(updatedEvidence);
@@ -70,9 +91,14 @@ export function useTransactions() {
   const addTransaction = async (
     data: Omit<Transaction, "id" | "status" | "evidenceCount">
   ) => {
+    const orgId = normalizeOrganisationId(user?.organisationId);
+    if (!orgId) {
+      throw new Error("Organisation is not selected.");
+    }
+
     const isNgo = user?.orgType === "NGO";
     const req: CreateTransactionRequest = {
-      organisationId: user?.organisationId ?? "",
+      organisationId: orgId,
       name:          data.name,
       counterparty:  data.counterparty,
       date:          data.date,

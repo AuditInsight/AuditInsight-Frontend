@@ -15,15 +15,11 @@ import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
 import { evidenceMatchesSearch } from "@/lib/evidenceSearch";
 import { exportEvidenceCSV } from "@/utils/export";
-import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
 import { useRBAC } from "@/context/RBACContext";
 import { useEvidence } from "@/hooks/useEvidence";
+import { useTransactions } from "@/hooks/useTransactions";
 
 type EvidenceSection = { title: string; items: string[] };
-
-const sections: EvidenceSection[] = (
-  Object.entries(NGO_EVIDENCE_CATEGORIES) as [string, readonly string[]][]
-).map(([title, items]) => ({ title, items: [...items] }));
 
 function EvidenceContent() {
   const { can } = useRBAC();
@@ -31,6 +27,7 @@ function EvidenceContent() {
   const canEdit   = can("evidence:upload");
   const canDelete = can("evidence:upload");
 
+  const { transactions } = useTransactions();
   const { documents, loading, error, saveEvidence, deleteEvidence: apiDeleteEvidence } = useEvidence();
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -95,6 +92,21 @@ function EvidenceContent() {
     );
     years.sort((a, b) => b.localeCompare(a));
     return ["All", ...years];
+  }, [documents]);
+
+  const sections = useMemo(() => {
+    const folderMap = documents.reduce<Record<string, Set<string>>>((acc, document) => {
+      const folder = document.folder?.trim();
+      const subfolder = document.subfolder?.trim();
+      if (!folder) return acc;
+      if (!acc[folder]) acc[folder] = new Set();
+      if (subfolder) acc[folder].add(subfolder);
+      return acc;
+    }, {});
+
+    return Object.entries(folderMap)
+      .map(([title, items]) => ({ title, items: Array.from(items).sort((a, b) => a.localeCompare(b)) }))
+      .sort((a, b) => a.title.localeCompare(b));
   }, [documents]);
 
   const totalPages    = Math.ceil(filteredData.length / pageSize);
@@ -190,6 +202,7 @@ function EvidenceContent() {
           onClose={() => setUploadOpen(false)}
           onSave={(saved) => { handleSave(saved); setUploadOpen(false); setPage(1); }}
           sections={sections}
+          transactions={transactions}
           mode="add"
         />
       )}
@@ -199,6 +212,7 @@ function EvidenceContent() {
           onClose={() => setEditingEvidence(null)}
           onSave={(saved) => { handleSave(saved); setEditingEvidence(null); }}
           sections={sections}
+          transactions={transactions}
           mode="edit"
           evidence={editingEvidence}
         />
