@@ -7,6 +7,7 @@ import { Transaction } from "@/types/transaction.types";
 import { uploadEvidence, updateEvidence } from "@/utils/api";
 import { X, Paperclip, AlertCircle, CheckCircle2, Upload } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
+import { useOrganisation } from "@/hooks/useOrganisation";
 
 interface Props {
   isOpen: boolean;
@@ -26,50 +27,43 @@ const ALLOWED_TYPES: Record<string, string> = {
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
 };
 
-const DEFAULT_EVIDENCE_SECTIONS = [
-  {
-    title: "Purchases & Procurement",
-    items: [
-      "Supplier invoices",
-      "Purchase orders",
-      "Supplier contracts",
-      "Goods received notes",
-    ],
-  },
-  {
-    title: "Banking & Cash",
-    items: [
-      "Payment confirmations",
-      "Bank statements",
-      "Bank reconciliations",
-      "Cashbooks",
-    ],
-  },
-  {
-    title: "Payroll & HR",
-    items: [
-      "Payroll registers",
-      "Employment contracts",
-      "Timesheets",
-    ],
-  },
-  {
-    title: "Legal & Governance",
-    items: [
-      "Contracts & agreements",
-      "Regulatory correspondence",
-      "Audit reports",
-    ],
-  },
-  {
-    title: "Financial Reporting",
-    items: [
-      "Financial statements",
-      "Budget reports",
-      "Audit trails",
-    ],
-  },
-];
+// Mirrors EvidenceFolderValidator.java in the backend. Keep these values in sync if the backend list changes.
+const EVIDENCE_FOLDERS_BY_ORG = {
+  PRIVATE: [
+    { folder: "Financial Reporting", subfolders: ["General Ledgers", "Trial Balances", "Financial Statements"] },
+    { folder: "Banking and Cash", subfolders: ["Bank Statements", "Bank Reconciliations", "Payment Confirmations"] },
+    { folder: "Sales Evidence", subfolders: ["Sales Invoices", "Receipts", "Credit Notes", "Sales Orders"] },
+    { folder: "Purchases and Procurement", subfolders: ["Purchase Orders", "Supplier Invoices", "Goods Received Notes", "Supplier Contracts"] },
+    { folder: "Payroll and HR", subfolders: ["Payroll Registers", "Employment Contracts", "Timesheets"] },
+    { folder: "Tax and Compliance", subfolders: ["VAT Returns", "PAYE Filings", "Tax Clearance Certificates"] },
+    { folder: "Inventory and Assets", subfolders: ["Stock Count Sheets", "Asset Registers", "Depreciation Schedules"] },
+    { folder: "Legal and Governance", subfolders: ["Board Minutes", "Company Registration", "Contracts"] },
+    { folder: "IT and System Evidence", subfolders: ["Access Logs", "Audit Trail Exports", "Backup Reports"] },
+    { folder: "Other Supporting Documents", subfolders: ["Emails", "Screenshots", "Miscellaneous"] },
+  ],
+  NGO: [
+    { folder: "Financial Reporting", subfolders: ["General Ledgers", "Trial Balances", "Financial Statements", "Project Financial Reports", "Donor Financial Reports"] },
+    { folder: "Budget Management", subfolders: ["Approved Annual Budget", "Project Budgets", "Grant Budgets", "Budget Revisions", "Budget vs Actual Reports", "Budget Approval Minutes"] },
+    { folder: "Banking and Cash", subfolders: ["Bank Statements", "Bank Reconciliations", "Payment Confirmations", "Cashbooks", "Cash Count Sheets", "Petty Cash Vouchers"] },
+    { folder: "Payment Evidence", subfolders: ["Payment Vouchers", "Signed Payment Requests", "Electronic Transfer Confirmations", "Cheque Copies", "Mobile Money Confirmations", "Payment Approval Forms"] },
+    { folder: "Grants and Donor Agreements", subfolders: ["Grant Agreements", "Funding Agreements", "Donor Contracts", "Grant Amendments", "Donor Correspondence"] },
+    { folder: "Donor Compliance", subfolders: ["Donor Guidelines", "Reporting Requirements", "Compliance Checklists", "Donor Approvals", "Waivers", "Donor Monitoring Reports"] },
+    { folder: "Project Documentation", subfolders: ["Project Proposals", "Work Plans", "Activity Reports", "Project Completion Reports", "Monitoring Reports"] },
+    { folder: "Project Activities", subfolders: ["Training Reports", "Workshop Reports", "Workshop Agendas", "Workshop Attendance Lists", "Signed Attendance Sheets", "Meeting Minutes", "Evaluation Forms", "Photographs"] },
+    { folder: "Beneficiary Documentation", subfolders: ["Beneficiary Lists", "Beneficiary Registration Forms", "Beneficiary IDs", "Distribution Lists", "Acknowledgement Receipts", "Consent Forms"] },
+    { folder: "Procurement", subfolders: ["Purchase Requisitions", "Purchase Orders", "Supplier Quotations", "Bid Evaluation Reports", "Supplier Invoices", "Goods Received Notes", "Supplier Contracts"] },
+    { folder: "Payroll and HR", subfolders: ["Payroll Registers", "Employment Contracts", "Timesheets", "Leave Records", "Staff Lists", "Performance Contracts"] },
+    { folder: "Travel", subfolders: ["Travel Authorizations", "Travel Expense Claims", "Flight Tickets", "Hotel Invoices"] },
+    { folder: "Vehicles", subfolders: ["Vehicle Logbooks", "Fuel Records", "Vehicle Maintenance Records", "Vehicle Insurance", "Vehicle Allocation Records"] },
+    { folder: "Fixed Assets", subfolders: ["Asset Register", "Asset Tags", "Purchase Documents", "Asset Transfer Forms", "Asset Disposal Forms", "Physical Verification Reports", "Maintenance Records", "Depreciation Schedules"] },
+    { folder: "Inventory", subfolders: ["Inventory Registers", "Stock Count Sheets"] },
+    { folder: "Compliance and Tax", subfolders: ["VAT Documents", "PAYE Filings", "RSSB Contributions", "Tax Clearance Certificates", "NGO Registration Certificates"] },
+    { folder: "Legal and Governance", subfolders: ["Board Minutes", "Management Meeting Minutes", "Policies", "Memorandums of Understanding", "Contracts", "Registration Documents"] },
+    { folder: "Audit Evidence", subfolders: ["Audit Requests", "Management Responses", "Audit Reports", "Management Letters", "Corrective Action Plans"] },
+    { folder: "IT and System Evidence", subfolders: ["Access Logs", "Audit Trail Exports", "Backup Reports"] },
+    { folder: "Other Supporting Documents", subfolders: ["Emails", "Approval Letters", "Miscellaneous"] },
+  ],
+} as const;
 
 function validate(fields: {
   name: string; transactionId: string; category: string; subCategory: string; file: File | null; isEdit: boolean;
@@ -77,8 +71,8 @@ function validate(fields: {
   const e: Record<string, string> = {};
   if (!fields.name.trim()) e.name = "Document name is required.";
   if (!fields.transactionId) e.transactionId = "Please link this to a transaction.";
-  if (!fields.category) e.category = "Category is required.";
-  if (!fields.subCategory) e.subCategory = "Subcategory is required.";
+  if (!fields.category) e.category = "Folder is required.";
+  if (!fields.subCategory) e.subCategory = "Subfolder is required.";
   if (!fields.isEdit && !fields.file) e.file = "Please select a file to upload.";
   return e;
 }
@@ -88,13 +82,14 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transac
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [name, setName]                 = useState("");
-  const [category, setCategory]         = useState("");
-  const [subCategory, setSubCategory]   = useState("");
+  const [category, setCategory]         = useState<MSEEvidenceCategory | "">("");
+  const [subCategory, setSubCategory]   = useState<MSEEvidenceSubcategory | "">("");
   const [notes, setNotes]               = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [amount, setAmount]             = useState("");
   const [counterparty, setCounterparty] = useState("");
   const { user } = useAuth();
+  const { org } = useOrganisation();
   const [file, setFile]                 = useState<File | null>(null);
   const [fileError, setFileError]       = useState("");
   const [submitError, setSubmitError]   = useState("");
@@ -250,8 +245,11 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transac
     }
   };
 
-  const effectiveSections = sections.length > 0 ? sections : DEFAULT_EVIDENCE_SECTIONS;
-  const selectedSection = effectiveSections.find((s) => s.title === category);
+  const orgType = org?.industry ?? org?.orgType ?? user?.orgType ?? "PRIVATE";
+  const isNgoOrg = orgType === "NGO";
+  const folderOptions = isNgoOrg ? EVIDENCE_FOLDERS_BY_ORG.NGO : EVIDENCE_FOLDERS_BY_ORG.PRIVATE;
+  const selectedFolder = folderOptions.find((entry) => entry.folder === category);
+  const subfolderOptions = selectedFolder?.subfolders ?? [];
   const inputSt = (field: string): React.CSSProperties => ({
     width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
     border: `1.5px solid ${touched[field] && errors[field] ? "#ef4444" : "#e2e8f0"}`,
@@ -309,18 +307,18 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transac
           {/* Category + Subcategory */}
           <div style={s.grid2}>
             <div>
-              <label style={s.label}>Category <span style={s.req}>*</span></label>
+              <label style={s.label}>Folder <span style={s.req}>*</span></label>
               <select value={category} onChange={(e) => { handleField("category", e.target.value, setCategory); setSubCategory(""); }} style={inputSt("category")}> 
-                <option value="">— Select category —</option>
-                {effectiveSections.map((sec) => <option key={sec.title} value={sec.title}>{sec.title}</option>)}
+                <option value="">— Select folder —</option>
+                {folderOptions.map((entry) => <option key={entry.folder} value={entry.folder}>{entry.folder}</option>)}
               </select>
               {touched.category && errors.category && <p style={s.err}><AlertCircle size={11} />{errors.category}</p>}
             </div>
             <div>
-              <label style={s.label}>Subcategory <span style={s.req}>*</span></label>
+              <label style={s.label}>Subfolder <span style={s.req}>*</span></label>
               <select value={subCategory} onChange={(e) => handleField("subCategory", e.target.value, setSubCategory)} style={inputSt("subCategory")} disabled={!category}>
-                <option value="">— Select subcategory —</option>
-                {selectedSection?.items.map((item) => <option key={item} value={item}>{item}</option>)}
+                <option value="">— Select subfolder —</option>
+                {subfolderOptions.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
               {touched.subCategory && errors.subCategory && <p style={s.err}><AlertCircle size={11} />{errors.subCategory}</p>}
             </div>

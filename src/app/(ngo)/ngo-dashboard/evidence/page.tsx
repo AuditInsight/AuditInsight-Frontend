@@ -6,7 +6,7 @@ import { EvidenceHeader } from "@/components/mse/evidence/EvidenceHeader";
 import { EvidenceFilters, EvidenceTab } from "@/components/mse/evidence/EvidenceFilters";
 import { EvidenceTable } from "@/components/mse/evidence/EvidenceTable";
 import { EvidencePagination } from "@/components/mse/evidence/EvidencePagination";
-import { EvidenceUploadModal } from "@/components/mse/evidence/EvidenceUploadModal";
+import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
 import { EvidenceDetailsModal } from "@/components/mse/evidence/EvidenceDetailsModal";
 import { ConfirmDeleteEvidenceModal } from "@/components/mse/evidence/ConfirmDeleteEvidenceModal";
 import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";

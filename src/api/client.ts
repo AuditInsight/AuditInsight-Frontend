@@ -29,12 +29,17 @@ if (!BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not set");
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
   // 15 second timeout — prevents requests hanging indefinitely
   timeout: 15_000,
 });
 
 // ── Request interceptor ────────────────────────────────────────────
+
+const isPublicAuthEndpoint = (url: string): boolean =>
+  url.includes("/auth/login") ||
+  url.includes("/auth/sign-up") ||
+  url.includes("/auth/verify-otp") ||
+  url.includes("/auth/resend-otp");
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
@@ -42,13 +47,7 @@ apiClient.interceptors.request.use(
 
     // Only omit the auth header for public auth endpoints.
     // Protected auth endpoints like change-password still need the token.
-    const isPublicAuthEndpoint =
-      url.includes("/auth/login") ||
-      url.includes("/auth/sign-up") ||
-      url.includes("/auth/verify-otp") ||
-      url.includes("/auth/resend-otp");
-
-    if (!isPublicAuthEndpoint) {
+    if (!isPublicAuthEndpoint(url)) {
       const token = tokenStorage.getAccessToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -65,7 +64,8 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    const url = error.config?.url ?? "";
+    if (error.response?.status === 401 && !isPublicAuthEndpoint(url)) {
       tokenStorage.clear();
       redirectToLogin();
     }
