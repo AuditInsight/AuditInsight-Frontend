@@ -8,6 +8,7 @@ import {
   deleteEvidence as apiDeleteEvidence,
 } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext.production";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
   const { user } = useAuth();
@@ -16,9 +17,20 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
   const [error,     setError]     = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    getEvidence(user?.organisationId)
-      .then(({ data }) => {
+    const orgId = normalizeOrganisationId(user?.organisationId);
+    if (!orgId) {
+      queueMicrotask(() => {
+        setDocuments([]);
+        setError(null);
+        setLoading(false);
+      });
+      return;
+    }
+
+    queueMicrotask(() => {
+      setLoading(true);
+      getEvidence(orgId)
+        .then(({ data }) => {
         const mapped: Evidence[] = (data ?? []).map((e) => ({
           id:            e.id,
           transactionId: e.transactionId,
@@ -33,12 +45,13 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
           status:        "Verified" as const,
         }));
         setDocuments(mapped);
-      })
-      .catch((err) => {
-        console.error("useEvidence load error", err);
-        setError("Failed to load evidence.");
-      })
-      .finally(() => setLoading(false));
+        })
+        .catch((err) => {
+          console.error("useEvidence load error", err);
+          setError("Failed to load evidence.");
+        })
+        .finally(() => setLoading(false));
+    });
   }, [user?.organisationId]);
 
   const saveEvidence = (saved: Evidence) => {
