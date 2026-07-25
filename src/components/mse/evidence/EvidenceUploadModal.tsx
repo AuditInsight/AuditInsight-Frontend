@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext.production";
 import { Evidence } from "@/types/evidence.types";
 import { Transaction } from "@/types/transaction.types";
-import { MOCK_TRANSACTIONS } from "@/mock/transactions.mock";
+import { uploadEvidence, updateEvidence } from "@/utils/api";
 import { X, Paperclip, AlertCircle, CheckCircle2, Upload } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 
@@ -12,6 +13,7 @@ interface Props {
   onClose: () => void;
   onSave: (evidence: Evidence) => void;
   sections: { title: string; items: string[] }[];
+  transactions: Transaction[];
   mode?: "add" | "edit";
   evidence?: Evidence | null;
 }
@@ -23,6 +25,51 @@ const ALLOWED_TYPES: Record<string, string> = {
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
 };
+
+const DEFAULT_EVIDENCE_SECTIONS = [
+  {
+    title: "Purchases & Procurement",
+    items: [
+      "Supplier invoices",
+      "Purchase orders",
+      "Supplier contracts",
+      "Goods received notes",
+    ],
+  },
+  {
+    title: "Banking & Cash",
+    items: [
+      "Payment confirmations",
+      "Bank statements",
+      "Bank reconciliations",
+      "Cashbooks",
+    ],
+  },
+  {
+    title: "Payroll & HR",
+    items: [
+      "Payroll registers",
+      "Employment contracts",
+      "Timesheets",
+    ],
+  },
+  {
+    title: "Legal & Governance",
+    items: [
+      "Contracts & agreements",
+      "Regulatory correspondence",
+      "Audit reports",
+    ],
+  },
+  {
+    title: "Financial Reporting",
+    items: [
+      "Financial statements",
+      "Budget reports",
+      "Audit trails",
+    ],
+  },
+];
 
 function validate(fields: {
   name: string; transactionId: string; category: string; subCategory: string; file: File | null; isEdit: boolean;
@@ -36,7 +83,7 @@ function validate(fields: {
   return e;
 }
 
-export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = "add", evidence = null }: Props) => {
+export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transactions, mode = "add", evidence = null }: Props) => {
   const isEdit = mode === "edit";
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -47,8 +94,10 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
   const [transactionId, setTransactionId] = useState("");
   const [amount, setAmount]             = useState("");
   const [counterparty, setCounterparty] = useState("");
+  const { user } = useAuth();
   const [file, setFile]                 = useState<File | null>(null);
   const [fileError, setFileError]       = useState("");
+  const [submitError, setSubmitError]   = useState("");
   const [errors, setErrors]             = useState<Record<string, string>>({});
   const [touched, setTouched]           = useState<Record<string, boolean>>({});
   const [saving, setSaving]             = useState(false);
@@ -56,19 +105,23 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
   useEffect(() => {
     if (!isOpen) return;
     if (isEdit && evidence) {
-      setName(evidence.documentName ?? "");
-      setCategory(evidence.folder ?? "");
-      setSubCategory(evidence.subfolder ?? "");
-      setNotes(evidence.notes ?? "");
-      setTransactionId(evidence.transactionId ? String(evidence.transactionId) : "");
-      setAmount(evidence.amount != null ? String(evidence.amount) : "");
-      setCounterparty(evidence.counterparty ?? "");
-      setFile(null);
+      queueMicrotask(() => {
+        setName(evidence.documentName ?? "");
+        setCategory(evidence.folder ?? "");
+        setSubCategory(evidence.subfolder ?? "");
+        setNotes(evidence.notes ?? "");
+        setTransactionId(evidence.transactionId ? String(evidence.transactionId) : "");
+        setAmount(evidence.amount != null ? String(evidence.amount) : "");
+        setCounterparty(evidence.counterparty ?? "");
+        setFile(null);
+      });
     } else {
-      setName(""); setCategory(""); setSubCategory(""); setNotes("");
-      setTransactionId(""); setAmount(""); setCounterparty(""); setFile(null);
+      queueMicrotask(() => {
+        setName(""); setCategory(""); setSubCategory(""); setNotes("");
+        setTransactionId(""); setAmount(""); setCounterparty(""); setFile(null);
+      });
     }
-    setErrors({}); setTouched({}); setFileError("");
+    queueMicrotask(() => { setErrors({}); setTouched({}); setFileError(""); });
   }, [isOpen, mode, evidence]);
 
   if (!isOpen) return null;
@@ -79,7 +132,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
     const id = e.target.value;
     setTransactionId(id);
     touch("transactionId");
-    const tx = MOCK_TRANSACTIONS.find((t) => String(t.id) === id);
+    const tx = transactions.find((t) => String(t.id) === id);
     if (tx) { setAmount(String(tx.amount)); setCounterparty(tx.counterparty ?? tx.name ?? ""); }
     else { setAmount(""); setCounterparty(""); }
     const e2 = validate({ name, transactionId: id, category, subCategory, file, isEdit });
@@ -109,8 +162,15 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
   const handleField = (field: string, value: string, setter: (v: string) => void) => {
     setter(value);
     touch(field);
-    const current = { name, transactionId, category, subCategory, file, isEdit, [field]: value };
-    setErrors(validate(current as any));
+    const current = {
+      name: field === "name" ? value : name,
+      transactionId: field === "transactionId" ? value : transactionId,
+      category: field === "category" ? value : category,
+      subCategory: field === "subCategory" ? value : subCategory,
+      file,
+      isEdit,
+    };
+    setErrors(validate(current));
   };
 
   const handleSave = async () => {
@@ -120,47 +180,78 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
+    if (!isEdit && !file) {
+      setFileError("Please select a file to upload.");
+      return;
+    }
+
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 500));
+    setSubmitError("");
 
-    const tx = MOCK_TRANSACTIONS.find((t) => String(t.id) === transactionId);
-    const inheritedAmount = tx?.amount ?? (amount ? Number(amount) : undefined);
-    const inheritedCounterparty = tx?.counterparty ?? counterparty;
-
-    const saved: Evidence = isEdit && evidence
-      ? {
-          ...evidence,
+    try {
+      let saved: Evidence;
+      if (isEdit && evidence) {
+        const { data } = await updateEvidence(evidence.id, {
           documentName: name,
-          folder: category,
-          subfolder: subCategory,
-          notes,
-          transactionId,
-          amount: inheritedAmount,
-          counterparty: inheritedCounterparty,
-        }
-      : {
-          id: `ev-${Date.now()}`,
-          organisationId: "org-001",
-          transactionId,
-          documentName: name,
-          folder: category,
-          subfolder: subCategory,
-          fileUpload: file ? URL.createObjectURL(file) : "",
-          fileType: file ? (ALLOWED_TYPES[file.type] ?? "pdf") : "pdf",
-          status: "Pending",
-          uploadedBy: "Eric Bizimana",
-          uploadedAt: new Date().toISOString(),
           notes: notes || undefined,
-          amount: inheritedAmount,
-          counterparty: inheritedCounterparty,
-        };
+        });
 
-    onSave(saved);
-    setSaving(false);
-    onClose();
+        saved = {
+          ...evidence,
+          documentName: data.documentName,
+          notes: data.notes,
+          uploadedAt: data.uploadedAt,
+          status: evidence.status ?? "Verified",
+          amount: evidence.amount,
+          counterparty: evidence.counterparty,
+        };
+      } else {
+        const orgId = user?.organisationId;
+        if (!orgId) {
+          setSubmitError("Unable to upload evidence without an organisation.");
+          return;
+        }
+
+        const { data } = await uploadEvidence(file as File, {
+          organisationId: orgId,
+          transactionId,
+          documentName: name,
+          folder: category,
+          subfolder: subCategory,
+          notes: notes || undefined,
+        });
+
+        saved = {
+          id: data.id,
+          organisationId: data.organisationId,
+          transactionId: data.transactionId,
+          documentName: data.documentName,
+          folder: data.folder,
+          subfolder: data.subfolder,
+          fileUpload: data.fileUpload,
+          fileType: data.fileType,
+          notes: data.notes,
+          uploadedBy: String(data.uploadedBy),
+          uploadedAt: data.uploadedAt,
+          status: "Verified",
+          amount: Number(amount) || undefined,
+          counterparty: counterparty || undefined,
+        };
+      }
+
+      onSave(saved);
+      onClose();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Upload failed. Please try again.";
+      setSubmitError(message);
+      console.error("Evidence upload failed", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const selectedSection = sections.find((s) => s.title === category);
+  const effectiveSections = sections.length > 0 ? sections : DEFAULT_EVIDENCE_SECTIONS;
+  const selectedSection = effectiveSections.find((s) => s.title === category);
   const inputSt = (field: string): React.CSSProperties => ({
     width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
     border: `1.5px solid ${touched[field] && errors[field] ? "#ef4444" : "#e2e8f0"}`,
@@ -196,9 +287,9 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
           {/* Transaction link */}
           <div>
             <label style={s.label}>Link to Transaction <span style={s.req}>*</span></label>
-            <select value={transactionId} onChange={handleTransactionChange} style={inputSt("transactionId")}>
+            <select value={transactionId} onChange={handleTransactionChange} style={inputSt("transactionId")} disabled={isEdit}>
               <option value="">— Select transaction —</option>
-              {MOCK_TRANSACTIONS.map((t) => (
+              {transactions.map((t) => (
                 <option key={String(t.id)} value={String(t.id)}>
                   {t.id} — {t.counterparty ?? t.name ?? ""} ({new Intl.NumberFormat("en-RW", { style: "currency", currency: "RWF", maximumFractionDigits: 0 }).format(t.amount)})
                 </option>
@@ -219,9 +310,9 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
           <div style={s.grid2}>
             <div>
               <label style={s.label}>Category <span style={s.req}>*</span></label>
-              <select value={category} onChange={(e) => { handleField("category", e.target.value, setCategory); setSubCategory(""); }} style={inputSt("category")}>
+              <select value={category} onChange={(e) => { handleField("category", e.target.value, setCategory); setSubCategory(""); }} style={inputSt("category")}> 
                 <option value="">— Select category —</option>
-                {sections.map((sec) => <option key={sec.title} value={sec.title}>{sec.title}</option>)}
+                {effectiveSections.map((sec) => <option key={sec.title} value={sec.title}>{sec.title}</option>)}
               </select>
               {touched.category && errors.category && <p style={s.err}><AlertCircle size={11} />{errors.category}</p>}
             </div>
@@ -260,6 +351,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
                 {file ? file.name : "Choose file (PDF, PNG, JPG, XLSX, DOCX — max 10 MB)"}
               </button>
               {fileError && <p style={s.err}><AlertCircle size={11} />{fileError}</p>}
+              {submitError && <p style={s.err}><AlertCircle size={11} />{submitError}</p>}
               {touched.file && errors.file && !fileError && <p style={s.err}><AlertCircle size={11} />{errors.file}</p>}
               {file && !fileError && (
                 <div style={s.fileChip}>
@@ -268,6 +360,12 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, mode = 
                   <span style={{ color: "#94a3b8", fontSize: 11 }}>({(file.size / 1024).toFixed(0)} KB)</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {isEdit && submitError && (
+            <div style={s.errSummary}>
+              <AlertCircle size={14} /> {submitError}
             </div>
           )}
 
