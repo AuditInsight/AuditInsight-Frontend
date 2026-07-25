@@ -129,6 +129,12 @@ function ActionCell({
   );
 }
 
+function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
+  return sortKey === col
+    ? (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)
+    : <ChevronDown size={12} className="opacity-30" />;
+}
+
 export default function NGOTransactionTable({
   transactions,
   donorScope,
@@ -158,10 +164,8 @@ export default function NGOTransactionTable({
     else { setSortKey(key); setSortDir("asc"); }
   };
 
-  const SortIcon = ({ col }: { col: SortKey }) =>
-    sortKey === col
-      ? (sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)
-      : <ChevronDown size={12} className="opacity-30" />;
+  // Use the top-level SortIcon component (declared above) to avoid creating
+  // nested components during render.
 
   const thStyle: React.CSSProperties = { padding: "10px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" };
 
@@ -192,23 +196,23 @@ export default function NGOTransactionTable({
               <th style={thStyle}>ID</th>
               {/* Date — sortable */}
               <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("date")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Date <SortIcon col="date" /></span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} /></span>
               </th>
               {/* Project — sortable */}
               <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("projectName")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Project <SortIcon col="projectName" /></span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Project <SortIcon col="projectName" sortKey={sortKey} sortDir={sortDir} /></span>
               </th>
               {/* Budget Line */}
               <th style={thStyle}>Budget Line</th>
               {/* Amount — sortable */}
               <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("amount")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Amount <SortIcon col="amount" /></span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Amount <SortIcon col="amount" sortKey={sortKey} sortDir={sortDir} /></span>
               </th>
               {/* Counterparty */}
               <th style={thStyle}>Counterparty</th>
               {/* Status — sortable */}
               <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("status")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Status <SortIcon col="status" /></span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Status <SortIcon col="status" sortKey={sortKey} sortDir={sortDir} /></span>
               </th>
               {/* Evidence */}
               <th style={thStyle}>Evidence</th>

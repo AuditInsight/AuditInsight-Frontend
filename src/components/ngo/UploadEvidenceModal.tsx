@@ -8,6 +8,7 @@ import { uploadEvidence } from "@/utils/api";
 import type { Evidence } from "@/types/evidence.types";
 import type { NGOTransaction, NGOEvidenceCategory } from "@/types/ngo";
 import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 interface Props {
   open: boolean;
@@ -61,9 +62,14 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
     try {
       // Upload each file sequentially; call onSubmit with the last saved Evidence
       let lastSaved: Evidence | null = null;
+      const orgId = normalizeOrganisationId(user?.organisationId);
+      if (!orgId) {
+        throw new Error("Unable to upload evidence: organisation is not selected.");
+      }
+
       for (const file of files) {
         const { data } = await uploadEvidence(file, {
-          organisationId: user?.organisationId ?? "",
+          organisationId: orgId,
           transactionId:  transaction.id,
           documentName:   file.name,
           folder:         category as string,

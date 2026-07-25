@@ -63,7 +63,7 @@ export default function NGONotificationPanel({ notifications, onMarkRead, onMark
           <div style={s.empty}>
             <div style={s.emptyIcon}><CheckCheck size={22} color="#1e3a8a" /></div>
             <p style={s.emptyText}>No audit flags raised</p>
-            <p style={s.emptySub}>Your auditor hasn't flagged any issues yet.</p>
+            <p style={s.emptySub}>Your auditor hasn\u0027t flagged any issues yet.</p>
           </div>
         ) : (
           notifications.map((notif) => {
