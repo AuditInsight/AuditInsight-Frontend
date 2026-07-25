@@ -197,6 +197,10 @@ function LoginForm() {
     } catch (err: unknown) {
       if (isAxiosError<ApiErrorResponse>(err)) {
         const status = err.response?.status;
+        if (err.code === "ERR_CANCELED") {
+          setServerError("Login request was cancelled. Please try again.");
+          return;
+        }
         if (status === 401 || status === 403) {
           setServerError("Invalid email or password.");
         } else if (status === 423) {
