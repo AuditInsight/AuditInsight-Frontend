@@ -20,9 +20,9 @@ export function useNotifications() {
     if (!user?.email) return;
     seedNotificationsIfEmpty();
     setNotifications(getNotificationsForUser(user.email));
-  }, [user?.email]);
+  }, [user]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => { queueMicrotask(() => refresh()); }, [refresh]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

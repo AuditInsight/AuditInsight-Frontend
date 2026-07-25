@@ -9,6 +9,7 @@ import {
   IssueType,
 } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext.production";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 function mapToReviewItem(r: {
   id: string;
@@ -39,10 +40,14 @@ export function useReviewQueue() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
 
-  const orgId = user?.organisationId ?? "";
+  const orgId = normalizeOrganisationId(user?.organisationId);
 
   const load = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await getReviewQueue(orgId);
@@ -58,6 +63,7 @@ export function useReviewQueue() {
   useEffect(() => { load(); }, [load]);
 
   const flagIssue = async (item: Omit<ReviewItem, "id">) => {
+    if (!isValidOrgId(orgId)) return;
     await apiFlagIssue({
       organisationId: orgId,
       transactionId:  String(item.transactionId),
