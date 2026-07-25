@@ -69,7 +69,6 @@ function VerifyOtpForm() {
       await apiClient.post("/auth/verify-otp", payload);
 
       sessionStorage.removeItem("pending_email");
-      sessionStorage.removeItem("pending_role");
 
       // Redirect to login with a success flag so the login page shows a banner
       router.replace(`/log-in?verified=1&email=${encodeURIComponent(email)}`);

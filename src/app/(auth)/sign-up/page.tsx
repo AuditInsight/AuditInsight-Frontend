@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Shield, Building2, ClipboardCheck, Check, Loader2, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, Shield, Check, Loader2, AlertTriangle } from "lucide-react";
 import { isAxiosError } from "axios";
 import { apiClient } from "@/api/client";
-import { RegisterRequest, RegisterApiResponse, ApiErrorResponse, BackendRole } from "@/types/auth";
+import { RegisterRequest, RegisterApiResponse, ApiErrorResponse } from "@/types/auth";
 
 // ── Password strength ──────────────────────────────────────────────
 
@@ -25,20 +25,11 @@ function getStrength(p: string) {
 
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-// ── Role content ───────────────────────────────────────────────────
-
-type UIRole = "CLIENT" | "AUDITOR";
-
-const ROLE_CONTENT: Record<UIRole, { heading: string; desc: string; bullets: string[] }> = {
+const ROLE_CONTENT = {
   CLIENT: {
-    heading: "Manage your organisation's finances",
+    heading: "Manage your organisation\u0027s finances",
     desc: "AuditInsight gives your team a single workspace to upload evidence, track transactions, and stay audit-ready.",
     bullets: ["Upload & organise financial evidence", "Invite auditors & accountants directly", "Track transaction status in real time", "Respond to auditor review requests"],
-  },
-  AUDITOR: {
-    heading: "Conduct audits with precision",
-    desc: "Review financial data, flag compliance issues, and manage your audit queue — all in one place.",
-    bullets: ["Access client transaction history", "Flag issues and manage review queues", "Upload and validate evidence documents", "Deliver findings with a full audit trail"],
   },
 };
 
@@ -46,7 +37,6 @@ const ROLE_CONTENT: Record<UIRole, { heading: string; desc: string; bullets: str
 
 export default function SignupPage() {
   const router = useRouter();
-  const [role, setRole]                     = useState<UIRole>("CLIENT");
   const [firstName, setFirstName]           = useState("");
   const [lastName, setLastName]             = useState("");
   const [email, setEmail]                   = useState("");
@@ -58,7 +48,6 @@ export default function SignupPage() {
   const [error, setError]                   = useState("");
 
   const strength = getStrength(password);
-  const content  = ROLE_CONTENT[role];
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +65,7 @@ export default function SignupPage() {
       lastName:  lastName.trim(),
       username:  email.trim().toLowerCase(),  // backend expects 'username' not 'email'
       password,
-      role:      role as BackendRole,
+      role:      "CLIENT",
     };
 
     try {
@@ -84,14 +73,7 @@ export default function SignupPage() {
 
       // Store email so verify-otp page knows where to send the user
       sessionStorage.setItem("pending_email", payload.username);
-      sessionStorage.setItem("pending_role",  role);
-
-      if (role === "CLIENT") {
-        router.push(`/verify-otp?email=${encodeURIComponent(payload.username)}&next=/onboarding`);
-      } else {
-        // Auditor accounts need admin approval — no OTP flow, just inform user
-        router.push("/log-in?registered=auditor");
-      }
+      router.push(`/verify-otp?email=${encodeURIComponent(payload.username)}&next=/onboarding`);
     } catch (err: unknown) {
       if (isAxiosError<ApiErrorResponse>(err)) {
         const msg = err.response?.data?.message;
@@ -118,10 +100,10 @@ export default function SignupPage() {
           <span style={s.logoText}>AuditInsight</span>
         </div>
         <div style={s.leftBody} className="auth-left-body">
-          <h2 style={s.leftHeading}>{content.heading}</h2>
-          <p style={s.leftDesc}>{content.desc}</p>
+          <h2 style={s.leftHeading}>{ROLE_CONTENT.CLIENT.heading}</h2>
+          <p style={s.leftDesc}>{ROLE_CONTENT.CLIENT.desc}</p>
           <ul style={s.bullets}>
-            {content.bullets.map((b) => (
+            {ROLE_CONTENT.CLIENT.bullets.map((b) => (
               <li key={b} style={s.bulletItem}>
                 <span style={s.checkBadge}><Check size={11} strokeWidth={3} /></span>
                 <span style={s.bulletText}>{b}</span>
@@ -129,11 +111,6 @@ export default function SignupPage() {
             ))}
           </ul>
         </div>
-        {role === "AUDITOR" && (
-          <div style={s.approvalNote}>
-            <strong>Note:</strong> Auditor accounts are reviewed and approved by an admin before access is granted.
-          </div>
-        )}
       </div>
 
       {/* RIGHT */}
@@ -151,22 +128,6 @@ export default function SignupPage() {
           )}
 
           <form onSubmit={handleSignup} noValidate style={{ display: "flex", flexDirection: "column" }}>
-            {/* Role tabs */}
-            <div style={s.roleTabs}>
-              {(["CLIENT", "AUDITOR"] as const).map((r) => (
-                <button key={r} type="button" onClick={() => setRole(r)}
-                  style={{ ...s.roleTab, ...(role === r ? s.roleTabActive : {}) }}>
-                  <span style={{ color: "#64748b", display: "flex" }}>
-                    {r === "CLIENT" ? <Building2 size={20} /> : <ClipboardCheck size={20} />}
-                  </span>
-                  <span style={s.roleTabContent}>
-                    <span style={s.roleTabTitle}>{r === "CLIENT" ? "Organisation Admin" : "Auditor"}</span>
-                    <span style={s.roleTabDesc}>{r === "CLIENT" ? "Register & manage my organisation" : "Conduct audits"}</span>
-                  </span>
-                  {role === r && <span style={s.roleTabCheck}><Check size={11} strokeWidth={3} /></span>}
-                </button>
-              ))}
-            </div>
 
             {/* Name row */}
             <div style={{ display: "flex", gap: 12 }}>

@@ -151,6 +151,7 @@ export default function ResetPasswordPage() {
               value={currentPassword}
               onChange={setCurrentPassword}
               type="password"
+              variant="stacked"
             />
 
             <div style={{ marginTop: "18px" }}>
@@ -160,6 +161,7 @@ export default function ResetPasswordPage() {
                 value={newPassword}
                 onChange={setNewPassword}
                 type="password"
+                variant="stacked"
               />
             </div>
 
@@ -170,6 +172,7 @@ export default function ResetPasswordPage() {
                 value={confirmPassword}
                 onChange={setConfirmPassword}
                 type="password"
+                variant="stacked"
               />
             </div>
 
