@@ -11,6 +11,7 @@ import {
 import { jwtDecode } from "jwt-decode";
 import { apiClient } from "@/api/client";
 import { tokenStorage } from "@/utils/tokenStorage";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 import {
   User,
   AuthState,
@@ -30,6 +31,12 @@ const IS_DEV = process.env.NEXT_PUBLIC_DEV_AUTH === "true";
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginRequest) => Promise<{ redirectTo: string }>;
   logout: () => void;
+  completeOnboarding: (org: {
+    organisationId: string;
+    organisationName: string;
+    orgType: OrgType;
+  }) => void;
+  completePasswordReset: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -37,6 +44,8 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   login: async () => ({ redirectTo: "/log-in" }),
   logout: () => {},
+  completeOnboarding: () => {},
+  completePasswordReset: () => {},
 });
 
 // ── Helper ─────────────────────────────────────────────────────────
@@ -49,7 +58,7 @@ function buildUserFromJwt(payload: JwtPayload & { orgType?: OrgType; donorScope?
     fullName: payload.fullName ?? payload.email,
     role,
     backendRole: payload.role,
-    organisationId: payload.organisationId,
+    organisationId: normalizeOrganisationId(payload.organisationId),
     orgType: payload.orgType,
     donorScope: payload.donorScope ?? null,
     mustChangePassword: false,
@@ -90,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    initializeAuth();
+    queueMicrotask(() => initializeAuth());
   }, [initializeAuth]);
 
   // ── login ──────────────────────────────────────────────────────
@@ -140,24 +149,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         mustChangePassword: data.mustChangePassword,
       };
 
-      // Fetch the organisation to determine NGO vs PRIVATE routing.
-      if (user.organisationId) {
-        try {
-          const { data: org } = await apiClient.get<OrganisationApiResponse>(
-            `/organisations/${user.organisationId}`
-          );
-          user = { ...user, organisationName: org.name, orgType: org.orgType };
-        } catch {
-          // Non-fatal — falls back to PRIVATE layout
+      // Always fetch available organisations to determine onboarding status and orgType.
+      try {
+        const { data: orgs } = await apiClient.get<OrganisationApiResponse[]>("/organisations");
+      const safeOrgId = normalizeOrganisationId(user.organisationId);
+      const safeOrgs = orgs.filter((org) => normalizeOrganisationId(org.id));
+      const selectedOrg = safeOrgId
+        ? (safeOrgs.find((org) => normalizeOrganisationId(org.id) === safeOrgId) ?? safeOrgs[0])
+        : safeOrgs[0];
+      if (selectedOrg) {
+        const safeSelectedOrgId = normalizeOrganisationId(selectedOrg.id);
+        if (safeSelectedOrgId) {
+          user = {
+            ...user,
+            organisationId: safeSelectedOrgId,
+              orgType: selectedOrg.industry ?? selectedOrg.orgType,
+            };
+          }
         }
+        setState({ status: "authenticated", user });
+
+        if (data.mustChangePassword) return { redirectTo: "/reset-password" };
+        if (user.role === "SYSTEM_ADMIN") return { redirectTo: "/admin/organizations" };
+        if (!selectedOrg) return { redirectTo: "/onboarding" };
+        if (user.orgType === "NGO") return { redirectTo: "/ngo-dashboard" };
+        return { redirectTo: "/dashboard" };
+      } catch {
+        setState({ status: "authenticated", user });
+        if (data.mustChangePassword) return { redirectTo: "/reset-password" };
+        if (user.role === "SYSTEM_ADMIN") return { redirectTo: "/admin/organizations" };
+        return { redirectTo: "/dashboard" };
       }
-
-      setState({ status: "authenticated", user });
-
-      if (data.mustChangePassword)      return { redirectTo: "/reset-password" };
-      if (user.role === "SYSTEM_ADMIN") return { redirectTo: "/admin/organizations" };
-      if (user.orgType === "NGO")       return { redirectTo: "/ngo-dashboard" };   // → (ngo) group
-      return { redirectTo: "/dashboard" };                                          // → (mse) group
     },
     []
   );
@@ -169,6 +191,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: "unauthenticated", user: null });
   }, []);
 
+  const completeOnboarding = useCallback(
+    (org: { organisationId: string; organisationName: string; orgType: OrgType }) => {
+      const safeOrgId = normalizeOrganisationId(org.organisationId);
+      if (!safeOrgId) return;
+      setState((prev) => {
+        if (!prev.user) return prev;
+        return {
+          ...prev,
+          user: {
+            ...prev.user,
+            organisationId: safeOrgId,
+            organisationName: org.organisationName,
+            orgType: org.orgType,
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const completePasswordReset = useCallback(() => {
+    setState((prev) => {
+      if (!prev.user) return prev;
+      return { ...prev, user: { ...prev.user, mustChangePassword: false } };
+    });
+  }, []);
+
   // ── Full-screen loader while initializing ──────────────────────
 
   if (state.status === "loading") {
@@ -176,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, logout, completeOnboarding, completePasswordReset }}>
       {children}
     </AuthContext.Provider>
   );

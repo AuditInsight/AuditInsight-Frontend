@@ -113,10 +113,12 @@ export default function BillingSettingsCard() {
         </div>
       </div>
 
-      {/* payment methods */}
+      {/* payment methods (label hidden until billing integration is enabled) */}
       <div style={s.card}>
         <div style={s.cardHeader}>
-          <h4 style={s.cardTitle}>Payment Methods</h4>
+          <h4 style={{ ...s.cardTitle, display: "none" }} aria-hidden>
+            Payment Methods
+          </h4>
           <button style={s.addCardBtn} onClick={() => { setPendingPlan({ plan: subscription.plan, cycle: subscription.billingCycle }); setPaymentOpen(true); }}>
             + Add Card
           </button>

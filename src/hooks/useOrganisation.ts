@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext.production";
 import { apiClient } from "@/api/client";
 import { OrganisationApiResponse } from "@/types/tenants";
 import { isAxiosError } from "axios";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 interface UseOrganisationReturn {
   org: OrganisationApiResponse | null;
@@ -26,10 +27,12 @@ export function useOrganisation(): UseOrganisationReturn {
     try {
       const { data } = await apiClient.get<OrganisationApiResponse[]>("/organisations");
       const list = Array.isArray(data) ? data : [];
-      // Pick the org matching the user's organisationId, or fall back to first
-      const match = user?.organisationId
-        ? (list.find((o) => o.id === user.organisationId) ?? list[0] ?? null)
-        : (list[0] ?? null);
+      const safeOrgId = normalizeOrganisationId(user?.organisationId);
+      const safeOrgs = list.filter((o) => normalizeOrganisationId(o.id));
+      // Pick the org matching the user's organisationId, or fall back to first valid org.
+      const match = safeOrgId
+        ? (safeOrgs.find((o) => normalizeOrganisationId(o.id) === safeOrgId) ?? safeOrgs[0] ?? null)
+        : (safeOrgs[0] ?? null);
       setOrg(match);
     } catch (err) {
       if (isAxiosError(err)) {

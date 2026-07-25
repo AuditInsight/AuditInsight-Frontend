@@ -111,7 +111,7 @@ export default function InviteUserModal({ open, onClose, onInvite }: Props) {
             <div style={s.fieldGroup}>
               <label style={s.label}>Role <span style={s.req}>*</span></label>
               <div style={s.roleGrid}>
-                {ROLES.map(r => (
+                {roles.map(r => (
                   <button
                     key={r.value}
                     type="button"

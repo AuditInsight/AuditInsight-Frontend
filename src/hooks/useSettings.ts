@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { OrganisationMemberResponse, getOrganisationMembers, inviteMember as apiInviteMember, removeMember as apiRemoveMember, BackendRole } from "@/utils/api";
 import { useOrganisation } from "./useOrganisation";
 import { useAuth } from "@/context/AuthContext.production";
+import { normalizeOrganisationId } from "@/utils/organisationId";
 
 export function useSettings() {
   const { user } = useAuth();
@@ -12,10 +13,15 @@ export function useSettings() {
   const [membersLoading, setMembersLoading] = useState(true);
   const [error,          setError]          = useState<string | null>(null);
 
-  const orgId = user?.organisationId;
+  const orgId = normalizeOrganisationId(user?.organisationId);
 
   const loadMembers = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      setMembers([]);
+      setMembersLoading(false);
+      setError(null);
+      return;
+    }
     setMembersLoading(true);
     try {
       const { data } = await getOrganisationMembers(orgId);
