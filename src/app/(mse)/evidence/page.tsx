@@ -82,7 +82,7 @@ export default function EvidencePage() {
 
     return Object.entries(folderMap)
       .map(([title, items]) => ({ title, items: Array.from(items).sort((a, b) => a.localeCompare(b)) }))
-      .sort((a, b) => a.title.localeCompare(b));
+      .sort((a, b) => a.title.localeCompare(b.title));
   }, [documents]);
 
   const totalPages   = Math.ceil(filteredData.length / pageSize);

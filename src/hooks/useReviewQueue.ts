@@ -11,6 +11,10 @@ import {
 import { useAuth } from "@/context/AuthContext.production";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 
+function isValidOrgId(orgId: string | null | undefined): orgId is string {
+  return Boolean(orgId && orgId.trim().length > 0);
+}
+
 function mapToReviewItem(r: {
   id: string;
   transactionId: string;

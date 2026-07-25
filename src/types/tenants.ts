@@ -14,6 +14,7 @@ export interface CreateOrganisationRequest {
 
 export interface OrganisationApiResponse {
   id: string;
+  organisationId?: string;      // some API variants return this field instead of id
   name: string;
   industry: OrgType;            // PRIVATE | NGO
   orgType: OrgType;             // alias — some response shapes include this

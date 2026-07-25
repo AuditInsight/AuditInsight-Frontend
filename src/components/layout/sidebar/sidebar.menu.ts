@@ -21,10 +21,11 @@ const ADMIN_NAV: NavItem[] = [
 ];
 
 export const NAV_BY_ROLE: Record<FrontendRole, NavItem[]> = {
-  ACCOUNTANT:   CORE_NAV,
-  ORG_ADMIN:    CORE_NAV,
-  AUDITOR:      CORE_NAV,
-  SYSTEM_ADMIN: ADMIN_NAV,
+  ACCOUNTANT:            CORE_NAV,
+  ORG_ADMIN:            CORE_NAV,
+  AUDITOR:              CORE_NAV,
+  SYSTEM_ADMIN:         ADMIN_NAV,
+  DONOR_REPRESENTATIVE: CORE_NAV,
 };
 
 

@@ -78,6 +78,7 @@ export interface NGOFlag {
   id: string;
   transactionId: string;
   projectName: string;
+  donor?: string;
   category: NGOFlagCategory;
   severity: FlagSeverity;
   notes: string;
@@ -93,6 +94,7 @@ export interface NGONotification {
   flagId: string;
   transactionId: string;
   projectName: string;
+  donor?: string;
   message: string;
   auditorName: string;
   severity: FlagSeverity;

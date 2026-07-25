@@ -81,13 +81,13 @@ function reviewItemToFlag(item: ReviewItem): {
 } {
   return {
     id:            item.id,
-    transactionId: item.transactionId,
+    transactionId: String(item.transactionId),
     projectName:   "",
     category:      item.type,
     severity:      item.risk === "High" ? "HIGH" : item.risk === "Low" ? "LOW" : "MEDIUM",
-    notes:         item.description,
-    flaggedBy:     item.flaggedBy,
-    flaggedAt:     item.createdAt,
+    notes:         item.description ?? "",
+    flaggedBy:     item.flaggedBy ?? "",
+    flaggedAt:     item.createdAt ?? "",
     status:        item.status === "Resolved" ? "RESOLVED" : "OPEN",
   };
 }

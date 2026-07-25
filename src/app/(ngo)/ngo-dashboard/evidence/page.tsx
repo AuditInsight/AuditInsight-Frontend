@@ -7,6 +7,7 @@ import { EvidenceFilters, EvidenceTab } from "@/components/mse/evidence/Evidence
 import { EvidenceTable } from "@/components/mse/evidence/EvidenceTable";
 import { EvidencePagination } from "@/components/mse/evidence/EvidencePagination";
 import UploadEvidenceModal from "@/components/ngo/UploadEvidenceModal";
+import { EvidenceUploadModal } from "@/components/mse/evidence/EvidenceUploadModal";
 import { EvidenceDetailsModal } from "@/components/mse/evidence/EvidenceDetailsModal";
 import { ConfirmDeleteEvidenceModal } from "@/components/mse/evidence/ConfirmDeleteEvidenceModal";
 import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
@@ -106,7 +107,7 @@ function EvidenceContent() {
 
     return Object.entries(folderMap)
       .map(([title, items]) => ({ title, items: Array.from(items).sort((a, b) => a.localeCompare(b)) }))
-      .sort((a, b) => a.title.localeCompare(b));
+      .sort((a, b) => a.title.localeCompare(b.title));
   }, [documents]);
 
   const totalPages    = Math.ceil(filteredData.length / pageSize);

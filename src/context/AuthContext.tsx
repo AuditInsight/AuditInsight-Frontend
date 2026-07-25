@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         "/auth/refresh",
         { refreshToken }
       );
-      tokenStorage.setTokens(data.token, data.refreshToken);
+      tokenStorage.setTokens(data.token);
       const payload = jwtDecode<JwtPayload>(data.token);
       setState({ status: "authenticated", user: buildUser(payload) });
     } catch {
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...(inviteToken ? { inviteToken } : {}),
       };
       const { data } = await apiClient.post<LoginApiResponse>("/auth/login", req);
-      tokenStorage.setTokens(data.token, data.refreshToken);
+      tokenStorage.setTokens(data.token);
       const payload = jwtDecode<JwtPayload>(data.token);
       const newUser = buildUser(payload, { mustChangePassword: data.mustChangePassword });
       setState({ status: "authenticated", user: newUser });

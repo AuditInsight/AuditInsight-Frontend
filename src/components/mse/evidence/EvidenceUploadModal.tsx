@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, type Dispatch, type SetStateAction } from "react";
 import { useAuth } from "@/context/AuthContext.production";
 import { Evidence } from "@/types/evidence.types";
 import { Transaction } from "@/types/transaction.types";
@@ -8,12 +8,13 @@ import { uploadEvidence, updateEvidence } from "@/utils/api";
 import { X, Paperclip, AlertCircle, CheckCircle2, Upload } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { useOrganisation } from "@/hooks/useOrganisation";
+import type { MSEEvidenceCategory, MSEEvidenceSubcategory } from "@/types/mse";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSave: (evidence: Evidence) => void;
-  sections: { title: string; items: string[] }[];
+  sections: readonly { title: string; items: readonly string[] }[];
   transactions: Transaction[];
   mode?: "add" | "edit";
   evidence?: Evidence | null;
@@ -102,8 +103,8 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transac
     if (isEdit && evidence) {
       queueMicrotask(() => {
         setName(evidence.documentName ?? "");
-        setCategory(evidence.folder ?? "");
-        setSubCategory(evidence.subfolder ?? "");
+        setCategory((evidence.folder as MSEEvidenceCategory | "") ?? "");
+        setSubCategory((evidence.subfolder as MSEEvidenceSubcategory | "") ?? "");
         setNotes(evidence.notes ?? "");
         setTransactionId(evidence.transactionId ? String(evidence.transactionId) : "");
         setAmount(evidence.amount != null ? String(evidence.amount) : "");
@@ -154,8 +155,8 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transac
     setErrors(e2);
   };
 
-  const handleField = (field: string, value: string, setter: (v: string) => void) => {
-    setter(value);
+  const handleField = <T extends string>(field: string, value: string, setter: Dispatch<SetStateAction<T | "">>) => {
+    setter(value as T | "");
     touch(field);
     const current = {
       name: field === "name" ? value : name,
