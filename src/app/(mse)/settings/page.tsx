@@ -1,4 +1,5 @@
 "use client";
+import SEO from "@/components/SEO";
 
 import { useState } from "react";
 
@@ -34,6 +35,10 @@ import { useSettings } from "@/hooks/useSettings";
 import { usePermissions } from "@/security/access-control";
 
 export default function SettingsPage() {
+  // Page‑level SEO
+  const seoTitle = "Settings • MSE Dashboard";
+  const seoDesc = "Manage organisation settings, users, permissions and compliance controls for your private company.";
+
   const { org, orgLoading, members, membersLoading, inviteMember } = useSettings();
   const { canManageOrganisation, canInviteMembers } = usePermissions();
 
@@ -46,6 +51,7 @@ export default function SettingsPage() {
   if (!canManageOrganisation) {
     return (
       <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <SEO title={seoTitle} description={seoDesc} canonicalUrl="https://your-domain.com/mse/settings" />
         <div style={{ textAlign: "center", color: "#6b7280" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
           <p style={{ fontWeight: 600, fontSize: 16, margin: 0 }}>Access Restricted</p>
@@ -62,7 +68,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div style={styles.page}>
+    <>
+      <SEO title={seoTitle} description={seoDesc} canonicalUrl="https://your-domain.com/mse/settings" />
+      <div style={styles.page}>
       <div style={styles.toolbarWrap}>
         <PageToolbar title="Settings" filters={["System Settings", "Audit Controls"]} primaryActionLabel={dirty ? "Save Changes" : "Saved"} />
         <div style={styles.toolbarActions}>
@@ -145,6 +153,7 @@ export default function SettingsPage() {
         onInvite={async (email, role) => { await inviteMember(email, role); setInviteOpen(false); }}
       />
     </div>
+    </>
   );
 }
 

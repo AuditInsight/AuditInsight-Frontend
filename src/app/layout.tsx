@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext.production";
+import SEO from "@/components/SEO";
 import { Colors } from "@/styles/colors";
 import { seedNotificationsIfEmpty } from "@/mock/notifications.mock";
 
@@ -10,6 +11,14 @@ if (typeof window !== "undefined") {
 export const metadata = {
   title: "AuditInsight",
   description: "Enterprise audit & compliance platform",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
+  openGraph: {
+    images: ["/logo.svg"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           layout shell — no global PageLayout wrapper needed here.
         */}
         <AuthProvider>
+          <SEO title="AuditInsight" description="Enterprise audit & compliance platform" />
           {children}
         </AuthProvider>
       </body>

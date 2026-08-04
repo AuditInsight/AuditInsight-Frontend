@@ -64,7 +64,7 @@ export default function Navbar() {
 
       <header className={`nb-bar${scrolled ? " scrolled" : ""}`}>
         <div style={s.logo}>
-          <div style={s.logoMark}><Shield size={16} color="#fff" strokeWidth={2.5} /></div>
+          <img src="/logo.svg" alt="AuditInsight Logo" style={{ width: 32, height: 32, objectFit: "contain" }} />
           <span style={s.logoText}>AuditInsight</span>
         </div>
 
