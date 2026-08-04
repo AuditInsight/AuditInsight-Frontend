@@ -6,6 +6,10 @@ import { useToast } from "@/components/ngo/NGOToast";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
+import { useSettings } from "@/hooks/useSettings";
+import InviteUserModal from "@/components/mse/settings/users/InviteUserModal"; // Re‑use MSE modal (dynamic role labels)
+import NGOUsersTable from "@/components/ngo/settings/users/NGOUsersTable";
+import SEO from "@/components/seo/SEO";
 import { theme } from "@/styles/theme";
 import { User, Lock, Bell, Building2 } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
@@ -63,11 +67,13 @@ const TAB_ICONS: Record<Tab, React.ReactNode> = {
 
 function SettingsContent() {
   const { user, can } = useRBAC();
+  const { members, inviteMember } = useSettings();
+  const [inviteOpen, setInviteOpen] = useState(false);
   const toast = useToast();
   const isDonor = user.role === "DONOR_REPRESENTATIVE";
   const canEditProfile = can("settings:profile:edit");
 
-  const visibleTabs: Tab[] = isDonor ? ["Profile", "Security"] : ["Organisation", "Profile", "Notifications", "Security"];
+  const visibleTabs: Tab[] = isDonor ? ["Profile", "Security"] : ["Organisation", "Profile", "Notifications", "Security", "Users"];
   const [active, setActive] = useState<Tab>(visibleTabs[0]);
 
   const handleSave = () => {
@@ -76,6 +82,8 @@ function SettingsContent() {
   };
 
   return (
+    <>
+    <SEO title="NGO Settings" description="Manage organisation profile, notifications and team members for your NGO." />
     <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xl }}>
       <NGOPageHeader title="Settings" subtitle="Manage your organisation profile, preferences, and security." />
       <style>{`
@@ -167,6 +175,32 @@ function SettingsContent() {
               <Toggle label="Two-factor authentication"     sub="Require OTP on every login" />
               <Toggle label="Session timeout after 30 min" sub="Auto sign-out on inactivity" defaultChecked />
             </div>
+          </Section>
+        )}
+        {active === "Users" && (
+          <Section title="Team Members">
+            <PermissionGate permission="settings:org:edit" fallback={null}>
+              <button
+                onClick={() => setInviteOpen(true)}
+                style={{
+                  padding: "10px 20px",
+                  background: theme.colors.primary,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  marginBottom: 12,
+                }}
+              >
+                Invite Member
+              </button>
+            </PermissionGate>
+            <NGOUsersTable users={members} />
+            <InviteUserModal
+              open={inviteOpen}
+              onClose={() => setInviteOpen(false)}
+              onInvite={inviteMember}
+            />
           </Section>
         )}
 

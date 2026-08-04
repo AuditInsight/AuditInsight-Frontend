@@ -1,4 +1,5 @@
 "use client";
+import SEO from "@/components/SEO";
 
 import { useState } from "react";
 
@@ -34,6 +35,13 @@ import { useSettings } from "@/hooks/useSettings";
 import { usePermissions } from "@/security/access-control";
 
 export default function SettingsPage() {
+  // Page‑level SEO
+  const seoTitle = "Settings • MSE Dashboard";
+  const seoDesc = "Manage organisation settings, users, permissions and compliance controls for your private company.";
+  // Render SEO component before any UI markup
+  return (
+    <>
+      <SEO title={seoTitle} description={seoDesc} canonicalUrl="https://your-domain.com/mse/settings" />
   const { org, orgLoading, members, membersLoading, inviteMember } = useSettings();
   const { canManageOrganisation, canInviteMembers } = usePermissions();
 
