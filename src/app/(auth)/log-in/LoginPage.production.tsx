@@ -241,7 +241,7 @@ function LoginForm() {
       {/* LEFT PANEL */}
       <div style={s.left} className="auth-left">
         <div style={s.brandBlock}>
-          <div style={s.logoMark}><Shield size={22} strokeWidth={2} /></div>
+          <img src="/logo.svg" alt="AuditInsight Logo" style={{ width: 48, height: 48, objectFit: "contain", marginBottom: 22 }} />
           <h1 style={s.brandName}>AuditInsight</h1>
           <p style={s.tagline}>
             Enterprise-grade auditing and compliance — built for modern finance teams.
