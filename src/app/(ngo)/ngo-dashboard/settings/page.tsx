@@ -11,7 +11,7 @@ import InviteUserModal from "@/components/mse/settings/users/InviteUserModal"; /
 import NGOUsersTable from "@/components/ngo/settings/users/NGOUsersTable";
 import SEO from "@/components/seo/SEO";
 import { theme } from "@/styles/theme";
-import { User, Lock, Bell, Building2 } from "lucide-react";
+import { User, Lock, Bell, Building2, Users } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 
 // ── Primitives ─────────────────────────────────────────────────────────────────
@@ -56,13 +56,14 @@ function Toggle({ label, sub, defaultChecked, disabled = false }: { label: strin
 
 // ── Settings ───────────────────────────────────────────────────────────────────
 
-type Tab = "Organisation" | "Profile" | "Notifications" | "Security";
+type Tab = "Organisation" | "Profile" | "Notifications" | "Security" | "Users";
 
 const TAB_ICONS: Record<Tab, React.ReactNode> = {
   Organisation:  <Building2 size={15} />,
   Profile:       <User size={15} />,
   Notifications: <Bell size={15} />,
   Security:      <Lock size={15} />,
+  Users:         <Users size={15} />,
 };
 
 function SettingsContent() {
@@ -212,8 +213,9 @@ function SettingsContent() {
           </div>
         )}
       </div>
-      </div>
     </div>
+    </div>
+    </>
   );
 }
 
