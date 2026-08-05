@@ -40,8 +40,8 @@ export interface NGOTransaction {
   id: string;
   organisationId: string;
   projectName: string;
-  donor: string;
   budgetLine: string;
+  donor?: string;
   description: string;
   counterparty: string;
   date: string;
@@ -82,8 +82,8 @@ export interface NGOFlag {
   category: NGOFlagCategory;
   severity: FlagSeverity;
   notes: string;
-  flaggedBy: string;       // auditor name
-  flaggedAt: string;       // ISO date
+  flaggedBy: string;
+  flaggedAt: string;
   resolvedAt?: string;
   status: "OPEN" | "RESOLVED" | "DISMISSED";
 }

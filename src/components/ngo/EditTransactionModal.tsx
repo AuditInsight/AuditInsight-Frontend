@@ -36,7 +36,7 @@ export default function EditTransactionModal({ open, transaction, onClose, onSub
   useEffect(() => {
     if (!transaction) return;
     setProjectName(transaction.projectName);
-    setDonor(transaction.donor);
+    setDonor(transaction.donor ?? "");
     setBudgetLine(transaction.budgetLine);
     setDescription(transaction.description);
     setCounterparty(transaction.counterparty);

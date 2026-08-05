@@ -4,8 +4,8 @@ import { useState } from "react";
 import { X, Plus, AlertCircle } from "lucide-react";
 import { isAxiosError } from "axios";
 import { useAuth } from "@/context/AuthContext.production";
-import { useTransactions } from "@/hooks/useTransactions";
-import type { NGOTransaction, DonorName } from "@/types/ngo";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
+import type { NGOTransaction } from "@/types/ngo";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 
 interface Props {
@@ -16,16 +16,15 @@ interface Props {
   organisationId?: string;
 }
 
-const DONORS: DonorName[] = ["USAID", "UNICEF", "World Bank", "EU", "UNDP", "GIZ", "DFID", "Gates Foundation", "One Acre Fund", "Red Cross"];
 const BUDGET_LINES = ["Medical Supplies", "Training & Workshops", "Scholarships", "Staff Costs", "Infrastructure", "Procurement", "Beneficiary Support", "Monitoring & Evaluation", "Grant Receipt", "Administration", "Other"];
 
 export default function AddTransactionModal({ open, onClose, onSubmit, createdBy, organisationId }: Props) {
   const { user } = useAuth();
-  const { addTransaction } = useTransactions();
+  const { addTransaction } = useNGOTransactions();
 
   const [projectName,   setProjectName]   = useState("");
-  const [donor,         setDonor]         = useState<DonorName | "">("");
   const [budgetLine,    setBudgetLine]    = useState("");
+  const [donor,         setDonor]         = useState("");
   const [description,   setDescription]   = useState("");
   const [counterparty,  setCounterparty]  = useState("");
   const [date,          setDate]          = useState(new Date().toISOString().slice(0, 10));
@@ -38,7 +37,7 @@ export default function AddTransactionModal({ open, onClose, onSubmit, createdBy
   if (!open) return null;
 
   const reset = () => {
-    setProjectName(""); setDonor(""); setBudgetLine(""); setDescription("");
+    setProjectName(""); setBudgetLine(""); setDonor(""); setDescription("");
     setCounterparty(""); setDate(new Date().toISOString().slice(0, 10));
     setAmount(""); setPaymentMethod("BANK"); setType("EXPENSE"); setError("");
   };
@@ -47,8 +46,8 @@ export default function AddTransactionModal({ open, onClose, onSubmit, createdBy
 
   const handleSubmit = async () => {
     if (!projectName.trim())  { setError("Project name is required."); return; }
-    if (!donor)               { setError("Please select a donor."); return; }
     if (!budgetLine)          { setError("Please select a budget line."); return; }
+    if (!donor.trim())        { setError("Donor is required."); return; }
     if (!description.trim())  { setError("Description is required."); return; }
     if (!counterparty.trim()) { setError("Counterparty is required."); return; }
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) { setError("Enter a valid amount."); return; }
@@ -61,25 +60,47 @@ export default function AddTransactionModal({ open, onClose, onSubmit, createdBy
         throw new Error("Organisation is not selected.");
       }
 
-      await addTransaction({
-        name:          projectName.trim(),
-        counterparty:  counterparty.trim(),
-        date,
-        amount:        Number(amount),
-        type,
-        paymentMethod,
-        donor:         donor as DonorName,
-        budgetLine,
-        projectName:   projectName.trim(),
-      });
+      let lastError: unknown;
+      const maxAttempts = 12;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          await addTransaction({
+            organisationId: orgId,
+            projectName:    projectName.trim(),
+            budgetLine,
+            donor:          donor.trim(),
+            description:    description.trim(),
+            counterparty:   counterparty.trim(),
+            date,
+            amount:         Number(amount),
+            currency:       "RWF",
+            paymentMethod,
+            type,
+          });
+          lastError = null;
+          break;
+        } catch (err) {
+          lastError = err;
+          const errData = isAxiosError(err) ? (err.response?.data?.message || err.response?.data?.error || JSON.stringify(err.response?.data || "")) : String(err);
+          const isDuplicateKey = errData.toLowerCase().includes("duplicate key") || errData.toLowerCase().includes("already exists") || (isAxiosError(err) && err.response?.status === 409);
+
+          if (isDuplicateKey && attempt < maxAttempts - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 250 + Math.random() * 250));
+            continue;
+          }
+          throw err;
+        }
+      }
+      if (lastError) throw lastError;
 
       // Build NGOTransaction for the parent callback (UI optimistic update)
       const newTxn: NGOTransaction = {
         id:             `temp-${Date.now()}`,
         organisationId: orgId,
         projectName:    projectName.trim(),
-        donor:          donor as DonorName,
         budgetLine,
+        donor:          donor.trim(),
         description:    description.trim(),
         counterparty:   counterparty.trim(),
         date,
@@ -98,7 +119,12 @@ export default function AddTransactionModal({ open, onClose, onSubmit, createdBy
       onClose();
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Failed to save transaction. Please try again.");
+        const msg = err.response?.data?.message ?? err.response?.data?.error ?? "";
+        if (msg.toLowerCase().includes("duplicate key") || msg.toLowerCase().includes("already exists") || err.response?.status === 409) {
+          setError("Temporary server conflict. Please click 'Save Transaction' again to complete.");
+        } else {
+          setError(msg || "Failed to save transaction. Please try again.");
+        }
       } else {
         setError("Unable to reach the server. Check your connection.");
       }
@@ -124,18 +150,9 @@ export default function AddTransactionModal({ open, onClose, onSubmit, createdBy
             <div style={s.errBanner}><AlertCircle size={13} style={{ flexShrink: 0 }} /> {error}</div>
           )}
 
-          <div style={s.row}>
-            <div style={s.field}>
-              <label style={s.label}>Project Name <span style={s.req}>*</span></label>
-              <input style={s.input} placeholder="e.g. Community Health Outreach" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
-            </div>
-            <div style={s.field}>
-              <label style={s.label}>Donor <span style={s.req}>*</span></label>
-              <select style={s.select} value={donor} onChange={(e) => setDonor(e.target.value as DonorName)}>
-                <option value="">Select donor</option>
-                {DONORS.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </div>
+          <div style={s.field}>
+            <label style={s.label}>Project Name <span style={s.req}>*</span></label>
+            <input style={s.input} placeholder="e.g. Community Health Outreach" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
           </div>
 
           <div style={s.row}>
@@ -146,6 +163,13 @@ export default function AddTransactionModal({ open, onClose, onSubmit, createdBy
                 {BUDGET_LINES.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
+            <div style={s.field}>
+              <label style={s.label}>Donor <span style={s.req}>*</span></label>
+              <input style={s.input} placeholder="Donor organization or name" value={donor} onChange={(e) => setDonor(e.target.value)} />
+            </div>
+          </div>
+
+          <div style={s.row}>
             <div style={s.field}>
               <label style={s.label}>Type <span style={s.req}>*</span></label>
               <select style={s.select} value={type} onChange={(e) => setType(e.target.value as "EXPENSE" | "INCOME")}>

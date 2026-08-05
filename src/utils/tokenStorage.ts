@@ -2,11 +2,10 @@
  * tokenStorage.ts — Secure token management singleton.
  *
  * The backend issues only an access token (no refresh token).
- * We persist the access token in sessionStorage so the user remains
- * logged in across page refreshes in the same browser tab.
+ * We persist the access token in localStorage so the user remains
+ * logged in across page refreshes, tab restarts, and browser restarts.
  *
- * This is still scoped to the browser session and avoids long-lived
- * persistence across browser restarts.
+ * The token is automatically cleared on explicit logout, or when it expires.
  */
 
 const ACCESS_TOKEN_KEY = "auditinsight.accessToken";
@@ -15,14 +14,14 @@ class TokenStorage {
   private accessToken: string | null = null;
 
   private isBrowser(): boolean {
-    return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
+    return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
   }
 
   setTokens(accessToken: string): void {
     this.accessToken = accessToken;
     if (this.isBrowser()) {
       try {
-        window.sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+        window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
       } catch {
         // Ignore storage exceptions in privacy-restricted environments.
       }
@@ -36,7 +35,7 @@ class TokenStorage {
 
     if (this.isBrowser()) {
       try {
-        const stored = window.sessionStorage.getItem(ACCESS_TOKEN_KEY);
+        const stored = window.localStorage.getItem(ACCESS_TOKEN_KEY);
         if (stored) {
           this.accessToken = stored;
           return stored;
@@ -62,7 +61,7 @@ class TokenStorage {
     this.accessToken = null;
     if (this.isBrowser()) {
       try {
-        window.sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+        window.localStorage.removeItem(ACCESS_TOKEN_KEY);
       } catch {
         // Ignore storage exceptions.
       }

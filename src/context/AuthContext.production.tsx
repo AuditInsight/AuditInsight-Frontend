@@ -76,9 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /**
    * initializeAuth — runs once on mount.
-   * Backend has no refresh token endpoint, so we check if an in-memory
-   * access token exists (survives HMR in dev, lost on hard refresh).
-   * On hard refresh the user will need to log in again.
+   * Backend has no refresh token endpoint, so we check if a stored
+   * access token exists in localStorage. If valid (not expired), user
+   * is automatically re-authenticated. This persists across browser
+   * restarts until the token expires or user explicitly logs out.
    */
   const initializeAuth = useCallback(() => {
     if (tokenStorage.hasSession()) {

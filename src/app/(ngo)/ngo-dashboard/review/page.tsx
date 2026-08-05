@@ -8,8 +8,9 @@ import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useNGOToast } from "@/components/ngo/NGOPageLayout";
 import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
-import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
-import type { NGOTransaction, NGOFlag, NGOFlagCategory, FlagSeverity } from "@/types/ngo";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
+import { useNGOAuditFlags } from "@/hooks/useNGOAuditFlags";
+import type { NGOTransaction, NGOFlagCategory, FlagSeverity } from "@/types/ngo";
 import { theme } from "@/styles/theme";
 import { Flag, CheckCircle2, Clock, AlertTriangle, ShieldCheck } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
@@ -27,30 +28,32 @@ function ReviewQueueContent() {
   const { user, can, canSee } = useRBAC();
   const toast = useNGOToast();
 
-  const [transactions, setTransactions] = useState<NGOTransaction[]>(NGO_TRANSACTIONS);
-  const [flags, setFlags]               = useState<NGOFlag[]>(NGO_FLAGS);
-  const [flagTarget, setFlagTarget]     = useState<NGOTransaction | null>(null);
-  const [filter, setFilter]             = useState<"ALL" | "OPEN" | "RESOLVED">("ALL");
+  const { transactions } = useNGOTransactions();
+  const { flags, flagIssue, resolveFlag: resolveViaAPI } = useNGOAuditFlags();
+  const [flagTarget, setFlagTarget] = useState<NGOTransaction | null>(null);
+  const [filter, setFilter] = useState<"ALL" | "OPEN" | "RESOLVED">("ALL");
 
   const visibleFlags  = flags.filter((f) => filter === "ALL" || f.status === filter);
   const openCount     = flags.filter((f) => f.status === "OPEN").length;
   const resolvedCount = flags.filter((f) => f.status === "RESOLVED").length;
 
-  const handleFlagSubmit = (flag: { transactionId: string; category: NGOFlagCategory; severity: FlagSeverity; notes: string }) => {
-    setFlags((prev) => [...prev, {
-      id: `FLAG-${Date.now()}`, transactionId: flag.transactionId,
-      projectName: flagTarget?.projectName ?? "", donor: flagTarget?.donor ?? "USAID",
-      category: flag.category, severity: flag.severity, notes: flag.notes,
-      flaggedBy: user.fullName, flaggedAt: new Date().toISOString(), status: "OPEN",
-    }]);
-    setTransactions((prev) => prev.map((t) => t.id === flag.transactionId ? { ...t, status: "FLAGGED" as const } : t));
-    setFlagTarget(null);
-    toast.success("Flag raised", `Transaction ${flag.transactionId} has been flagged.`);
+  const handleFlagSubmit = async (flag: { transactionId: string; category: NGOFlagCategory; severity: FlagSeverity; notes: string }) => {
+    try {
+      await flagIssue(flag);
+      setFlagTarget(null);
+      toast.success("Flag raised", `Transaction ${flag.transactionId} has been flagged.`);
+    } catch (err) {
+      toast.error("Flag failed", err instanceof Error ? err.message : "Could not flag transaction");
+    }
   };
 
-  const resolveFlag = (id: string) => {
-    setFlags((prev) => prev.map((f) => f.id === id ? { ...f, status: "RESOLVED" as const, resolvedAt: new Date().toISOString() } : f));
-    toast.success("Flag resolved", "The issue has been marked as resolved.");
+  const handleResolveFlag = async (id: string) => {
+    try {
+      await resolveViaAPI(id, { status: "RESOLVED" });
+      toast.success("Flag resolved", "The issue has been marked as resolved.");
+    } catch (err) {
+      toast.error("Resolution failed", err instanceof Error ? err.message : "Could not resolve flag");
+    }
   };
 
   return (
@@ -106,7 +109,6 @@ function ReviewQueueContent() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
                       <span style={{ padding: "2px 10px", borderRadius: 999, fontSize: theme.typography.xs, fontWeight: 700, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>{flag.severity}</span>
-                      <span style={{ padding: "2px 10px", borderRadius: 999, fontSize: theme.typography.xs, fontWeight: 600, background: theme.colors.primarySoft, color: theme.colors.primary, border: `1px solid ${theme.colors.border}` }}>{flag.donor}</span>
                       <span style={{ fontSize: theme.typography.xs, color: theme.colors.textMuted }}>{new Date(flag.flaggedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                       {flag.status === "RESOLVED" && (
                         <span style={{ padding: "2px 10px", borderRadius: 999, fontSize: theme.typography.xs, fontWeight: 700, color: theme.colors.success, background: theme.colors.successBg, border: `1px solid #bbf7d0` }}>Resolved</span>
@@ -117,7 +119,7 @@ function ReviewQueueContent() {
                     <p style={{ margin: 0, fontSize: theme.typography.sm, color: theme.colors.textSecondary, lineHeight: theme.typography.lineHeight.relaxed }}>{flag.notes}</p>
                   </div>
                   {flag.status === "OPEN" && can("flag:resolve") && (
-                    <button onClick={() => resolveFlag(flag.id)} style={{ flexShrink: 0, padding: "7px 16px", borderRadius: theme.radius.md, border: "none", background: theme.colors.success, color: "#fff", fontSize: theme.typography.sm, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                    <button onClick={() => handleResolveFlag(flag.id)} style={{ flexShrink: 0, padding: "7px 16px", borderRadius: theme.radius.md, border: "none", background: theme.colors.success, color: "#fff", fontSize: theme.typography.sm, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                       Mark Resolved
                     </button>
                   )}
@@ -141,7 +143,7 @@ function ReviewQueueContent() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: theme.typography.sm }}>
             <thead>
               <tr style={{ background: theme.colors.appBackground }}>
-                {["ID", "Project", "Donor", "Amount", "Date", "Issue", "Action"].map((h) => (
+                {["ID", "Project", "Amount", "Date", "Issue", "Action"].map((h) => (
                   <th key={h} style={{ padding: "11px 16px", textAlign: "left", fontSize: theme.typography.xs, fontWeight: 700, color: theme.colors.textMuted, letterSpacing: "0.05em", textTransform: "uppercase", borderBottom: `1px solid ${theme.colors.border}`, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -151,7 +153,6 @@ function ReviewQueueContent() {
                 <tr key={txn.id} style={{ borderBottom: `1px solid ${theme.colors.divider}` }}>
                   <td style={{ padding: "13px 16px" }}><span style={{ fontFamily: "monospace", fontSize: theme.typography.xs, fontWeight: 700, color: theme.colors.textMuted }}>{txn.id}</span></td>
                   <td style={{ padding: "13px 16px", fontWeight: 600, color: theme.colors.textPrimary }}>{txn.projectName}</td>
-                  <td style={{ padding: "13px 16px" }}><span style={{ padding: "3px 10px", borderRadius: 999, fontSize: theme.typography.xs, fontWeight: 700, background: theme.colors.primarySoft, color: theme.colors.primary, border: `1px solid ${theme.colors.border}` }}>{txn.donor}</span></td>
                   <td style={{ padding: "13px 16px", fontWeight: 700, color: theme.colors.textPrimary, whiteSpace: "nowrap" }}>RWF {txn.amount.toLocaleString()}</td>
                   <td style={{ padding: "13px 16px", fontSize: theme.typography.xs, color: theme.colors.textSecondary, whiteSpace: "nowrap" }}>{new Date(txn.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</td>
                   <td style={{ padding: "13px 16px" }}><span style={{ fontSize: theme.typography.sm, fontWeight: 600, color: txn.status === "FLAGGED" ? theme.colors.danger : theme.colors.warning }}>{txn.status === "FLAGGED" ? "⚠ Flagged" : "No evidence"}</span></td>

@@ -5,8 +5,9 @@ import NGOPageLayout from "@/components/ngo/NGOPageLayout";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import { useRBAC } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
-import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
-import type { NGOFlag } from "@/types/ngo";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
+import { useNGOAuditFlags } from "@/hooks/useNGOAuditFlags";
+import { useNGOToast } from "@/components/ngo/NGOPageLayout";
 import { theme } from "@/styles/theme";
 import { ShieldCheck, AlertTriangle, CheckCircle2, Clock, FileText, Lock } from "lucide-react";
 
@@ -44,10 +45,13 @@ const scoreColor = readiness >= 80 ? theme.colors.success : readiness >= 60 ? th
 
 function AuditReadinessContent() {
   const { user, can } = useRBAC();
-  const [flags, setFlags] = useState<NGOFlag[]>(NGO_FLAGS);
+  const toast = useNGOToast();
+
+  const { transactions } = useNGOTransactions();
+  const { flags, resolveFlag: resolveViaAPI } = useNGOAuditFlags();
 
   const openFlags = flags.filter((f) => f.status === "OPEN");
-  const evidenced = NGO_TRANSACTIONS.filter((t) => t.evidenceCount > 0).length;
+  const evidenced = transactions.filter((t) => t.evidenceCount > 0).length;
   const hasAccess = user.role === "AUDITOR" || user.role === "ORG_ADMIN";
 
   if (!hasAccess) {
@@ -67,7 +71,14 @@ function AuditReadinessContent() {
     );
   }
 
-  const resolveFlag = (id: string) => setFlags((prev) => prev.map((f) => f.id === id ? { ...f, status: "RESOLVED" as const, resolvedAt: new Date().toISOString() } : f));
+  const handleResolveFlag = async (id: string) => {
+    try {
+      await resolveViaAPI(id, { status: "RESOLVED" });
+      toast.success("Flag resolved", "The issue has been marked as resolved.");
+    } catch (err) {
+      toast.error("Resolution failed", err instanceof Error ? err.message : "Could not resolve flag");
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xl }}>
@@ -100,7 +111,7 @@ function AuditReadinessContent() {
         <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}>
           {[
             { label: "Open Audit Flags",       value: openFlags.length,                          color: theme.colors.danger,  icon: <AlertTriangle size={15} /> },
-            { label: "Transactions Evidenced", value: `${evidenced}/${NGO_TRANSACTIONS.length}`, color: theme.colors.primary, icon: <FileText size={15} />      },
+            { label: "Transactions Evidenced", value: `${evidenced}/${transactions.length}`,     color: theme.colors.primary, icon: <FileText size={15} />      },
             { label: "Checklist Progress",     value: `${doneItems}/${totalItems}`,              color: theme.colors.success, icon: <CheckCircle2 size={15} />   },
             { label: "Days to Next Audit",     value: "42",                                      color: theme.colors.warning, icon: <Clock size={15} />           },
           ].map(({ label, value, color, icon }) => (
@@ -159,11 +170,11 @@ function AuditReadinessContent() {
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: "0 0 3px", fontSize: theme.typography.sm, fontWeight: 600, color: theme.colors.textPrimary }}>{flag.category}</p>
-                  <p style={{ margin: "0 0 6px", fontSize: theme.typography.xs, color: theme.colors.textMuted }}>{flag.transactionId} · {flag.projectName} · {flag.donor}</p>
+                  <p style={{ margin: "0 0 6px", fontSize: theme.typography.xs, color: theme.colors.textMuted }}>{flag.transactionId} · {flag.projectName}</p>
                   <p style={{ margin: 0, fontSize: theme.typography.sm, color: theme.colors.textSecondary, lineHeight: theme.typography.lineHeight.relaxed }}>{flag.notes}</p>
                 </div>
                 <PermissionGate permission="flag:resolve">
-                  <button onClick={() => resolveFlag(flag.id)} style={{ flexShrink: 0, padding: "7px 16px", borderRadius: theme.radius.md, border: "none", background: theme.colors.success, color: "#fff", fontSize: theme.typography.sm, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  <button onClick={() => handleResolveFlag(flag.id)} style={{ flexShrink: 0, padding: "7px 16px", borderRadius: theme.radius.md, border: "none", background: theme.colors.success, color: "#fff", fontSize: theme.typography.sm, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                     Resolve
                   </button>
                 </PermissionGate>

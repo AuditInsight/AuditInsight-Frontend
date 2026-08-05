@@ -58,14 +58,26 @@ function TransactionsContent() {
   };
 
   const handleCreateTransaction = async (data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
-    addTransaction(data);
-    setIsAddModalOpen(false);
+    try {
+      await addTransaction(data);
+      setIsAddModalOpen(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create transaction";
+      console.error("Create transaction error", err);
+      alert(msg);
+    }
   };
 
   const handleUpdateTransaction = async (data: Omit<Transaction, "id" | "status" | "evidenceCount">) => {
     if (!editingTransaction) return;
-    updateTransaction(editingTransaction.id, data);
-    setEditingTransaction(null);
+    try {
+      await updateTransaction(editingTransaction.id, data);
+      setEditingTransaction(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update transaction";
+      console.error("Update transaction error", err);
+      alert(msg);
+    }
   };
 
   const handleConfirmDelete = async () => {

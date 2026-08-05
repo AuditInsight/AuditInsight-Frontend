@@ -1,38 +1,38 @@
 "use client";
 
 import NGOPageLayout from "@/components/ngo/NGOPageLayout";
-import DonorScopeBanner from "@/components/ngo/rbac/DonorScopeBanner";
-import { useRBAC, useScopedData } from "@/context/RBACContext";
 import { ProtectedRoute } from "@/components/Guards";
-import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
+import { useNGOAuditFlags } from "@/hooks/useNGOAuditFlags";
 import { theme } from "@/styles/theme";
-import { CheckCircle2, AlertTriangle, Clock, TrendingUp, Lock } from "lucide-react";
-import type { DonorName } from "@/types/ngo";
+import { CheckCircle2, AlertTriangle, TrendingUp, Lock, Clock } from "lucide-react";
+import type { NGOTransaction, NGOFlag } from "@/types/ngo";
 
-const ALL_DONORS: DonorName[] = ["USAID", "UNICEF", "World Bank", "EU"];
+const COMPLIANCE_RULES = [
+  "Signed attendance sheets for all training activities",
+  "Payment vouchers for all disbursements",
+  "Quarterly financial reports",
+  "Bank reconciliation statements monthly",
+  "Beneficiary lists for all programme activities",
+  "Activity reports per project milestone",
+  "Payment vouchers for all transactions",
+  "No unsupported cash payments above RWF 50,000",
+  "Audit trail for all transactions > RWF 1M",
+];
 
-const DONOR_RULES: Record<string, string[]> = {
-  USAID:        ["Signed attendance sheets for all training activities", "Payment vouchers for all disbursements", "Quarterly financial reports", "Procurement docs for purchases > RWF 500,000"],
-  UNICEF:       ["Beneficiary lists for all programme activities", "Bank reconciliation statements monthly", "Activity reports per project milestone", "Signed grant agreement on file"],
-  "World Bank": ["Signed supplier contracts before payment", "Environmental & social safeguard reports", "Procurement plan approved by WB", "Audit trail for all transactions > RWF 1M"],
-  EU:           ["Payment vouchers for all transactions", "No unsupported cash payments above RWF 50,000", "Quarterly narrative reports", "Visibility requirements (EU branding on outputs)"],
-};
-
-function DonorComplianceCard({ donor }: { donor: DonorName }) {
-  const txns     = NGO_TRANSACTIONS.filter((t) => t.donor === donor);
-  const flags    = NGO_FLAGS.filter((f) => f.donor === donor && f.status === "OPEN");
-  const complete = txns.filter((t) => t.status === "COMPLETED").length;
-  const score    = txns.length > 0 ? Math.max(0, Math.min(100, Math.round((complete / txns.length) * 100) - flags.length * 10)) : 100;
+function OverallComplianceCard({ transactions, flags }: { transactions: NGOTransaction[]; flags: NGOFlag[] }) {
+  const complete = transactions.filter((t) => t.status === "COMPLETED").length;
+  const score    = transactions.length > 0 ? Math.max(0, Math.min(100, Math.round((complete / transactions.length) * 100) - flags.length * 10)) : 100;
   const color    = score >= 80 ? theme.colors.success : score >= 60 ? theme.colors.warning : theme.colors.danger;
-  const rules    = DONOR_RULES[donor] ?? [];
+  const rules    = COMPLIANCE_RULES;
 
   return (
     <div style={{ background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, boxShadow: theme.shadows.sm, overflow: "hidden" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${theme.colors.divider}` }}>
         <div>
-          <p style={{ margin: 0, fontSize: theme.typography.lg, fontWeight: 700, color: theme.colors.textPrimary }}>{donor}</p>
-          <p style={{ margin: "3px 0 0", fontSize: theme.typography.xs, color: theme.colors.textMuted }}>{txns.length} transactions · {flags.length} open flag{flags.length !== 1 ? "s" : ""}</p>
+          <p style={{ margin: 0, fontSize: theme.typography.lg, fontWeight: 700, color: theme.colors.textPrimary }}>Overall Compliance</p>
+          <p style={{ margin: "3px 0 0", fontSize: theme.typography.xs, color: theme.colors.textMuted }}>{transactions.length} transactions · {flags.length} open flag{flags.length !== 1 ? "s" : ""}</p>
         </div>
         <div style={{ textAlign: "right" }}>
           <p style={{ margin: 0, fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>{score}%</p>
@@ -78,16 +78,13 @@ function DonorComplianceCard({ donor }: { donor: DonorName }) {
 }
 
 function ComplianceContent() {
-  const { user } = useRBAC();
-  const isDonor  = user.role === "DONOR_REPRESENTATIVE";
-  const allTxns  = useScopedData(NGO_TRANSACTIONS, (t) => t.donor);
-  const openFlags = NGO_FLAGS.filter((f) => f.status === "OPEN");
-  const visibleDonors: DonorName[] = isDonor && user.assignedDonorId ? [user.assignedDonorId as DonorName] : ALL_DONORS;
+  const { transactions } = useNGOTransactions();
+  const { flags } = useNGOAuditFlags();
+
+  const openFlags = flags.filter((f) => f.status === "OPEN");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xl }}>
-
-      {isDonor && user.assignedDonorId && <DonorScopeBanner donorName={user.assignedDonorId} />}
 
       {/* Read-only notice */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: theme.radius.md, background: theme.colors.appBackground, border: `1px solid ${theme.colors.border}` }}>
@@ -98,10 +95,10 @@ function ComplianceContent() {
       {/* Stats */}
       <div style={{ display: "flex", gap: theme.spacing.lg, flexWrap: "wrap" }}>
         {[
-          { label: isDonor ? "Your Donor" : "Active Donors", value: visibleDonors.length,                                  accent: theme.colors.primary, icon: <TrendingUp size={16} />    },
-          { label: "Open Flags",                             value: openFlags.length,                                       accent: theme.colors.danger,  icon: <AlertTriangle size={16} /> },
-          { label: "Compliant Txns",                         value: allTxns.filter((t) => t.status === "COMPLETED").length, accent: theme.colors.success, icon: <CheckCircle2 size={16} />  },
-          { label: "Pending Evidence",                       value: allTxns.filter((t) => t.status === "PENDING").length,   accent: theme.colors.warning, icon: <Clock size={16} />          },
+          { label: "Total Transactions",                       value: transactions.length,                                      accent: theme.colors.primary, icon: <TrendingUp size={16} />    },
+          { label: "Open Flags",                               value: openFlags.length,                                         accent: theme.colors.danger,  icon: <AlertTriangle size={16} /> },
+          { label: "Compliant Txns",                           value: transactions.filter((t) => t.status === "COMPLETED").length, accent: theme.colors.success, icon: <CheckCircle2 size={16} />  },
+          { label: "Pending Evidence",                         value: transactions.filter((t) => t.status === "PENDING").length,   accent: theme.colors.warning, icon: <Clock size={16} />          },
         ].map(({ label, value, accent, icon }) => (
           <div key={label} style={{ flex: 1, minWidth: 140, background: theme.colors.Surface, border: `1px solid ${theme.colors.border}`, borderRadius: theme.radius.lg, padding: theme.spacing.lg, boxShadow: theme.shadows.sm }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
@@ -113,10 +110,8 @@ function ComplianceContent() {
         ))}
       </div>
 
-      {/* Donor cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: theme.spacing.lg }}>
-        {visibleDonors.map((donor) => <DonorComplianceCard key={donor} donor={donor} />)}
-      </div>
+      {/* Overall compliance card */}
+      <OverallComplianceCard transactions={transactions} flags={flags} />
     </div>
   );
 }
@@ -124,7 +119,7 @@ function ComplianceContent() {
 export default function CompliancePage() {
   return (
     <ProtectedRoute>
-      <NGOPageLayout pageTitle="Donor Compliance" pageSub="Track compliance status and requirements for each active donor.">
+      <NGOPageLayout pageTitle="Compliance Status" pageSub="Track overall compliance status and requirements.">
         <ComplianceContent />
       </NGOPageLayout>
     </ProtectedRoute>

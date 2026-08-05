@@ -34,8 +34,8 @@ function toNGO(t: Transaction): NGOTransaction {
     id:             t.id,
     organisationId: t.organisationId ?? "",
     projectName:    t.projectName ?? t.name,
-    donor:          t.donor ?? "",
     budgetLine:     t.budgetLine ?? "",
+    donor:          (t as any).donor ?? "",
     description:    t.name,
     counterparty:   t.counterparty,
     date:           t.date,
@@ -67,7 +67,6 @@ function toTransaction(t: NGOTransaction): Transaction {
     createdBy:      t.createdBy,
     createdAt:      t.createdAt,
     notes:          t.notes,
-    donor:          t.donor,
     budgetLine:     t.budgetLine,
     projectName:    t.projectName,
   };
@@ -190,8 +189,7 @@ function TransactionsContent() {
           !t.projectName.toLowerCase().includes(q) &&
           !t.description.toLowerCase().includes(q) &&
           !t.counterparty.toLowerCase().includes(q) &&
-          !(t.budgetLine ?? "").toLowerCase().includes(q) &&
-          !(t.donor ?? "").toLowerCase().includes(q)
+          !(t.budgetLine ?? "").toLowerCase().includes(q)
         ) return false;
       }
       if (startDate && new Date(t.date) < new Date(startDate)) return false;
@@ -213,8 +211,8 @@ function TransactionsContent() {
 
   const handleExport = () => {
     const rows = [
-      ["ID", "Project", "Donor", "Budget Line", "Counterparty", "Date", "Amount", "Type", "Status"],
-      ...filteredNgo.map((t) => [t.id, t.projectName, t.donor ?? "", t.budgetLine ?? "", t.counterparty, t.date, t.amount, t.type, t.status]),
+      ["ID", "Project", "Budget Line", "Counterparty", "Date", "Amount", "Type", "Status"],
+      ...filteredNgo.map((t) => [t.id, t.projectName, t.budgetLine ?? "", t.counterparty, t.date, t.amount, t.type, t.status]),
     ];
     const csv  = rows.map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -224,7 +222,7 @@ function TransactionsContent() {
     URL.revokeObjectURL(url);
   };
 
-  const handleCreate = (_txn: NGOTransaction) => {
+  const handleCreate = () => {
     // AddTransactionModal already called the API — useTransactions auto-refreshes
     setIsAddOpen(false);
   };
