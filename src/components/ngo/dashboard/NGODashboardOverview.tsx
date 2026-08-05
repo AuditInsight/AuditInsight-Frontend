@@ -7,9 +7,10 @@ import {
   Copy, Download, FileText, Loader2, Paperclip, RefreshCw, TrendingUp,
   XCircle, DollarSign, Users, ShieldCheck,
 } from "lucide-react";
-import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
 import { useRBAC } from "@/context/RBACContext";
 import { useAuth } from "@/context/AuthContext.production";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
+import { useNGOAuditFlags } from "@/hooks/useNGOAuditFlags";
 import type { NGORole } from "@/types/ngo";
 import NGOActivityFeed from "@/components/ngo/dashboard/NGOActivityFeed";
 import NGOQuickActions from "@/components/ngo/dashboard/NGOQuickActions";
@@ -201,16 +202,17 @@ export default function NGODashboardOverview() {
   const router = useRouter();
   const { user: authUser } = useAuth();
   const { user: rbacUser } = useRBAC();
-  const [loading, setLoading] = useState(false);
+  const [manualRefresh, setManualRefresh] = useState(false);
+
+  const { transactions: allTxns, loading: txnLoading } = useNGOTransactions();
+  const { flags, loading: flagsLoading, refresh: refreshFlags } = useNGOAuditFlags();
 
   const rawRole  = authUser?.role ?? "ORG_ADMIN";
   const role     = (rawRole === "SYSTEM_ADMIN" || rawRole === "DONOR_REPRESENTATIVE" ? "ORG_ADMIN" : rawRole) as NGORole;
   const fullName = authUser?.fullName ?? rbacUser.fullName ?? "User";
   const orgName  = authUser?.organisationName ?? "Rwanda Health Foundation";
 
-  const allTxns = NGO_TRANSACTIONS;
   const scopedTxns = allTxns;
-  const flags   = NGO_FLAGS;
 
   const income   = scopedTxns.filter((t) => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
   const expense  = scopedTxns.filter((t) => t.type === "EXPENSE").reduce((s, t) => s + t.amount, 0);
@@ -232,7 +234,11 @@ export default function NGODashboardOverview() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ngo-dashboard.csv"; a.click();
   };
 
-  const refresh = () => { setLoading(true); setTimeout(() => setLoading(false), 700); };
+  const refresh = () => {
+    setManualRefresh(true);
+    refreshFlags();
+    setTimeout(() => setManualRefresh(false), 700);
+  };
 
   // Role-specific metric cards
   const metrics = (() => {
@@ -340,7 +346,7 @@ export default function NGODashboardOverview() {
 
       </div>
 
-      {loading && (
+      {(txnLoading || flagsLoading || manualRefresh) && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000 }}>
           <Loader2 size={36} style={{ color: ACCENT, animation: "ngo-spin 1s linear infinite" }} />
         </div>

@@ -2,23 +2,25 @@
 
 import NGOPageLayout from "@/components/ngo/NGOPageLayout";
 import { ProtectedRoute } from "@/components/Guards";
-import { NGO_TRANSACTIONS } from "@/mock/ngo.mock";
-import { FolderOpen, DollarSign, CheckCircle2, Clock, Users } from "lucide-react";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
+import { FolderOpen, DollarSign, CheckCircle2, Users } from "lucide-react";
 
-const PROJECTS = Array.from(new Set(NGO_TRANSACTIONS.map(t => t.projectName))).map(name => {
-  const txns    = NGO_TRANSACTIONS.filter(t => t.projectName === name);
-  const donor   = txns[0]?.donor ?? "—";
-  const budget  = txns.filter(t => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
-  const spent   = txns.filter(t => t.type === "EXPENSE").reduce((s, t) => s + t.amount, 0);
-  const burn    = budget > 0 ? Math.round((spent / budget) * 100) : 0;
-  const flagged = txns.filter(t => t.status === "FLAGGED").length;
-  const pending = txns.filter(t => t.status === "PENDING").length;
-  const complete = txns.filter(t => t.status === "COMPLETED").length;
-  const status  = flagged > 0 ? "AT RISK" : pending > 0 ? "IN PROGRESS" : "ON TRACK";
-  const statusColor = flagged > 0 ? "#dc2626" : pending > 0 ? "#d97706" : "#16a34a";
-  const statusBg    = flagged > 0 ? "#fef2f2" : pending > 0 ? "#fffbeb" : "#f0fdf4";
-  return { name, donor, budget, spent, burn, flagged, pending, complete, txns: txns.length, status, statusColor, statusBg };
-});
+function ProjectsContent() {
+  const { transactions } = useNGOTransactions();
+
+  const PROJECTS = Array.from(new Set(transactions.map(t => t.projectName))).map(name => {
+    const txns    = transactions.filter(t => t.projectName === name);
+    const budget  = txns.filter(t => t.type === "INCOME").reduce((s, t) => s + t.amount, 0);
+    const spent   = txns.filter(t => t.type === "EXPENSE").reduce((s, t) => s + t.amount, 0);
+    const burn    = budget > 0 ? Math.round((spent / budget) * 100) : 0;
+    const flagged = txns.filter(t => t.status === "FLAGGED").length;
+    const pending = txns.filter(t => t.status === "PENDING").length;
+    const complete = txns.filter(t => t.status === "COMPLETED").length;
+    const status  = flagged > 0 ? "AT RISK" : pending > 0 ? "IN PROGRESS" : "ON TRACK";
+    const statusColor = flagged > 0 ? "#dc2626" : pending > 0 ? "#d97706" : "#16a34a";
+    const statusBg    = flagged > 0 ? "#fef2f2" : pending > 0 ? "#fffbeb" : "#f0fdf4";
+    return { name, budget, spent, burn, flagged, pending, complete, txns: txns.length, status, statusColor, statusBg };
+  });
 
 const ACTIVITIES = [
   { project: "Community Health Outreach",  activity: "Q3 Medical Supply Distribution",    date: "2024-07-02", status: "Completed", beneficiaries: 1240 },
@@ -37,12 +39,10 @@ const ACT_CFG = {
   Flagged:   { color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
 };
 
-export default function ProjectsPage() {
   const totalBeneficiaries = ACTIVITIES.reduce((s, a) => s + a.beneficiaries, 0);
 
   return (
-    <ProtectedRoute>
-      <NGOPageLayout pageTitle="Project Activities" pageSub="Monitor progress, budgets, and activities across all active projects.">
+    <div>
         {/* Summary */}
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
           {[
@@ -71,7 +71,6 @@ export default function ProjectsPage() {
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
                     <div>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{p.name}</p>
-                      <p style={{ margin: "3px 0 0", fontSize: 12, color: "#64748b" }}>Donor: {p.donor}</p>
                     </div>
                     <span style={{ padding: "3px 9px", borderRadius: 999, fontSize: 10.5, fontWeight: 700, color: p.statusColor, background: p.statusBg, whiteSpace: "nowrap" as const }}>{p.status}</span>
                   </div>
@@ -135,6 +134,15 @@ export default function ProjectsPage() {
             </tbody>
           </table>
         </div>
+    </div>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <ProtectedRoute>
+      <NGOPageLayout pageTitle="Project Activities" pageSub="Monitor progress, budgets, and activities across all active projects.">
+        <ProjectsContent />
       </NGOPageLayout>
     </ProtectedRoute>
   );

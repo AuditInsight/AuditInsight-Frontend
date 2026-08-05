@@ -12,7 +12,6 @@ import NGOToast, { useToast } from "@/components/ngo/NGOToast";
 import { useAuth } from "@/context/AuthContext.production";
 import { useRBAC } from "@/context/RBACContext";
 import type { NGORole, NGONotification } from "@/types/ngo";
-import { NGO_NOTIFICATIONS } from "@/mock/ngo.mock";
 
 const TABS = [
   { label: "Dashboard",    path: "/ngo-dashboard",              icon: <LayoutDashboard size={15} /> },
@@ -43,7 +42,7 @@ export default function NGODashboardShell({ children }: Props) {
   const [notifOpen,  setNotifOpen]  = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search,     setSearch]     = useState("");
-  const [notifications, setNotifications] = useState<NGONotification[]>(NGO_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NGONotification[]>([]);
 
   const rawRole  = authUser?.role ?? "ORG_ADMIN";
   const role     = (rawRole === "SYSTEM_ADMIN" ? "ORG_ADMIN" : rawRole) as NGORole;

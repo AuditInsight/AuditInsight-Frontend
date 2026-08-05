@@ -5,7 +5,8 @@ import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 import NGOStatCard from "@/components/ngo/dashboard/NGOStatCard";
 import NGOEmptyState from "@/components/ngo/dashboard/NGOEmptyState";
 import { ProtectedRoute } from "@/components/Guards";
-import { NGO_TRANSACTIONS, NGO_FLAGS } from "@/mock/ngo.mock";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
+import { useNGOAuditFlags } from "@/hooks/useNGOAuditFlags";
 import { FileText, Download, BarChart3, CheckCircle2, AlertTriangle, TrendingUp } from "lucide-react";
 
 const REPORTS = [
@@ -25,9 +26,12 @@ const TYPE_COLORS: Record<string, { color: string; bg: string }> = {
 };
 
 function ReportsContent() {
-  const totalTxns    = NGO_TRANSACTIONS.length;
-  const openFlags    = NGO_FLAGS.filter((f) => f.status === "OPEN").length;
-  const completedPct = Math.round((NGO_TRANSACTIONS.filter((t) => t.status === "COMPLETED").length / totalTxns) * 100);
+  const { transactions } = useNGOTransactions();
+  const { flags } = useNGOAuditFlags();
+
+  const totalTxns    = transactions.length;
+  const openFlags    = flags.filter((f) => f.status === "OPEN").length;
+  const completedPct = totalTxns > 0 ? Math.round((transactions.filter((t) => t.status === "COMPLETED").length / totalTxns) * 100) : 0;
   const readyReports = REPORTS.filter((r) => r.status === "Ready").length;
 
   const handleDownload = (report: typeof REPORTS[0]) => {
