@@ -4,7 +4,6 @@ import { useState } from "react";
 import { X, Plus, AlertCircle } from "lucide-react";
 import { isAxiosError } from "axios";
 import { useAuth } from "@/context/AuthContext.production";
-import { useNGOTransactions } from "@/hooks/useNGOTransactions";
 import type { NGOTransaction } from "@/types/ngo";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 
@@ -12,15 +11,15 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSubmit: (txn: NGOTransaction) => void;
+  addTransaction: (data: Omit<NGOTransaction, "id" | "status" | "evidenceCount" | "createdBy" | "createdAt">) => Promise<void>;
   createdBy?: string;
   organisationId?: string;
 }
 
 const BUDGET_LINES = ["Medical Supplies", "Training & Workshops", "Scholarships", "Staff Costs", "Infrastructure", "Procurement", "Beneficiary Support", "Monitoring & Evaluation", "Grant Receipt", "Administration", "Other"];
 
-export default function AddTransactionModal({ open, onClose, onSubmit, createdBy, organisationId }: Props) {
+export default function AddTransactionModal({ open, onClose, onSubmit, addTransaction, createdBy, organisationId }: Props) {
   const { user } = useAuth();
-  const { addTransaction } = useNGOTransactions();
 
   const [projectName,   setProjectName]   = useState("");
   const [budgetLine,    setBudgetLine]    = useState("");
