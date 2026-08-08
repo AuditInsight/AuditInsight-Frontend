@@ -2,11 +2,6 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext.production";
 import SEO from "@/components/SEO";
 import { Colors } from "@/styles/colors";
-import { seedNotificationsIfEmpty } from "@/mock/notifications.mock";
-
-if (typeof window !== "undefined") {
-  seedNotificationsIfEmpty();
-}
 
 export const metadata = {
   title: "AuditInsight",
