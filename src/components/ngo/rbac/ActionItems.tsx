@@ -7,17 +7,19 @@ import type { NGOTransaction } from "@/types/ngo";
 interface Props {
   transactions: NGOTransaction[];
   onUploadEvidence: (txn: NGOTransaction) => void;
+  hideHeader?: boolean;
 }
 
-export default function ActionItems({ transactions, onUploadEvidence }: Props) {
+export default function ActionItems({ transactions, onUploadEvidence, hideHeader = false }: Props) {
   const router  = useRouter();
   const pending = transactions.filter((t) => t.status === "PENDING");
   const flagged = transactions.filter((t) => t.status === "FLAGGED");
   const total   = pending.length + flagged.length;
 
   return (
-    <div style={s.card}>
+    <div style={hideHeader ? { background: "transparent", borderRadius: 0, border: "none", overflow: "visible", boxShadow: "none" } : s.card}>
       {/* Header */}
+      {!hideHeader && (
       <div style={s.header}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={s.headerIcon}>
@@ -34,6 +36,7 @@ export default function ActionItems({ transactions, onUploadEvidence }: Props) {
           <span style={s.countBadge}>{total}</span>
         )}
       </div>
+      )}
 
       {total === 0 ? (
         <div style={s.emptyWrap}>
@@ -88,11 +91,13 @@ export default function ActionItems({ transactions, onUploadEvidence }: Props) {
       )}
 
       {/* Footer */}
+      {!hideHeader && (
       <div style={s.footer}>
         <button style={s.footerBtn} onClick={() => router.push("/ngo-dashboard/transactions")}>
           View all transactions <ArrowRight size={12} />
         </button>
       </div>
+      )}
     </div>
   );
 }

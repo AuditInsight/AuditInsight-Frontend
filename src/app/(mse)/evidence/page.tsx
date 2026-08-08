@@ -12,6 +12,7 @@ import { ConfirmDeleteEvidenceModal } from "@/components/mse/evidence/ConfirmDel
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
 import { MSE_EVIDENCE_SECTIONS } from "@/types/mse";
+import { EVIDENCE_CATEGORIES } from "@/constants/evidenceCategories";
 import { evidenceMatchesSearch } from "@/lib/evidenceSearch";
 import { useTransactions } from "@/hooks/useTransactions";
 import { usePermissions } from "@/security/access-control";
@@ -71,18 +72,32 @@ export default function EvidencePage() {
   }, [documents]);
 
   const sections = useMemo(() => {
-    const folderMap = documents.reduce<Record<string, Set<string>>>((acc, document) => {
-      const folder = document.folder?.trim();
-      const subfolder = document.subfolder?.trim();
-      if (!folder) return acc;
-      if (!acc[folder]) acc[folder] = new Set();
-      if (subfolder) acc[folder].add(subfolder);
-      return acc;
-    }, {});
+    // Start with all predefined categories
+    const mergedSections = EVIDENCE_CATEGORIES.map(cat => ({
+      title: cat.title,
+      items: [...cat.items],
+    }));
 
-    return Object.entries(folderMap)
-      .map(([title, items]) => ({ title, items: Array.from(items).sort((a, b) => a.localeCompare(b)) }))
-      .sort((a, b) => a.title.localeCompare(b.title));
+    // Add any additional folders from documents that aren't in predefined categories
+    const definedFolders = new Set(EVIDENCE_CATEGORIES.map(c => c.title));
+    const additionalFolders = Array.from(
+      new Set(documents.map(d => d.folder).filter(f => f && !definedFolders.has(f.trim())))
+    );
+
+    additionalFolders.forEach(folder => {
+      const subfolders = new Set(
+        documents
+          .filter(d => d.folder?.trim() === folder?.trim())
+          .map(d => d.subfolder?.trim())
+          .filter(Boolean)
+      );
+      mergedSections.push({
+        title: folder!,
+        items: Array.from(subfolders).sort((a, b) => a.localeCompare(b)),
+      });
+    });
+
+    return mergedSections;
   }, [documents]);
 
   const totalPages   = Math.ceil(filteredData.length / pageSize);

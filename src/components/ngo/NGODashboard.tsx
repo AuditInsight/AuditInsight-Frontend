@@ -12,9 +12,9 @@ import NGOFlagIssueModal from "./NGOFlagIssueModal";
 import NGONotificationPanel from "./NGONotificationPanel";
 import { useAuth } from "@/context/AuthContext.production";
 import { useRBAC, useScopedData } from "@/context/RBACContext";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
 import type { NGORole, NGOTransaction, NGOFlag, NGONotification, DonorName } from "@/types/ngo";
 import { NGO_PERMISSIONS } from "@/types/ngo";
-import { NGO_TRANSACTIONS, NGO_FLAGS, NGO_NOTIFICATIONS, NGO_MOCK_USERS } from "@/mock/ngo.mock";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
 import ActionItems from "@/components/ngo/rbac/ActionItems";
 import AuditorAlertsPanel from "@/components/ngo/rbac/AuditorAlertsPanel";
@@ -208,26 +208,26 @@ function TopBar({
 function NGODashboardInner() {
   const { user: authUser, logout } = useAuth();
   const { user: rbacUser, scopeData } = useRBAC();
+  const { addTransaction } = useNGOTransactions();
 
   const rawRole = authUser?.role ?? "ORG_ADMIN";
   const activeRole = ((rawRole === "SYSTEM_ADMIN" ? "ORG_ADMIN" : rawRole) as NGORole);
-  const mockUser = NGO_MOCK_USERS[activeRole];
   const user = {
-    fullName: authUser?.fullName ?? mockUser.fullName,
-    email: authUser?.email ?? mockUser.email,
+    fullName: authUser?.fullName ?? "User",
+    email: authUser?.email ?? "",
     role: activeRole,
-    organisationId: authUser?.organisationId ?? mockUser.organisationId,
-    organisationName: authUser?.organisationName ?? mockUser.organisationName,
-    donorScope: (authUser?.donorScope ?? mockUser.donorScope ?? null) as DonorName | null,
+    organisationId: authUser?.organisationId ?? "",
+    organisationName: authUser?.organisationName ?? "NGO Portal",
+    donorScope: (authUser?.donorScope ?? null) as DonorName | null,
   };
   const perms = NGO_PERMISSIONS[activeRole];
 
   const [collapsed, setCollapsed] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [transactions, setTransactions] = useState<NGOTransaction[]>(NGO_TRANSACTIONS);
-  const [flags, setFlags] = useState<NGOFlag[]>(NGO_FLAGS);
-  const [notifications, setNotifications] = useState<NGONotification[]>(NGO_NOTIFICATIONS);
+  const [transactions, setTransactions] = useState<NGOTransaction[]>([]);
+  const [flags, setFlags] = useState<NGOFlag[]>([]);
+  const [notifications, setNotifications] = useState<NGONotification[]>([]);
   const [flagTarget,    setFlagTarget]    = useState<NGOTransaction | null>(null);
   const [uploadTarget,  setUploadTarget]  = useState<NGOTransaction | null>(null);
   const [editTarget,    setEditTarget]    = useState<NGOTransaction | null>(null);
@@ -452,6 +452,7 @@ function NGODashboardInner() {
         organisationId={user.organisationId}
         onClose={() => setAddTxnOpen(false)}
         onSubmit={handleAddTransaction}
+        addTransaction={addTransaction}
       />
       <NGORoleSwitcher />
     </div>

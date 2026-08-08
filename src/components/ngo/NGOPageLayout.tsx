@@ -10,7 +10,6 @@ import AppFooter from "@/components/layout/AppFooter";
 import { useAuth } from "@/context/AuthContext.production";
 import { useRoleAccent, useRoleLabel } from "@/context/RBACContext";
 import type { NGORole, NGONotification } from "@/types/ngo";
-import { NGO_NOTIFICATIONS } from "@/mock/ngo.mock";
 
 const noop = () => {};
 const noopToast = { toasts: [], dismiss: noop, success: noop, error: noop, warning: noop };
@@ -31,7 +30,7 @@ function NGOPageLayoutInner({ pageTitle, pageSub, children }: Props) {
   const roleLabel = useRoleLabel();
   const [collapsed, setCollapsed]       = useState(false);
   const [notifOpen, setNotifOpen]       = useState(false);
-  const [notifications, setNotifications] = useState<NGONotification[]>(NGO_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NGONotification[]>([]);
   const [search, setSearch]             = useState("");
   const toast                           = useToast();
 

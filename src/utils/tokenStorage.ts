@@ -9,9 +9,17 @@
  */
 
 const ACCESS_TOKEN_KEY = "auditinsight.accessToken";
+const USER_DATA_KEY = "auditinsight.userData";
+
+interface CachedUserData {
+  organisationId: string;
+  organisationName: string;
+  orgType: string;
+}
 
 class TokenStorage {
   private accessToken: string | null = null;
+  private userData: CachedUserData | null = null;
 
   private isBrowser(): boolean {
     return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -26,6 +34,42 @@ class TokenStorage {
         // Ignore storage exceptions in privacy-restricted environments.
       }
     }
+  }
+
+  setUserData(userData: CachedUserData): void {
+    this.userData = userData;
+    if (this.isBrowser()) {
+      try {
+        window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+        console.log("DEBUG: Saved user data to localStorage:", userData);
+      } catch (err) {
+        console.error("DEBUG: Failed to save user data:", err);
+      }
+    }
+  }
+
+  getUserData(): CachedUserData | null {
+    if (this.userData !== null) {
+      console.log("DEBUG: Retrieved user data from memory:", this.userData);
+      return this.userData;
+    }
+
+    if (this.isBrowser()) {
+      try {
+        const stored = window.localStorage.getItem(USER_DATA_KEY);
+        console.log("DEBUG: Retrieved from localStorage:", stored);
+        if (stored) {
+          this.userData = JSON.parse(stored);
+          console.log("DEBUG: Parsed user data:", this.userData);
+          return this.userData;
+        }
+      } catch (err) {
+        console.error("DEBUG: Failed to parse user data:", err);
+        return null;
+      }
+    }
+
+    return null;
   }
 
   getAccessToken(): string | null {
@@ -59,9 +103,11 @@ class TokenStorage {
 
   clear(): void {
     this.accessToken = null;
+    this.userData = null;
     if (this.isBrowser()) {
       try {
         window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+        window.localStorage.removeItem(USER_DATA_KEY);
       } catch {
         // Ignore storage exceptions.
       }

@@ -91,14 +91,25 @@ export function useTransactions() {
   const addTransaction = async (
     data: Omit<Transaction, "id" | "status" | "evidenceCount">
   ) => {
+    console.log("DEBUG: User object:", JSON.stringify(user, null, 2));
     const orgId = normalizeOrganisationId(user?.organisationId);
-    if (!orgId) {
-      throw new Error("Organisation is not selected.");
+    console.log("DEBUG: Auth user:", {
+      orgId,
+      orgType: user?.orgType,
+      orgName: user?.organisationName,
+      userId: user?.id,
+      dataOrgId: (data as any).organisationId
+    });
+
+    // Use organisation ID from data if available (fallback from modal)
+    const finalOrgId = orgId || normalizeOrganisationId((data as any).organisationId);
+    if (!finalOrgId) {
+      throw new Error("Organisation is not selected. Please log in again.");
     }
 
     const isNgo = user?.orgType === "NGO";
     const req: CreateTransactionRequest = {
-      organisationId: orgId,
+      organisationId: finalOrgId,
       name:          data.name,
       counterparty:  data.counterparty,
       date:          data.date,
@@ -109,25 +120,37 @@ export function useTransactions() {
       ...(isNgo && { donor: (data as Transaction & { donor?: string }).donor ?? "" }),
       ...(isNgo && { budgetLine: (data as Transaction & { budgetLine?: string }).budgetLine ?? "" }),
     };
-    const { data: created } = await apiCreateTransaction(req);
-    const newTx: Transaction = {
-      id:            created.id,
-      name:          created.name,
-      counterparty:  created.counterparty ?? "",
-      date:          String(created.date),
-      amount:        Number(created.amount),
-      type:          created.type,
-      paymentMethod: created.paymentMethod,
-      status:        created.status,
-      evidenceCount: 0,
-      createdBy:     created.createdBy,
-      createdAt:     String(created.createdAt),
-      // Preserve NGO fields from the request so the table renders them immediately
-      donor:         req.donor,
-      budgetLine:    req.budgetLine,
-      projectName:   req.name,
-    };
-    setTransactions((prev) => withMeta([newTx, ...prev], evidences));
+    console.log("DEBUG: Creating transaction with request:", JSON.stringify(req, null, 2));
+    try {
+      const { data: created } = await apiCreateTransaction(req);
+      const newTx: Transaction = {
+        id:            created.id,
+        name:          created.name,
+        counterparty:  created.counterparty ?? "",
+        date:          String(created.date),
+        amount:        Number(created.amount),
+        type:          created.type,
+        paymentMethod: created.paymentMethod,
+        status:        created.status,
+        evidenceCount: 0,
+        createdBy:     created.createdBy,
+        createdAt:     String(created.createdAt),
+        // Preserve NGO fields from the request so the table renders them immediately
+        donor:         req.donor,
+        budgetLine:    req.budgetLine,
+        projectName:   req.name,
+      };
+      setTransactions((prev) => withMeta([newTx, ...prev], evidences));
+    } catch (err: unknown) {
+      console.error("DEBUG: Transaction creation failed:", err);
+      const axiosErr = err as any;
+      if (axiosErr?.response) {
+        console.error("Backend response status:", axiosErr.response.status);
+        console.error("Backend response data:", axiosErr.response.data);
+        console.error("Backend response headers:", axiosErr.response.headers);
+      }
+      throw err;
+    }
   };
 
   // Backend only supports status updates via PATCH — no full edit endpoint

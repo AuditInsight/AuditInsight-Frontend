@@ -148,6 +148,11 @@ export default function NGOTransactionTable({
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
+  // DEBUG: Show what data we're receiving
+  if (transactions.length > 0) {
+    console.log("📊 NGOTransactionTable received:", { count: transactions.length, firstTxn: transactions[0] });
+  }
+
   const sorted = [...transactions].sort((a, b) => {
     let cmp = 0;
     if (sortKey === "date")        cmp = a.date.localeCompare(b.date);
