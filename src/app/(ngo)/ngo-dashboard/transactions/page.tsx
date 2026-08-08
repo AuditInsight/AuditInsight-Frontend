@@ -21,7 +21,9 @@ import NGOTransactionTable from "@/components/ngo/NGOTransactionTable";
 
 import { useRBAC } from "@/context/RBACContext";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
+import { useNGOToast } from "@/components/ngo/NGOPageLayout";
 import { theme } from "@/styles/theme";
 import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
@@ -119,6 +121,7 @@ function TransactionsContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const transactionId = searchParams.get("transactionId");
+  const toast = useNGOToast();
 
   const { user, can } = useRBAC();
   const canAdd  = can("transaction:create");
@@ -131,6 +134,8 @@ function TransactionsContent() {
     deleteTransaction,
     saveEvidence,
   } = useTransactions();
+
+  const { addTransaction } = useNGOTransactions();
 
   const {
     items: reviewItems,
@@ -158,6 +163,8 @@ function TransactionsContent() {
   const [endDate,      setEndDate]      = useState("");
   const [page,         setPage]         = useState(1);
   const [deleteError,  setDeleteError]  = useState<string | null>(null);
+  const [expandActionItems, setExpandActionItems] = useState(false);
+  const [expandAuditorAlerts, setExpandAuditorAlerts] = useState(false);
 
   const pageSize = 25;
 
@@ -222,9 +229,13 @@ function TransactionsContent() {
     URL.revokeObjectURL(url);
   };
 
-  const handleCreate = () => {
-    // AddTransactionModal already called the API — useTransactions auto-refreshes
+  const handleCreate = async () => {
+    toast.success("Transaction added", "Transaction has been successfully created.");
     setIsAddOpen(false);
+    // Wait a moment then reload to ensure backend has persisted the data
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
   };
 
   const handleFlagSubmit = async (flag: {
@@ -287,15 +298,100 @@ function TransactionsContent() {
       {/* NGO-specific action panels */}
       <PermissionGate component="panel:action_items">
         <div className="ngo-txn-panels">
-          <ActionItems
-            transactions={ngoTransactions}
-            onUploadEvidence={(txn) => setUploadTarget(txn)}
-          />
-          <AuditorAlertsPanel
-            flags={openFlags as Parameters<typeof AuditorAlertsPanel>[0]["flags"]}
-            transactions={ngoTransactions}
-            onUploadEvidence={(txn) => setUploadTarget(txn)}
-          />
+          {/* Collapsible Action Items */}
+          <div style={{ background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, overflow: "hidden" }}>
+            <button
+              onClick={() => setExpandActionItems(!expandActionItems)}
+              style={{ width: "100%", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", border: "none", cursor: "pointer", borderBottom: expandActionItems ? `1px solid ${theme.colors.divider}` : "none", fontFamily: "inherit" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, textAlign: "left" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(30,58,138,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {/* AlertTriangle icon */}
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" color="#1e3a8a">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05l-8.47-14.14a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>Action Items</div>
+                  <div style={{ fontSize: 11.5, color: "#94a3b8", marginTop: "2px" }}>Transactions pending evidence or flagged for revision</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#1e3a8a", color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {ngoTransactions.filter((t) => t.status === "PENDING" || t.status === "FLAGGED").length}
+                </span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  style={{ transform: expandActionItems ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease", color: "#94a3b8" }}
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </button>
+            {expandActionItems && (
+              <div style={{ borderTop: `1px solid ${theme.colors.divider}` }}>
+                <ActionItems
+                  transactions={ngoTransactions}
+                  onUploadEvidence={(txn) => setUploadTarget(txn)}
+                  hideHeader={true}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Collapsible Auditor Alerts */}
+          <div style={{ background: theme.colors.Surface, borderRadius: theme.radius.lg, border: `1px solid ${theme.colors.border}`, overflow: "hidden" }}>
+            <button
+              onClick={() => setExpandAuditorAlerts(!expandAuditorAlerts)}
+              style={{ width: "100%", padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", border: "none", cursor: "pointer", borderBottom: expandAuditorAlerts ? `1px solid ${theme.colors.divider}` : "none", fontFamily: "inherit" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, textAlign: "left" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(30,58,138,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {/* Flag icon */}
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" color="#1e3a8a">
+                    <path d="M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6l-4 4V4z"></path>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>Auditor Alerts</div>
+                  <div style={{ fontSize: 11.5, color: "#94a3b8", marginTop: "2px" }}>Issues flagged by auditors requiring re-upload of evidence</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#1e3a8a", color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {openFlags.length}
+                </span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  style={{ transform: expandAuditorAlerts ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease", color: "#94a3b8" }}
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </button>
+            {expandAuditorAlerts && (
+              <div style={{ borderTop: `1px solid ${theme.colors.divider}` }}>
+                <AuditorAlertsPanel
+                  flags={openFlags as Parameters<typeof AuditorAlertsPanel>[0]["flags"]}
+                  transactions={ngoTransactions}
+                  onUploadEvidence={(txn) => setUploadTarget(txn)}
+                  hideHeader={true}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </PermissionGate>
 
@@ -359,6 +455,9 @@ function TransactionsContent() {
           open={isAddOpen}
           onClose={() => setIsAddOpen(false)}
           onSubmit={handleCreate}
+          addTransaction={addTransaction}
+          createdBy={user.fullName}
+          organisationId={user.organisationId}
         />
       )}
 
