@@ -11,7 +11,7 @@ import InviteUserModal from "@/components/mse/settings/users/InviteUserModal"; /
 import NGOUsersTable from "@/components/ngo/settings/users/NGOUsersTable";
 import SEO from "@/components/seo/SEO";
 import { theme } from "@/styles/theme";
-import { User, Lock, Bell, Building2, Users } from "lucide-react";
+import { User, Lock, Bell, Building2, Users, Eye, EyeOff } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 
 // ── Primitives ─────────────────────────────────────────────────────────────────
@@ -35,6 +35,29 @@ function Field({ label, defaultValue, type = "text", readOnly = false }: { label
         type={type} defaultValue={defaultValue} readOnly={readOnly}
         style={{ padding: "9px 12px", borderRadius: theme.radius.md, border: `1px solid ${theme.colors.border}`, fontSize: theme.typography.sm, color: readOnly ? theme.colors.textMuted : theme.colors.textPrimary, fontFamily: "inherit", outline: "none", background: readOnly ? theme.colors.appBackground : theme.colors.Surface, cursor: readOnly ? "not-allowed" : "text" }}
       />
+    </div>
+  );
+}
+
+function PasswordField({ label, defaultValue }: { label: string; defaultValue?: string }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{ fontSize: theme.typography.xs, fontWeight: 600, color: theme.colors.textSecondary }}>{label}</label>
+      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+        <input
+          type={visible ? "text" : "password"}
+          defaultValue={defaultValue}
+          style={{ padding: "9px 12px", paddingRight: "36px", borderRadius: theme.radius.md, border: `1px solid ${theme.colors.border}`, fontSize: theme.typography.sm, color: theme.colors.textPrimary, fontFamily: "inherit", outline: "none", background: theme.colors.Surface, width: "100%", boxSizing: "border-box" }}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible(!visible)}
+          style={{ position: "absolute", right: 10, background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: theme.colors.textMuted }}
+        >
+          {visible ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
     </div>
   );
 }
@@ -170,9 +193,9 @@ function SettingsContent() {
         {active === "Security" && (
           <Section title="Security Settings">
             <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.lg }}>
-              <Field label="Current Password" type="password" />
-              <Field label="New Password"     type="password" />
-              <Field label="Confirm Password" type="password" />
+              <PasswordField label="Current Password" />
+              <PasswordField label="New Password" />
+              <PasswordField label="Confirm Password" />
               <Toggle label="Two-factor authentication"     sub="Require OTP on every login" />
               <Toggle label="Session timeout after 30 min" sub="Auto sign-out on inactivity" defaultChecked />
             </div>
