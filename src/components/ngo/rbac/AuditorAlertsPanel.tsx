@@ -21,6 +21,7 @@ interface Props {
   flags: FlagLike[];
   transactions: NGOTransaction[];
   onUploadEvidence: (txn: NGOTransaction) => void;
+  hideHeader?: boolean;
 }
 
 const SEV: Record<string, { dot: string; color: string; bg: string; border: string }> = {
@@ -30,7 +31,7 @@ const SEV: Record<string, { dot: string; color: string; bg: string; border: stri
   LOW:      { dot: "#94a3b8", color: "#475569",  bg: "#f8fafc",              border: "#e2e8f0"              },
 };
 
-export default function AuditorAlertsPanel({ flags, transactions, onUploadEvidence }: Props) {
+export default function AuditorAlertsPanel({ flags, transactions, onUploadEvidence, hideHeader = false }: Props) {
   const openFlags = flags.filter((f) => f.status === "OPEN" || f.status === "Open");
   const enriched  = openFlags.map((flag) => ({
     flag,
@@ -38,8 +39,9 @@ export default function AuditorAlertsPanel({ flags, transactions, onUploadEviden
   }));
 
   return (
-    <div style={s.card}>
+    <div style={hideHeader ? { background: "transparent", borderRadius: 0, border: "none", overflow: "visible", boxShadow: "none" } : s.card}>
       {/* Header */}
+      {!hideHeader && (
       <div style={s.header}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={s.headerIcon}>
@@ -54,6 +56,7 @@ export default function AuditorAlertsPanel({ flags, transactions, onUploadEviden
           <span style={s.countBadge}>{openFlags.length}</span>
         )}
       </div>
+      )}
 
       {openFlags.length === 0 ? (
         <div style={s.emptyWrap}>
