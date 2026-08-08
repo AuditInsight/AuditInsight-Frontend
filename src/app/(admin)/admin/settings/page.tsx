@@ -90,6 +90,8 @@ function Input({ value, onChange, placeholder }: { value: string; onChange: (v: 
   );
 }
 
+export const dynamic = "force-dynamic";
+
 export default function AdminSettingsPage() {
   const { canViewAdminPanel } = usePermissions();
   const { user } = useAuth();

@@ -6,6 +6,8 @@ import { MOCK_PENDING_AUDITORS } from "@/mock/admin.mock";
 import { theme } from "@/styles/theme";
 import { Shield } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function ApprovalsPage() {
   const { canViewAdminPanel } = usePermissions();
 
