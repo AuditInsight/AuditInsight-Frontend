@@ -52,14 +52,19 @@ const AuthContext = createContext<AuthContextValue>({
 
 function buildUserFromJwt(payload: JwtPayload & { orgType?: OrgType; donorScope?: string | null; fullName?: string }): User {
   const role = mapBackendRoleToFrontend(payload.role);
+
+  // Try to restore organisation data from localStorage cache
+  const cachedUserData = tokenStorage.getUserData();
+
   return {
     id: Number(payload.sub),
     email: payload.email,
     fullName: payload.fullName ?? payload.email,
     role,
     backendRole: payload.role,
-    organisationId: normalizeOrganisationId(payload.organisationId),
-    orgType: payload.orgType,
+    organisationId: normalizeOrganisationId(payload.organisationId) || cachedUserData?.organisationId,
+    organisationName: cachedUserData?.organisationName,
+    orgType: (payload.orgType || cachedUserData?.orgType) as OrgType | undefined,
     donorScope: payload.donorScope ?? null,
     mustChangePassword: false,
   };
@@ -81,26 +86,85 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * is automatically re-authenticated. This persists across browser
    * restarts until the token expires or user explicitly logs out.
    */
-  const initializeAuth = useCallback(() => {
+  const initializeAuth = useCallback(async () => {
+    console.log("DEBUG: initializeAuth called");
     if (tokenStorage.hasSession()) {
       try {
         const token = tokenStorage.getAccessToken()!;
         const payload = jwtDecode<JwtPayload>(token);
+        console.log("DEBUG: Token decoded, org from JWT:", payload.organisationId);
         // Check token hasn't expired
         if (payload.exp * 1000 > Date.now()) {
-          setState({ status: "authenticated", user: buildUserFromJwt(payload) });
+          let user = buildUserFromJwt(payload);
+          console.log("DEBUG: User built from JWT:", user);
+
+          // Try to fetch fresh organisation data from API
+          try {
+            console.log("DEBUG: Fetching organisations from API...");
+            const { data: orgs } = await apiClient.get<OrganisationApiResponse[]>("/organisations");
+            console.log("DEBUG: Organisations fetched:", orgs);
+            const safeOrgId = normalizeOrganisationId(user.organisationId);
+            const safeOrgs = orgs.filter((org) => normalizeOrganisationId(org.id));
+            const selectedOrg = safeOrgId
+              ? (safeOrgs.find((org) => normalizeOrganisationId(org.id) === safeOrgId) ?? safeOrgs[0])
+              : safeOrgs[0];
+            if (selectedOrg) {
+              const safeSelectedOrgId = normalizeOrganisationId(selectedOrg.id);
+              if (safeSelectedOrgId) {
+                user = {
+                  ...user,
+                  organisationId: safeSelectedOrgId,
+                  organisationName: selectedOrg.name,
+                  orgType: selectedOrg.industry ?? selectedOrg.orgType,
+                };
+                console.log("DEBUG: User updated with org from API:", user);
+                // Save to localStorage as backup
+                tokenStorage.setUserData({
+                  organisationId: safeSelectedOrgId,
+                  organisationName: selectedOrg.name,
+                  orgType: selectedOrg.industry ?? selectedOrg.orgType,
+                });
+              }
+            }
+          } catch (err) {
+            console.error("DEBUG: Failed to fetch organisations from API:", err);
+            // If org fetch fails, restore from localStorage cache
+            const cachedUserData = tokenStorage.getUserData();
+            console.log("DEBUG: Attempting to restore from cache:", cachedUserData);
+            if (cachedUserData) {
+              user = {
+                ...user,
+                organisationId: cachedUserData.organisationId,
+                organisationName: cachedUserData.organisationName,
+                orgType: cachedUserData.orgType as OrgType,
+              };
+              console.log("DEBUG: User restored from cache:", user);
+            }
+          }
+
+          console.log("DEBUG: Setting authenticated state with user:", user);
+          setState({ status: "authenticated", user });
+          // Log what's actually in localStorage after initialization
+          if (typeof window !== "undefined") {
+            console.log("DEBUG: localStorage content:", {
+              accessToken: window.localStorage.getItem("auditinsight.accessToken") ? "EXISTS" : "MISSING",
+              userData: window.localStorage.getItem("auditinsight.userData"),
+            });
+          }
           return;
         }
-      } catch {
+      } catch (err) {
         // Malformed token — fall through to unauthenticated
+        console.error("DEBUG: Token validation failed:", err);
       }
     }
+    console.log("DEBUG: No valid session, clearing and logging out");
     tokenStorage.clear();
     setState({ status: "unauthenticated", user: null });
   }, []);
 
   useEffect(() => {
-    queueMicrotask(() => initializeAuth());
+    initializeAuth();
   }, [initializeAuth]);
 
   // ── login ──────────────────────────────────────────────────────
@@ -128,6 +192,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             donorScope:         devResult.donorScope ?? null,
             mustChangePassword:  devResult.mustChangePassword,
           };
+          // Save user data to localStorage for persistence across page refreshes
+          if (user.organisationId) {
+            tokenStorage.setUserData({
+              organisationId: user.organisationId,
+              organisationName: user.organisationName || "",
+              orgType: user.orgType || "PRIVATE",
+            });
+          }
           setState({ status: "authenticated", user });
           if (user.mustChangePassword)      return { redirectTo: "/reset-password" };
           if (user.role === "SYSTEM_ADMIN") return { redirectTo: "/admin/organizations" };
@@ -153,19 +225,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Always fetch available organisations to determine onboarding status and orgType.
       try {
         const { data: orgs } = await apiClient.get<OrganisationApiResponse[]>("/organisations");
-      const safeOrgId = normalizeOrganisationId(user.organisationId);
-      const safeOrgs = orgs.filter((org) => normalizeOrganisationId(org.id));
-      const selectedOrg = safeOrgId
-        ? (safeOrgs.find((org) => normalizeOrganisationId(org.id) === safeOrgId) ?? safeOrgs[0])
-        : safeOrgs[0];
-      if (selectedOrg) {
-        const safeSelectedOrgId = normalizeOrganisationId(selectedOrg.id);
-        if (safeSelectedOrgId) {
-          user = {
-            ...user,
-            organisationId: safeSelectedOrgId,
-              orgType: selectedOrg.industry ?? selectedOrg.orgType,
+        const safeOrgId = normalizeOrganisationId(user.organisationId);
+        const safeOrgs = orgs.filter((org) => normalizeOrganisationId(org.id));
+        const selectedOrg = safeOrgId
+          ? (safeOrgs.find((org) => normalizeOrganisationId(org.id) === safeOrgId) ?? safeOrgs[0])
+          : safeOrgs[0];
+        if (selectedOrg) {
+          const safeSelectedOrgId = normalizeOrganisationId(selectedOrg.id);
+          const orgName = selectedOrg.name || "";
+          const orgType = selectedOrg.industry ?? selectedOrg.orgType;
+          if (safeSelectedOrgId) {
+            user = {
+              ...user,
+              organisationId: safeSelectedOrgId,
+              organisationName: orgName,
+              orgType: orgType as OrgType,
             };
+            // Save to localStorage for persistence across page refreshes
+            tokenStorage.setUserData({
+              organisationId: safeSelectedOrgId,
+              organisationName: orgName,
+              orgType: orgType,
+            });
           }
         }
         setState({ status: "authenticated", user });
@@ -196,6 +277,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (org: { organisationId: string; organisationName: string; orgType: OrgType }) => {
       const safeOrgId = normalizeOrganisationId(org.organisationId);
       if (!safeOrgId) return;
+      // Save to localStorage for persistence across page refreshes
+      tokenStorage.setUserData({
+        organisationId: safeOrgId,
+        organisationName: org.organisationName,
+        orgType: org.orgType,
+      });
       setState((prev) => {
         if (!prev.user) return prev;
         return {
