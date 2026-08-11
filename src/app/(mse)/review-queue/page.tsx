@@ -50,15 +50,12 @@ export default function ReviewQueuePage() {
 
   const handleFlagSubmit = (flag: { transactionId: string; type: string; severity: string; notes: string }) => {
     flagIssue({
-      type: flag.type as ReviewItem["type"],
+      type: flag.type,
       transactionId: flag.transactionId,
-      amount: "—",
       risk: flag.severity as "Critical" | "Medium" | "Low",
       severity: flag.severity as "Critical" | "Medium" | "Low",
-      due: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString().split("T")[0],
       status: "Open",
       description: flag.notes,
-      flaggedBy: user?.fullName ?? "Auditor",
     });
     appendAuditLog({
       userId: user?.id ?? 0, userEmail: user?.email ?? "",
