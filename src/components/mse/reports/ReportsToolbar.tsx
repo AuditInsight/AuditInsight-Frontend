@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { CSSProperties } from "react";
 import { Download, ChevronDown } from "lucide-react";
 import { EvidenceDropdown } from "@/components/mse/evidence/EvidenceDropdown";
-import { MOCK_REVIEW_QUEUE } from "@/mock/reviewQueue.mock";
-import { MOCK_TRANSACTIONS } from "@/mock/transactions.mock";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { exportReportsCSV, exportReportsPDF } from "@/utils/export";
 
 interface Props {
@@ -17,10 +17,10 @@ interface Props {
   setDateTo?: (v: string) => void;
 }
 
-function getFiltered(severity: string, dateFrom: string, dateTo: string) {
-  return MOCK_REVIEW_QUEUE.filter((r) => {
+function getFiltered(reviewItems: any[], severity: string, dateFrom: string, dateTo: string) {
+  return reviewItems.filter((r) => {
     if (severity !== "All" && r.risk !== severity) return false;
-    const due = r.due ?? "";
+    const due = r.createdAt ?? "";
     if (dateFrom && due < dateFrom) return false;
     if (dateTo && due > dateTo) return false;
     return true;
@@ -33,6 +33,13 @@ export default function ReportsToolbar({
   dateTo = "", setDateTo,
 }: Props) {
   const [exportOpen, setExportOpen] = useState(false);
+  const { items: reviewItems } = useReviewQueue();
+  const { transactions } = useTransactions();
+
+  const filteredReviews = useMemo(
+    () => getFiltered(reviewItems, severity, dateFrom, dateTo),
+    [reviewItems, severity, dateFrom, dateTo]
+  );
 
   return (
     <div style={styles.container}>
@@ -54,15 +61,13 @@ export default function ReportsToolbar({
         {exportOpen && (
           <div style={styles.exportMenu}>
             <button style={styles.exportItem} onClick={() => {
-              const rows = getFiltered(severity, dateFrom, dateTo);
-              exportReportsCSV(rows, { severity, dateFrom, dateTo, transactionsCount: MOCK_TRANSACTIONS.length });
+              exportReportsCSV(filteredReviews, { severity, dateFrom, dateTo, transactionsCount: transactions.length });
               setExportOpen(false);
             }}>
               Export CSV
             </button>
             <button style={styles.exportItem} onClick={() => {
-              const rows = getFiltered(severity, dateFrom, dateTo);
-              exportReportsPDF(rows, { severity, dateFrom, dateTo, transactionsCount: MOCK_TRANSACTIONS.length });
+              exportReportsPDF(filteredReviews, { severity, dateFrom, dateTo, transactionsCount: transactions.length });
               setExportOpen(false);
             }}>
               Export PDF
