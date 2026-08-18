@@ -130,13 +130,11 @@ export default function NGOSidebar({ user, onLogout, collapsed = false, onToggle
 
       {/* ── Logo + collapse toggle ── */}
       <div style={s.logoRow}>
-        <div style={s.logoMark}>
-          <Shield size={15} color="#fff" strokeWidth={2.5} />
-        </div>
+        <img src="/logo.svg" alt="AuditInsight" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
         {!collapsed && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <span style={s.logoTitle}>AuditInsight</span>
-            <span style={s.logoSub}>Audit Intelligence</span>
+            <span style={s.logoSub}>{user.role === "AUDITOR" ? "Audit Portal" : user.role === "ORG_ADMIN" ? "Admin Portal" : "Portal"}</span>
           </div>
         )}
         <button
