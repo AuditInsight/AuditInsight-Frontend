@@ -15,6 +15,7 @@ import NGOEditTransactionModal from "@/components/ngo/EditTransactionModal";
 
 import { TransactionsStats } from "@/components/mse/transactions/TransactionsStats";
 import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
+import { TransactionFilters } from "@/components/mse/transactions/TransactionFilters";
 import ViewTransactionModal from "@/components/mse/transactions/modals/ViewTransactionModal";
 import PageToolbar from "@/components/layout/pageToolbar/pageToolbar";
 import NGOTransactionTable from "@/components/ngo/NGOTransactionTable";
@@ -162,6 +163,13 @@ function TransactionsContent() {
   const [startDate,    setStartDate]    = useState("");
   const [endDate,      setEndDate]      = useState("");
   const [page,         setPage]         = useState(1);
+  const [status, setStatus] = useState("All");
+  const [type, setType] = useState("All");
+  const [paymentMethod, setPaymentMethod] = useState("All");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
+  const [evidenceCount, setEvidenceCount] = useState("All");
+  const [projectName, setProjectName] = useState("All");
   const [deleteError,  setDeleteError]  = useState<string | null>(null);
   const [expandActionItems, setExpandActionItems] = useState(false);
   const [expandAuditorAlerts, setExpandAuditorAlerts] = useState(false);
@@ -201,9 +209,17 @@ function TransactionsContent() {
       }
       if (startDate && new Date(t.date) < new Date(startDate)) return false;
       if (endDate   && new Date(t.date) > new Date(endDate))   return false;
+      if (status !== "All" && t.status !== status) return false;
+      if (type !== "All" && t.type !== type) return false;
+      if (paymentMethod !== "All" && t.paymentMethod !== paymentMethod) return false;
+      if (minAmount && t.amount < Number(minAmount)) return false;
+      if (maxAmount && t.amount > Number(maxAmount)) return false;
+      if (evidenceCount === "HAS" && t.evidenceCount === 0) return false;
+      if (evidenceCount === "NO" && t.evidenceCount > 0) return false;
+      if (projectName !== "All" && t.projectName !== projectName) return false;
       return true;
     });
-  }, [ngoTransactions, search, startDate, endDate]);
+  }, [ngoTransactions, search, startDate, endDate, status, type, paymentMethod, minAmount, maxAmount, evidenceCount, projectName]);
 
   const filteredData  = useMemo(() => filteredNgo.map(toTransaction), [filteredNgo]);
   const totalPages    = Math.ceil(filteredNgo.length / pageSize);
@@ -228,6 +244,12 @@ function TransactionsContent() {
     a.href = url; a.download = "ngo-transactions.csv"; a.click();
     URL.revokeObjectURL(url);
   };
+
+  const projectOptions = useMemo(() => {
+    const projects = Array.from(new Set(ngoTransactions.map((t) => t.projectName).filter(Boolean))) as string[];
+    projects.sort((a, b) => a.localeCompare(b));
+    return projects;
+  }, [ngoTransactions]);
 
   const handleCreate = async () => {
     toast.success("Transaction added", "Transaction has been successfully created.");
@@ -406,9 +428,39 @@ function TransactionsContent() {
           endDate={endDate}
           setStartDate={setStartDate}
           setEndDate={setEndDate}
-          onReset={() => { setSearch(""); setStartDate(""); setEndDate(""); setPage(1); }}
+          onReset={() => {
+            setSearch("");
+            setStartDate("");
+            setEndDate("");
+            setStatus("All");
+            setType("All");
+            setPaymentMethod("All");
+            setMinAmount("");
+            setMaxAmount("");
+            setEvidenceCount("All");
+            setProjectName("All");
+            setPage(1);
+          }}
           onExport={handleExport}
           onAdd={canAdd ? () => setIsAddOpen(true) : undefined}
+        />
+
+        <TransactionFilters
+          status={status}
+          setStatus={setStatus}
+          type={type}
+          setType={setType}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          minAmount={minAmount}
+          setMinAmount={setMinAmount}
+          maxAmount={maxAmount}
+          setMaxAmount={setMaxAmount}
+          evidenceCount={evidenceCount}
+          setEvidenceCount={setEvidenceCount}
+          projectName={projectName}
+          setProjectName={setProjectName}
+          projectOptions={projectOptions}
         />
 
         {txnLoading ? (
