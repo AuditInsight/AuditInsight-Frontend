@@ -88,6 +88,19 @@ export const TransactionsTable = ({
           );
         })}
       </tbody>
+      {data.length > 0 && (
+        <tfoot>
+          <tr style={{ background: "#f8fafc" }}>
+            <td colSpan={2} style={{ padding: "10px 16px", fontSize: 12, fontWeight: 700, color: "#64748b" }}>
+              Net total ({data.length} transactions)
+            </td>
+            <td style={{ padding: "10px 16px", fontSize: 13.5, fontWeight: 700, color: "#0f172a" }}>
+              RWF {data.reduce((sum, t) => sum + (t.amount ?? 0), 0).toLocaleString()}
+            </td>
+            <td colSpan={4} />
+          </tr>
+        </tfoot>
+      )}
     </table>
   );
 };

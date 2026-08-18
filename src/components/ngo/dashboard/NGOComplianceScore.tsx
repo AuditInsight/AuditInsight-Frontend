@@ -1,28 +1,45 @@
 "use client";
 
 import { ShieldCheck, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useNGOTransactions } from "@/hooks/useNGOTransactions";
+import { useNGOAuditFlags } from "@/hooks/useNGOAuditFlags";
 
-interface ComplianceItem {
+interface ComplianceMetric {
   label: string;
   score: number;
-  max: number;
   color: string;
 }
 
-const ITEMS: ComplianceItem[] = [
-  { label: "Evidence Coverage",    score: 82, max: 100, color: "#1e3a8a" },
-  { label: "Timely Submissions",   score: 91, max: 100, color: "#2563eb" },
-  { label: "Flag Resolution Rate", score: 74, max: 100, color: "#475569" },
-  { label: "Donor Reporting",      score: 96, max: 100, color: "#15803d" },
-];
-
-function getOverall(items: ComplianceItem[]) {
-  return Math.round(items.reduce((s, i) => s + i.score, 0) / items.length);
-}
-
 export default function NGOComplianceScore() {
-  const overall = getOverall(ITEMS);
-  const status  = overall >= 90 ? "Excellent" : overall >= 75 ? "Good" : overall >= 60 ? "Fair" : "Needs Attention";
+  const { transactions } = useNGOTransactions();
+  const { flags } = useNGOAuditFlags();
+
+  const completed = transactions.filter((t) => t.status === "COMPLETED").length;
+  const total = transactions.length || 1;
+  const evidenceCoverage = Math.round((completed / total) * 100);
+
+  const resolvedFlags = flags.filter((f) => f.status === "RESOLVED").length;
+  const flagResolutionRate = flags.length > 0 ? Math.round((resolvedFlags / flags.length) * 100) : 100;
+
+  const recentMonths = 3;
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - recentMonths, 1);
+  const recentTxns = transactions.filter((t) => new Date(t.date) >= cutoff);
+  const onTimeTxns = recentTxns.filter((t) => t.evidenceCount > 0 || t.status === "COMPLETED");
+  const timelinessRate = recentTxns.length > 0 ? Math.round((onTimeTxns.length / recentTxns.length) * 100) : 0;
+
+  const openFlags = flags.filter((f) => f.status === "OPEN").length;
+  const flagHealthScore = Math.max(0, 100 - (openFlags * 15));
+
+  const metrics: ComplianceMetric[] = [
+    { label: "Evidence Coverage", score: evidenceCoverage, color: "#1e3a8a" },
+    { label: "Timely Submissions", score: timelinessRate, color: "#2563eb" },
+    { label: "Flag Resolution", score: flagResolutionRate, color: "#15803d" },
+    { label: "Flag Health", score: flagHealthScore, color: "#475569" },
+  ];
+
+  const overall = Math.round(metrics.reduce((sum, m) => sum + m.score, 0) / metrics.length);
+  const status = overall >= 90 ? "Excellent" : overall >= 75 ? "Good" : overall >= 60 ? "Fair" : "Needs Attention";
   const statusColor = overall >= 90 ? "#15803d" : overall >= 75 ? "#2563eb" : overall >= 60 ? "#d97706" : "#dc2626";
 
   return (
@@ -44,7 +61,7 @@ export default function NGOComplianceScore() {
       </div>
 
       <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-        {ITEMS.map((item) => (
+        {metrics.map((item) => (
           <div key={item.label}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <span style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>{item.label}</span>

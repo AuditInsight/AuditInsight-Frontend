@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard, CreditCard, FolderOpen, Flag, Settings,
-  Bell, LogOut, Search, ChevronDown, Shield, Menu, X,
+  Bell, LogOut, Search, ChevronDown, Menu, X,
 } from "lucide-react";
 import NGONotificationPanel from "@/components/ngo/NGONotificationPanel";
 import NGORoleSwitcher from "@/components/ngo/rbac/NGORoleSwitcher";
@@ -69,12 +69,10 @@ export default function NGODashboardShell({ children }: Props) {
       <header style={s.header}>
         {/* Logo */}
         <div style={s.logoArea}>
-          <div style={s.logoMark}>
-            <Shield size={14} color="#fff" strokeWidth={2.5} />
-          </div>
+          <img src="/logo.svg" alt="AuditInsight" style={{ width: 32, height: 32, objectFit: "contain" }} />
           <div className="ngo-logo-text">
             <span style={s.logoTitle}>AuditInsight</span>
-            <span style={s.logoSub}>NGO Portal</span>
+            <span style={s.logoSub}>{authUser?.orgType === "NGO" ? "NGO Portal" : "Enterprise Portal"}</span>
           </div>
         </div>
 
@@ -199,7 +197,7 @@ export default function NGODashboardShell({ children }: Props) {
 
       <footer style={s.footer}>
         <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", textAlign: "center" }}>
-          AuditInsight NGO Portal · {orgName} · {new Date().getFullYear()}
+          AuditInsight · {orgName} · {new Date().getFullYear()}
         </p>
       </footer>
 
@@ -232,7 +230,7 @@ const s: Record<string, React.CSSProperties> = {
   root:    { minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f1f5f9", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" },
   header:  { display: "flex", alignItems: "center", gap: 0, background: "#fff", borderBottom: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(15,23,42,0.06)", position: "sticky", top: 0, zIndex: 100, padding: "0 20px", height: 58 },
   logoArea:  { display: "flex", alignItems: "center", gap: 10, paddingRight: 20, borderRight: "1px solid #f1f5f9", flexShrink: 0 },
-  logoMark:  { width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#1e40af,#3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 10px rgba(59,130,246,0.35)", flexShrink: 0 },
+  logoMark:  { width: 32, height: 32, borderRadius: 9, background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "none", flexShrink: 0 },
   logoTitle: { fontSize: 14, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.3px", display: "block", lineHeight: 1.2 },
   logoSub:   { fontSize: 9, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block" },
   tabBar:    { display: "flex", alignItems: "stretch", flex: 1, height: "100%", paddingLeft: 8, gap: 0, overflowX: "auto" as const },

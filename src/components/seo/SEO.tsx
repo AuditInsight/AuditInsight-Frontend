@@ -10,7 +10,11 @@ type SEOProps = {
   ogImage?: string;
 };
 
-export default function SEO({ title = "AuditInsight", description = "An intelligent audit readiness platform that organizes financial evidence, links every transaction to its supporting documents, and helps organizations prepare for audits with confidence.", ogImage }: SEOProps) {
+export default function SEO({
+  title = "AuditInsight",
+  description = "An intelligent audit readiness platform that organizes financial evidence, links every transaction to its supporting documents, and helps organizations prepare for audits with confidence.",
+  ogImage,
+}: SEOProps) {
   const defaultImage = ogImage ?? "/og-default.png"; // ensure a fallback image exists in public folder
   return (
     <Head>

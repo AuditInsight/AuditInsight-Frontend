@@ -59,6 +59,11 @@ export function useTransactions() {
       const txns = (txRes.data ?? []).map((t) => ({
         ...t,
         counterparty: t.counterparty ?? "",
+        amount: Number(t.amount) || 0,
+        date: t.date || "",
+        name: t.name || "",
+        type: t.type || "EXPENSE",
+        paymentMethod: t.paymentMethod || "BANK",
       }));
       setTransactions(withMeta(txns, ev));
     } catch (err) {

@@ -1,6 +1,5 @@
 "use client";
 
-import { Shield } from "lucide-react";
 
 export default function AppFooter() {
   const year = new Date().getFullYear();
@@ -9,7 +8,7 @@ export default function AppFooter() {
       <div style={s.inner} className="footer-inner-responsive">
         <div style={s.left}>
           <div style={s.logoRow}>
-            <div style={s.logoMark}><Shield size={11} color="#fff" strokeWidth={2.5} /></div>
+            <img src="/logo.svg" alt="AuditInsight" style={{ width: 22, height: 22, objectFit: "contain" }} />
             <span style={s.logoText}>AuditInsight</span>
           </div>
           <span style={s.copy}>© {year} AuditInsight · All rights reserved</span>

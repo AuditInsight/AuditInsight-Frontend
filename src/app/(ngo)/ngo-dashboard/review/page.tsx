@@ -15,7 +15,7 @@ import { theme } from "@/styles/theme";
 import { Flag, CheckCircle2, Clock, AlertTriangle, ShieldCheck } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 import NGOStatCard from "@/components/ngo/dashboard/NGOStatCard";
-import NGOAuditTrail from "@/components/ngo/dashboard/NGOAuditTrail";
+// import NGOAuditTrail from "@/components/ngo/dashboard/NGOAuditTrail";
 
 const SEV_CFG = {
   CRITICAL: { color: theme.colors.danger,  bg: theme.colors.dangerBg,  border: "#fecaca" },
@@ -175,8 +175,8 @@ function ReviewQueueContent() {
 
       <NGOFlagIssueModal open={flagTarget !== null} transaction={flagTarget} auditorName={user.fullName} onClose={() => setFlagTarget(null)} onSubmit={handleFlagSubmit} />
 
-      {/* Audit trail */}
-      <NGOAuditTrail />
+      {/* Audit trail — API support pending */}
+      {/* <NGOAuditTrail /> */}
     </div>
   );
 }

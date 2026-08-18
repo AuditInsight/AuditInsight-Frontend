@@ -21,12 +21,12 @@ function toNGOTransaction(t: Transaction): NGOTransaction {
     budgetLine:     t.budgetLine ?? "",
     donor:          (t as any).donor ?? "",
     description:    t.name,
-    counterparty:   t.counterparty,
-    date:           t.date,
-    amount:         t.amount,
+    counterparty:   t.counterparty ?? "",
+    date:           t.date ?? "",
+    amount:         t.amount ?? 0,
     currency:       "RWF",
-    paymentMethod:  t.paymentMethod,
-    type:           t.type,
+    paymentMethod:  t.paymentMethod ?? "BANK",
+    type:           t.type ?? "EXPENSE",
     status:         t.status === "PENDING" ? "PENDING" : "COMPLETED",
     evidenceCount:  t.evidenceCount ?? 0,
     createdBy:      t.createdBy ?? "",
@@ -37,7 +37,6 @@ function toNGOTransaction(t: Transaction): NGOTransaction {
 
 // Global queue to serialize transaction submissions and prevent ID collisions
 let submitQueue: Promise<void> = Promise.resolve();
-const queueLock = { locked: false };
 
 function enqueueSubmit(fn: () => Promise<void>): Promise<void> {
   return new Promise((resolve, reject) => {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, ArrowLeftRight, FileCheck, ClipboardList,
   Settings, LogOut, Building2, UserCheck, Bell,
-  Shield, Menu, X,
+  Menu, X,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { usePermissions } from "@/security/access-control";
@@ -71,9 +71,7 @@ export default function Header({ title }: HeaderProps) {
       <header style={s.bar}>
         {/* LEFT — logo */}
         <div style={s.left} onClick={() => navigate(canViewAdminPanel ? "/admin/organizations" : "/dashboard")}>
-          <div style={s.logoMark}>
-            <Shield size={16} color="#1e3a8a" strokeWidth={2.5} />
-          </div>
+          <img src="/logo.svg" alt="AuditInsight" style={{ width: 34, height: 34, objectFit: "contain" }} />
           <div style={s.logoText}>
             <span style={s.logoTitle}>{title}</span>
             <span className="header-logo-sub" style={s.logoSub}>Audit Intelligence</span>

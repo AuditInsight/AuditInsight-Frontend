@@ -1,6 +1,5 @@
 "use client";
 
-import { Shield } from "lucide-react";
 
 const LINKS = {
   Product:  [{ label: "Features", href: "#features" }, { label: "How It Works", href: "#how-it-works" }, { label: "Pricing", href: "#pricing" }, { label: "Security", href: "#security" }, { label: "Changelog", href: "#" }],
@@ -52,7 +51,9 @@ export default function Footer() {
         <div className="footer-top">
           <div style={s.brand}>
             <div style={s.logoRow}>
-              <div style={s.logoMark}><Shield size={16} color="#fff" strokeWidth={2.5} /></div>
+              <div style={s.logoMark}>
+                <img src="/logo.svg" alt="AuditInsight" style={{ width: 22, height: 22, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+              </div>
               <span style={s.logoText}>AuditInsight</span>
             </div>
             <p style={s.brandDesc}>
@@ -102,7 +103,7 @@ const s: Record<string, React.CSSProperties> = {
   inner:     { maxWidth: 1160, margin: "0 auto", padding: "72px 24px 40px" },
   brand:     { display: "flex", flexDirection: "column", gap: 16 },
   logoRow:   { display: "flex", alignItems: "center", gap: 10 },
-  logoMark:  { width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(30,58,138,0.40)" },
+  logoMark:  { width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(30,58,138,0.40)" },
   logoText:  { fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px" },
   brandDesc: { margin: 0, fontSize: 13, color: "rgba(255,255,255,0.48)", lineHeight: 1.7, maxWidth: 260 },
   socialRow: { display: "flex", gap: 10 },

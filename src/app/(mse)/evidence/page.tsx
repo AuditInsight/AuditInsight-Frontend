@@ -6,6 +6,7 @@ import { EvidenceHeader } from "@/components/mse/evidence/EvidenceHeader";
 import { EvidenceFilters, EvidenceTab } from "@/components/mse/evidence/EvidenceFilters";
 import { EvidenceTable } from "@/components/mse/evidence/EvidenceTable";
 import { EvidencePagination } from "@/components/mse/evidence/EvidencePagination";
+import { PageSizeSelector } from "@/components/mse/evidence/PageSizeSelector";
 import { EvidenceUploadModal } from "@/components/mse/evidence/EvidenceUploadModal";
 import { EvidenceDetailsModal } from "@/components/mse/evidence/EvidenceDetailsModal";
 import { ConfirmDeleteEvidenceModal } from "@/components/mse/evidence/ConfirmDeleteEvidenceModal";
@@ -39,8 +40,7 @@ export default function EvidencePage() {
   const [editingEvidence, setEditingEvidence]   = useState<Evidence | null>(null);
   const [evidenceToDelete, setEvidenceToDelete] = useState<Evidence | null>(null);
   const [isDeleting, setIsDeleting]             = useState(false);
-
-  const pageSize = 25;
+  const [pageSize, setPageSize]                 = useState(25);
 
   const filteredData = useMemo(() => {
     return documents.filter((e) => {
@@ -173,7 +173,16 @@ export default function EvidencePage() {
             onDelete={canDeleteEvidence ? setEvidenceToDelete : undefined}
           />
 
-          <EvidencePagination page={page} setPage={setPage} totalPages={totalPages} />
+          <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+            <span style={{ color: theme.colors.textMuted, fontSize: "13px" }}>
+              Showing {filteredData.length === 0 ? 0 : (page - 1) * pageSize + 1}–
+              {Math.min(page * pageSize, filteredData.length)} of {filteredData.length.toLocaleString()} documents
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <PageSizeSelector pageSize={pageSize} setPageSize={(size) => { setPageSize(size); setPage(1); }} />
+              <EvidencePagination page={page} setPage={setPage} totalPages={totalPages} />
+            </div>
+          </div>
         </div>
       </div>
 
