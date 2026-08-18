@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { TransactionsStats } from "@/components/mse/transactions/TransactionsStats";
 import { TransactionsTable } from "@/components/mse/transactions/TransactionsTable";
 import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
+import { TransactionFilters } from "@/components/mse/transactions/TransactionFilters";
 import ViewTransactionModal from "@/components/mse/transactions/modals/ViewTransactionModal";
 import { AddTransactionModal } from "@/components/mse/transactions/modals/AddTransactionModal";
 import { ConfirmDeleteModal } from "@/components/mse/transactions/modals/ConfirmDeleteModal";
@@ -29,6 +30,13 @@ function TransactionsContent() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("All");
+  const [type, setType] = useState("All");
+  const [paymentMethod, setPaymentMethod] = useState("All");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
+  const [evidenceCount, setEvidenceCount] = useState("All");
+  const [projectName, setProjectName] = useState("All");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
@@ -46,9 +54,17 @@ function TransactionsContent() {
       if (search && !(t.counterparty ?? t.name ?? "").toLowerCase().includes(search.toLowerCase())) return false;
       if (startDate && new Date(t.date) < new Date(startDate)) return false;
       if (endDate && new Date(t.date) > new Date(endDate)) return false;
+      if (status !== "All" && t.status !== status) return false;
+      if (type !== "All" && t.type !== type) return false;
+      if (paymentMethod !== "All" && t.paymentMethod !== paymentMethod) return false;
+      if (minAmount && t.amount < Number(minAmount)) return false;
+      if (maxAmount && t.amount > Number(maxAmount)) return false;
+      if (evidenceCount === "HAS" && (t.evidenceCount ?? 0) === 0) return false;
+      if (evidenceCount === "NO" && (t.evidenceCount ?? 0) > 0) return false;
+      if (projectName !== "All" && t.projectName !== projectName) return false;
       return true;
     });
-  }, [transactions, search, startDate, endDate]);
+  }, [transactions, search, startDate, endDate, status, type, paymentMethod, minAmount, maxAmount, evidenceCount, projectName]);
 
   const totalPages = Math.ceil(filteredData.length / pageSize);
   const paginatedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
@@ -93,6 +109,12 @@ function TransactionsContent() {
     exportTransactionsCSV(filteredData);
   };
 
+  const projectOptions = useMemo(() => {
+    const projects = Array.from(new Set(transactions.map((t) => t.projectName).filter(Boolean))) as string[];
+    projects.sort((a, b) => a.localeCompare(b));
+    return projects;
+  }, [transactions]);
+
   return (
     <div style={pageStyles}>
       <style>{`
@@ -113,9 +135,39 @@ function TransactionsContent() {
           endDate={endDate}
           setStartDate={setStartDate}
           setEndDate={setEndDate}
-          onReset={() => { setSearch(""); setStartDate(""); setEndDate(""); setPage(1); }}
+          onReset={() => {
+            setSearch("");
+            setStartDate("");
+            setEndDate("");
+            setStatus("All");
+            setType("All");
+            setPaymentMethod("All");
+            setMinAmount("");
+            setMaxAmount("");
+            setEvidenceCount("All");
+            setProjectName("All");
+            setPage(1);
+          }}
           onExport={handleExport}
           onAdd={canAddTransaction ? () => setIsAddModalOpen(true) : undefined}
+        />
+
+        <TransactionFilters
+          status={status}
+          setStatus={setStatus}
+          type={type}
+          setType={setType}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          minAmount={minAmount}
+          setMinAmount={setMinAmount}
+          maxAmount={maxAmount}
+          setMaxAmount={setMaxAmount}
+          evidenceCount={evidenceCount}
+          setEvidenceCount={setEvidenceCount}
+          projectName={projectName}
+          setProjectName={setProjectName}
+          projectOptions={projectOptions}
         />
 
         <div className="txn-table-wrap">
