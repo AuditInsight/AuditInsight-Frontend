@@ -241,7 +241,9 @@ function LoginForm() {
       {/* LEFT PANEL */}
       <div style={s.left} className="auth-left">
         <div style={s.brandBlock}>
-          <img src="/logo.svg" alt="AuditInsight Logo" style={{ width: 48, height: 48, objectFit: "contain", marginBottom: 22 }} />
+          <div style={s.logoMark}>
+            <img src="/logo.svg" alt="AuditInsight Logo" style={{ width: 32, height: 32, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          </div>
           <h1 style={s.brandName}>AuditInsight</h1>
           <p style={s.tagline}>
             Enterprise-grade auditing and compliance — built for modern finance teams.
@@ -422,10 +424,10 @@ const s: Record<string, React.CSSProperties> = {
   },
   brandBlock: { marginBottom: 52 },
   logoMark: {
-    width: 48, height: 48, borderRadius: 13,
-    background: "rgba(255,255,255,0.15)",
+    width: 56, height: 56, borderRadius: 14,
+    background: "linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12))",
     display: "flex", alignItems: "center", justifyContent: "center",
-    color: "#fff", marginBottom: 22,
+    color: "#fff", marginBottom: 22, boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
   },
   brandName:   { color: "#fff", fontSize: 30, fontWeight: 700, margin: "0 0 14px", letterSpacing: "-0.5px" },
   tagline:     { color: "rgba(255,255,255,0.70)", fontSize: 15, lineHeight: 1.65, margin: 0, maxWidth: 300 },

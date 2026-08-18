@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Shield, Check, Loader2, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, Check, Loader2, AlertTriangle } from "lucide-react";
 import { isAxiosError } from "axios";
 import { apiClient } from "@/api/client";
 import { RegisterRequest, RegisterApiResponse, ApiErrorResponse } from "@/types/auth";
@@ -96,7 +96,9 @@ export default function SignupPage() {
       {/* LEFT */}
       <div style={s.left} className="auth-left">
         <div style={s.logoRow}>
-          <div style={s.logoMark}><Shield size={18} strokeWidth={2} /></div>
+          <div style={s.logoMark}>
+            <img src="/logo.svg" alt="AuditInsight" style={{ width: 24, height: 24, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          </div>
           <span style={s.logoText}>AuditInsight</span>
         </div>
         <div style={s.leftBody} className="auth-left-body">
@@ -230,7 +232,7 @@ const s: Record<string, React.CSSProperties> = {
   shell: { minHeight: "100vh", display: "flex" },
   left: { width: "42%", minHeight: "100vh", background: "linear-gradient(160deg,#0c2d6b 0%,#0f3d75 45%,#0d3366 100%)", display: "flex", flexDirection: "column", padding: "48px 52px", position: "relative", overflow: "hidden" },
   logoRow: { display: "flex", alignItems: "center", gap: 12, marginBottom: 52 },
-  logoMark: { width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" },
+  logoMark: { width: 48, height: 48, borderRadius: 12, background: "linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12))", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" },
   logoText: { color: "#fff", fontSize: 18, fontWeight: 700, letterSpacing: "-0.3px" },
   leftBody: { flex: 1 },
   leftHeading: { color: "#fff", fontSize: 24, fontWeight: 700, margin: "0 0 14px", lineHeight: 1.3, letterSpacing: "-0.4px" },
