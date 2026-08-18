@@ -136,7 +136,7 @@ export default function NGOSidebar({ user, onLogout, collapsed = false, onToggle
         {!collapsed && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <span style={s.logoTitle}>AuditInsight</span>
-            <span style={s.logoSub}>NGO Portal</span>
+            <span style={s.logoSub}>Audit Intelligence</span>
           </div>
         )}
         <button

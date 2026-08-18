@@ -70,11 +70,11 @@ export default function NGODashboardShell({ children }: Props) {
         {/* Logo */}
         <div style={s.logoArea}>
           <div style={s.logoMark}>
-            <Shield size={14} color="#fff" strokeWidth={2.5} />
+            <Shield size={14} color="#1e3a8a" strokeWidth={2.5} />
           </div>
           <div className="ngo-logo-text">
             <span style={s.logoTitle}>AuditInsight</span>
-            <span style={s.logoSub}>NGO Portal</span>
+            <span style={s.logoSub}>Audit Intelligence</span>
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export default function NGODashboardShell({ children }: Props) {
 
       <footer style={s.footer}>
         <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", textAlign: "center" }}>
-          AuditInsight NGO Portal · {orgName} · {new Date().getFullYear()}
+          AuditInsight · {orgName} · {new Date().getFullYear()}
         </p>
       </footer>
 
