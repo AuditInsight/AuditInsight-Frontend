@@ -150,7 +150,18 @@ export default function NGOTransactionTable({
 
   // DEBUG: Show what data we're receiving
   if (transactions.length > 0) {
-    console.log("📊 NGOTransactionTable received:", { count: transactions.length, firstTxn: transactions[0] });
+    const firstTxn = transactions[0];
+    console.log("📊 NGOTransactionTable received:", {
+      count: transactions.length,
+      firstTxn: {
+        id: firstTxn.id,
+        counterparty: firstTxn.counterparty,
+        amount: firstTxn.amount,
+        date: firstTxn.date,
+        projectName: firstTxn.projectName,
+        status: firstTxn.status,
+      },
+    });
   }
 
   const sorted = [...transactions].sort((a, b) => {
@@ -255,18 +266,18 @@ export default function NGOTransactionTable({
                   </td>
                   {/* Budget Line */}
                   <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
-                    <span style={{ fontSize: 12.5, color: "#64748b" }}>{txn.budgetLine}</span>
+                    <span style={{ fontSize: 12.5, color: "#64748b" }}>{txn.budgetLine || "–"}</span>
                   </td>
                   {/* Amount */}
                   <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
                     <p style={{ fontSize: 13.5, fontWeight: 700, color: "#0f172a", margin: 0 }}>
-                      {txn.type === "INCOME" ? "+" : "−"}{txn.currency} {txn.amount.toLocaleString()}
+                      {txn.type === "INCOME" ? "+" : "−"}{txn.currency || "RWF"} {(txn.amount ?? 0).toLocaleString()}
                     </p>
-                    <p style={{ fontSize: 11.5, color: "#94a3b8", margin: "2px 0 0" }}>{txn.paymentMethod.replace("_", " ")}</p>
+                    <p style={{ fontSize: 11.5, color: "#94a3b8", margin: "2px 0 0" }}>{(txn.paymentMethod || "BANK").replace("_", " ")}</p>
                   </td>
                   {/* Counterparty */}
                   <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
-                    <span style={{ fontSize: 12.5, color: "#475569" }}>{txn.counterparty}</span>
+                    <span style={{ fontSize: 12.5, color: "#475569" }}>{txn.counterparty || "–"}</span>
                   </td>
                   {/* Status */}
                   <td style={{ padding: "12px 16px" }}>
