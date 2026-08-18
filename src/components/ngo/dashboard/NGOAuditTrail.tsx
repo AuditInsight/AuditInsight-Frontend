@@ -1,25 +1,18 @@
 "use client";
 
-import { Shield, User, FileText, Flag, Upload, CheckCircle2 } from "lucide-react";
+import { Shield, FileText, Flag, Upload, CheckCircle2 } from "lucide-react";
+import { getAuditLog } from "@/security/audit-logger";
+import type { AuditEntry } from "@/security/audit-logger";
 
-interface AuditEntry {
-  id: string;
-  action: string;
-  actor: string;
-  role: string;
-  target: string;
-  timestamp: string;
-  type: "create" | "update" | "flag" | "upload" | "resolve" | "view";
-}
-
-const DUMMY_TRAIL: AuditEntry[] = [
-  { id: "A-001", action: "Transaction created",    actor: "Alice Uwimana",   role: "Accountant",  target: "TXN-012",  timestamp: "2024-06-15 09:14", type: "create"  },
-  { id: "A-002", action: "Evidence uploaded",      actor: "Alice Uwimana",   role: "Accountant",  target: "TXN-003",  timestamp: "2024-06-15 09:32", type: "upload"  },
-  { id: "A-003", action: "Flag raised",            actor: "Bob Nkurunziza",  role: "Auditor",     target: "TXN-007",  timestamp: "2024-06-15 10:05", type: "flag"    },
-  { id: "A-004", action: "Transaction reviewed",   actor: "Carol Ingabire",  role: "Org Admin",   target: "TXN-001",  timestamp: "2024-06-15 11:20", type: "view"    },
-  { id: "A-005", action: "Flag resolved",          actor: "Bob Nkurunziza",  role: "Auditor",     target: "FLAG-002", timestamp: "2024-06-15 13:45", type: "resolve" },
-  { id: "A-006", action: "Transaction updated",    actor: "Alice Uwimana",   role: "Accountant",  target: "TXN-005",  timestamp: "2024-06-15 14:10", type: "update"  },
-];
+const ACTION_TYPE_MAP: Record<string, "create" | "update" | "flag" | "upload" | "resolve"> = {
+  TRANSACTION_CREATE: "create",
+  TRANSACTION_UPDATE: "update",
+  TRANSACTION_DELETE: "update",
+  EVIDENCE_UPLOAD: "upload",
+  EVIDENCE_DELETE: "upload",
+  FLAG_CREATED: "flag",
+  FLAG_RESOLVED: "resolve",
+};
 
 const TYPE_CFG = {
   create:  { icon: <FileText size={13} />,    color: "#1e3a8a", bg: "rgba(30,58,138,0.08)"  },
@@ -27,7 +20,6 @@ const TYPE_CFG = {
   flag:    { icon: <Flag size={13} />,        color: "#d97706", bg: "#fffbeb"               },
   upload:  { icon: <Upload size={13} />,      color: "#475569", bg: "#f1f5f9"               },
   resolve: { icon: <CheckCircle2 size={13} />, color: "#15803d", bg: "#f0fdf4"              },
-  view:    { icon: <User size={13} />,        color: "#64748b", bg: "#f8fafc"               },
 };
 
 interface Props {
@@ -35,7 +27,8 @@ interface Props {
 }
 
 export default function NGOAuditTrail({ maxItems = 6 }: Props) {
-  const entries = DUMMY_TRAIL.slice(0, maxItems);
+  const auditLog = [...getAuditLog()].reverse();
+  const entries = auditLog.slice(0, maxItems);
 
   return (
     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", boxShadow: "0 1px 4px rgba(15,23,42,0.05)", overflow: "hidden" }}>
@@ -59,29 +52,43 @@ export default function NGOAuditTrail({ maxItems = 6 }: Props) {
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry, idx) => {
-              const cfg = TYPE_CFG[entry.type];
-              return (
-                <tr key={entry.id} style={{ borderBottom: idx < entries.length - 1 ? "1px solid #f8fafc" : "none" }}>
-                  <td style={{ padding: "11px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ width: 26, height: 26, borderRadius: 7, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", color: cfg.color, flexShrink: 0 }}>
-                        {cfg.icon}
+            {entries.length === 0 ? (
+              <tr>
+                <td colSpan={4} style={{ padding: "24px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                  No audit entries yet
+                </td>
+              </tr>
+            ) : (
+              entries.map((entry, idx: number) => {
+                const type = (ACTION_TYPE_MAP[entry.action as keyof typeof ACTION_TYPE_MAP] || "create") as keyof typeof TYPE_CFG;
+                const cfg = TYPE_CFG[type];
+                return (
+                  <tr key={entry.id} style={{ borderBottom: idx < entries.length - 1 ? "1px solid #f8fafc" : "none" }}>
+                    <td style={{ padding: "11px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: 7, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", color: cfg.color, flexShrink: 0 }}>
+                          {cfg.icon}
+                        </div>
+                        <span style={{ fontWeight: 600, color: "#0f172a" }}>{entry.action.replace(/_/g, " ")}</span>
                       </div>
-                      <span style={{ fontWeight: 600, color: "#0f172a" }}>{entry.action}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: "11px 16px" }}>
-                    <p style={{ margin: 0, fontWeight: 600, color: "#0f172a" }}>{entry.actor}</p>
-                    <p style={{ margin: "1px 0 0", fontSize: 11, color: "#94a3b8" }}>{entry.role}</p>
-                  </td>
-                  <td style={{ padding: "11px 16px" }}>
-                    <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#64748b" }}>{entry.target}</span>
-                  </td>
-                  <td style={{ padding: "11px 16px", fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap" }}>{entry.timestamp}</td>
-                </tr>
-              );
-            })}
+                    </td>
+                    <td style={{ padding: "11px 16px" }}>
+                      <p style={{ margin: 0, fontWeight: 600, color: "#0f172a", fontSize: 12 }}>{entry.userEmail}</p>
+                      <p style={{ margin: "1px 0 0", fontSize: 11, color: "#94a3b8" }}>{entry.userRole}</p>
+                    </td>
+                    <td style={{ padding: "11px 16px" }}>
+                      <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#64748b" }}>{entry.targetResourceId}</span>
+                    </td>
+                    <td style={{ padding: "11px 16px", fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap" }}>
+                      {new Date(entry.timestamp).toLocaleString(undefined, {
+                        month: "short", day: "numeric",
+                        hour: "2-digit", minute: "2-digit",
+                      })}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
