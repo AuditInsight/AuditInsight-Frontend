@@ -135,9 +135,7 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
             {/* Header */}
             <div style={header}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={logoMark}>
-                  <Shield size={14} color="#1e3a8a" strokeWidth={2.5} />
-                </div>
+                <img src="/logo.svg" alt="AuditInsight" style={{ width: 32, height: 32, objectFit: "contain" }} />
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>AuditInsight</div>
                   <div style={{ fontSize: 12, color: "#94a3b8" }}>Secure Checkout</div>

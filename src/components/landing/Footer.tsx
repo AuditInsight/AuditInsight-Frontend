@@ -1,6 +1,5 @@
 "use client";
 
-import { Shield } from "lucide-react";
 
 const LINKS = {
   Product:  [{ label: "Features", href: "#features" }, { label: "How It Works", href: "#how-it-works" }, { label: "Pricing", href: "#pricing" }, { label: "Security", href: "#security" }, { label: "Changelog", href: "#" }],
@@ -52,7 +51,7 @@ export default function Footer() {
         <div className="footer-top">
           <div style={s.brand}>
             <div style={s.logoRow}>
-              <div style={s.logoMark}><Shield size={16} color="#fff" strokeWidth={2.5} /></div>
+              <img src="/logo.svg" alt="AuditInsight" style={{ width: 28, height: 28, objectFit: "contain" }} />
               <span style={s.logoText}>AuditInsight</span>
             </div>
             <p style={s.brandDesc}>

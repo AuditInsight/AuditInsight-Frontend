@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext.production";
 import { NAV_BY_ROLE } from "./sidebar.menu";
 import { FrontendRole } from "@/types/auth";
-import { LogOut, Shield } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 const ROLE_CONFIG: Record<FrontendRole, { label: string; color: string; bg: string }> = {
   ORG_ADMIN:            { label: "Org Admin",             color: "#1e3a8a", bg: "#eff6ff" },
@@ -39,7 +39,7 @@ export default function Sidebar() {
     <aside style={s.sidebar}>
       {/* Logo */}
       <div style={s.logoRow}>
-        <div style={s.logoMark}><Shield size={16} color="#fff" /></div>
+        <img src="/logo.svg" alt="AuditInsight" style={{ width: 28, height: 28, objectFit: "contain" }} />
         <span style={s.logoText}>AuditInsight</span>
       </div>
 

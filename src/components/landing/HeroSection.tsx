@@ -85,7 +85,7 @@ export default function HeroSection() {
           <div style={s.mockCard}>
             <div style={s.mockHeader}>
               <div style={s.mockLogoRow}>
-                <div style={s.mockLogoMark}><Shield size={13} color="#fff" /></div>
+                <img src="/logo.svg" alt="AuditInsight" style={{ width: 18, height: 18, objectFit: "contain" }} />
                 <span style={s.mockLogoTxt}>AuditInsight</span>
               </div>
               <span style={s.mockBadge}>● Live</span>
