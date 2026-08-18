@@ -64,7 +64,9 @@ export default function Navbar() {
 
       <header className={`nb-bar${scrolled ? " scrolled" : ""}`}>
         <div style={s.logo}>
-          <img src="/logo.svg" alt="AuditInsight Logo" style={{ width: 32, height: 32, objectFit: "contain" }} />
+          <div style={s.logoMark}>
+            <img src="/logo.svg" alt="AuditInsight Logo" style={{ width: 24, height: 24, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          </div>
           <span style={s.logoText}>AuditInsight</span>
         </div>
 
@@ -121,7 +123,7 @@ export default function Navbar() {
 const s: Record<string, React.CSSProperties> = {
   logo:     { display: "flex", alignItems: "center", gap: 10 },
   logoMark: {
-    width: 34, height: 34, borderRadius: 10,
+    width: 42, height: 42, borderRadius: 12,
     background: "linear-gradient(135deg,#0f3d75,#1e3a8a)",
     display: "flex", alignItems: "center", justifyContent: "center",
     boxShadow: "0 4px 12px rgba(30,58,138,0.30)",

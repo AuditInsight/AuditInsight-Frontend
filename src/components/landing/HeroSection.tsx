@@ -85,7 +85,9 @@ export default function HeroSection() {
           <div style={s.mockCard}>
             <div style={s.mockHeader}>
               <div style={s.mockLogoRow}>
-                <img src="/logo.svg" alt="AuditInsight" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                <div style={s.mockLogoMark}>
+                  <img src="/logo.svg" alt="AuditInsight" style={{ width: 16, height: 16, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+                </div>
                 <span style={s.mockLogoTxt}>AuditInsight</span>
               </div>
               <span style={s.mockBadge}>● Live</span>
@@ -198,7 +200,7 @@ const s: Record<string, React.CSSProperties> = {
   mockHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   mockLogoRow: { display: "flex", alignItems: "center", gap: 8 },
   mockLogoMark: {
-    width: 28, height: 28, borderRadius: 7, background: ACCENT,
+    width: 36, height: 36, borderRadius: 8, background: ACCENT,
     display: "flex", alignItems: "center", justifyContent: "center",
   },
   mockLogoTxt: { fontSize: 14, fontWeight: 700, color: "#0f172a" },
