@@ -39,7 +39,9 @@ export default function Sidebar() {
     <aside style={s.sidebar}>
       {/* Logo */}
       <div style={s.logoRow}>
-        <img src="/logo.svg" alt="AuditInsight" style={{ width: 28, height: 28, objectFit: "contain" }} />
+        <div style={s.logoMark}>
+          <img src="/logo.svg" alt="AuditInsight" style={{ width: 20, height: 20, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+        </div>
         <span style={s.logoText}>AuditInsight</span>
       </div>
 
@@ -100,7 +102,7 @@ export default function Sidebar() {
 const s: Record<string, React.CSSProperties> = {
   sidebar: { width: 240, minHeight: "100vh", background: "#fff", borderRight: "1px solid #e2e8f0", display: "flex", flexDirection: "column", padding: "20px 14px", position: "sticky", top: 0, height: "100vh", overflowY: "auto", flexShrink: 0 },
   logoRow: { display: "flex", alignItems: "center", gap: 10, padding: "0 6px", marginBottom: 4 },
-  logoMark: { width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", display: "flex", alignItems: "center", justifyContent: "center" },
+  logoMark: { width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(30,58,138,0.30)", flexShrink: 0 },
   logoText: { fontSize: 16, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.3px" },
   divider: { height: 1, background: "#f1f5f9", margin: "12px 0" },
   profileCard: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "14px 10px", borderRadius: 12, border: "1.5px solid", background: "#fafafa", textAlign: "center" },
