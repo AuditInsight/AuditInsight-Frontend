@@ -337,133 +337,67 @@ export const getAuditorProfile = () => apiClient.get("/auditor/profile");
 /* =========================
    BILLING & PAYMENT TYPES
 ========================= */
-export type PaymentMethodType = "card" | "momo" | "bank_transfer";
-export type PaymentProvider = "stripe" | "momo" | "paypal";
-export type SubscriptionStatus = "active" | "past_due" | "cancelled" | "trialing";
+export type PlanTier = "FREE" | "STARTER" | "PROFESSIONAL" | "ENTERPRISE";
+export type BillingCycle = "MONTHLY" | "SIX_MONTHS" | "YEARLY";
+export type PaymentProvider = "MOMO" | "CARD";
+export type PaymentStatus = "PENDING" | "SUCCESSFUL" | "FAILED";
+export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
 
-export interface PaymentMethodResponse {
-  id: string;
-  type: PaymentMethodType;
-  provider: PaymentProvider;
-  isDefault: boolean;
-  createdAt: string;
-}
-
-export interface CardPaymentMethodResponse extends PaymentMethodResponse {
-  type: "card";
-  provider: "stripe";
-  brand: string;
-  last4: string;
-  expiryMonth: number;
-  expiryYear: number;
-}
-
-export interface MOMOPaymentMethodResponse extends PaymentMethodResponse {
-  type: "momo";
-  provider: "momo";
+export interface StartMomoCheckoutRequest {
+  planTier: PlanTier;
+  billingCycle: BillingCycle;
   phoneNumber: string;
-  network: string;
+}
+
+export interface StartCardCheckoutRequest {
+  planTier: PlanTier;
+  billingCycle: BillingCycle;
+}
+
+export interface PaymentStatusResponse {
+  paymentId: string;
+  provider: PaymentProvider;
+  status: PaymentStatus;
+  usdAmount: number;
+  chargedCurrency: string;
+  chargedAmount: number;
+  subscriptionId?: string;
+  failureReason?: string;
+}
+
+export interface CardCheckoutResponse {
+  paymentId: string;
+  checkoutUrl: string;
 }
 
 export interface SubscriptionResponse {
   id: string;
   organisationId: string;
-  plan: string;
-  billingCycle: string;
+  planTier: PlanTier;
+  billingCycle: BillingCycle;
   status: SubscriptionStatus;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  cancelAtPeriodEnd: boolean;
-  preferredPaymentMethod?: string;
-}
-
-export interface PaymentIntentResponse {
-  id: string;
-  clientSecret: string;
-  amount: number;
-  currency: string;
-  status: string;
-}
-
-export interface ProcessPaymentRequest {
-  paymentMethodId: string;
-  amount: number;
-  currency?: string;
-  planId?: string;
-  billingCycle?: string;
-  description?: string;
-}
-
-export interface ProcessMOMOPaymentRequest {
-  phoneNumber: string;
-  amount: number;
-  currency?: string;
-  network: "mtn" | "airtel";
-  planId?: string;
-  billingCycle?: string;
+  startDate: string;
+  endDate: string;
 }
 
 /* =========================
    BILLING & PAYMENT API
 ========================= */
 
-// Get subscription for current organisation
-export const getSubscription = () =>
-  apiClient.get<SubscriptionResponse>("/billing/subscription");
+// Start MOMO checkout (pawaPay integration)
+export const startMomoCheckout = (organisationId: string, data: StartMomoCheckoutRequest) =>
+  apiClient.post<PaymentStatusResponse>(`/subscriptions/${organisationId}/checkout/momo`, data);
 
-// Get all payment methods for current organisation
-export const getPaymentMethods = () =>
-  apiClient.get<(CardPaymentMethodResponse | MOMOPaymentMethodResponse)[]>("/billing/payment-methods");
+// Get MOMO payment status
+export const getMomoPaymentStatus = (paymentId: string) =>
+  apiClient.get<PaymentStatusResponse>(`/subscriptions/payments/${paymentId}/status`);
 
-// Add a new payment method
-export const addPaymentMethod = (data: {
-  type: PaymentMethodType;
-  provider: PaymentProvider;
-  token?: string; // For Stripe card tokens
-  phoneNumber?: string; // For MOMO
-  network?: string; // For MOMO
-}) =>
-  apiClient.post<CardPaymentMethodResponse | MOMOPaymentMethodResponse>("/billing/payment-methods", data);
+// Start card checkout (Flutterwave integration)
+export const startCardCheckout = (organisationId: string, data: StartCardCheckoutRequest) =>
+  apiClient.post<CardCheckoutResponse>(`/subscriptions/${organisationId}/checkout/card`, data);
 
-// Delete payment method
-export const deletePaymentMethod = (methodId: string) =>
-  apiClient.delete<ResponseMessage>(`/billing/payment-methods/${methodId}`);
-
-// Set default payment method
-export const setDefaultPaymentMethod = (methodId: string) =>
-  apiClient.patch<PaymentMethodResponse>(`/billing/payment-methods/${methodId}/default`, {});
-
-// Process payment with card (Stripe)
-export const processCardPayment = (data: ProcessPaymentRequest) =>
-  apiClient.post<PaymentIntentResponse>("/billing/payments/card", data);
-
-// Process payment with MOMO
-export const processMOMOPayment = (data: ProcessMOMOPaymentRequest) =>
-  apiClient.post<{ id: string; status: string; checkoutUrl?: string }>("/billing/payments/momo", data);
-
-// Get payment history
-export const getPaymentHistory = () =>
-  apiClient.get<{
-    id: string;
-    amount: number;
-    currency: string;
-    status: string;
-    method: string;
-    createdAt: string;
-  }[]>("/billing/payments");
-
-// Change subscription plan
-export const changePlan = (data: {
-  planId: string;
-  billingCycle: string;
-  paymentMethodId: string;
-}) =>
-  apiClient.post<SubscriptionResponse>("/billing/subscription/change-plan", data);
-
-// Cancel subscription
-export const cancelSubscription = (cancelAtPeriodEnd?: boolean) =>
-  apiClient.post<SubscriptionResponse>("/billing/subscription/cancel", {
-    cancelAtPeriodEnd: cancelAtPeriodEnd ?? true,
-  });
+// Get active subscription for organisation
+export const getActiveSubscription = (organisationId: string) =>
+  apiClient.get<SubscriptionResponse>(`/subscriptions/${organisationId}/active`);
 
 export default apiClient;
