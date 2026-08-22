@@ -98,7 +98,7 @@ function EvidenceContent() {
 
   const sections = useMemo(() => {
     // Start with all predefined NGO categories
-    const mergedSections = Object.entries(NGO_EVIDENCE_CATEGORIES).map(([title, items]) => ({
+    const mergedSections: EvidenceSection[] = Object.entries(NGO_EVIDENCE_CATEGORIES).map(([title, items]) => ({
       title,
       items: [...items],
     }));
