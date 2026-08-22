@@ -1,5 +1,9 @@
 "use client";
 
+/*
+// NOTE: This hook is currently unused in the application
+// It is kept here for future reference but is commented out to prevent build errors
+
 import { useState, useCallback } from "react";
 import {
   getPaymentMethods,
@@ -250,3 +254,4 @@ export function usePayments() {
     cancelSubscription: cancelSub,
   };
 }
+*/
