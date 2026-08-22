@@ -11,9 +11,6 @@ interface Props {
 const items = [
   "Organization",
   "Users & Roles",
-  "Permissions",
-  "Workflow",
-  "Compliance",
   "Security",
   "Billing & Plans",
   "Audit Logs",
