@@ -23,7 +23,7 @@ export const NGO_EVIDENCE_CATEGORIES = {
 } as const;
 
 export type NGOEvidenceCategory = keyof typeof NGO_EVIDENCE_CATEGORIES;
-export type NGOEvidenceDocType  = typeof NGO_EVIDENCE_CATEGORIES[NGOEvidenceCategory][number];
+export type NGOEvidenceDocType  = string;
 
 // ─── NGO-specific roles ───────────────────────────────────────────────────────
 export type NGORole = "ORG_ADMIN" | "ACCOUNTANT" | "AUDITOR" | "DONOR_REPRESENTATIVE";
