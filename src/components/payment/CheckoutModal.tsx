@@ -7,7 +7,8 @@ import StripeCardInput, { CardData } from "./StripeCardInput";
 import MoMoInput from "./MoMoInput";
 import { TEST_CARDS } from "./cardUtils";
 import { MoMoData, TEST_PHONES, simulateMoMoPayment } from "./momoUtils";
-import { Shield, CheckCircle2, XCircle, Lock, ChevronRight, CreditCard, Smartphone } from "lucide-react";
+import { CheckCircle2, XCircle, Lock, ChevronRight, CreditCard, Smartphone } from "lucide-react";
+import { startMomoCheckout, startCardCheckout, getMomoPaymentStatus } from "@/utils/api";
 
 // ── Payment result ─────────────────────────────────────────────────
 type PaymentState = "idle" | "processing" | "3dsecure" | "success" | "failed";
@@ -16,6 +17,7 @@ interface Props {
   open: boolean;
   plan: PlanTier;
   cycle: BillingCycle;
+  organisationId?: string;
   onClose: () => void;
   onSuccess: (receiptId: string) => void;
 }
@@ -40,7 +42,7 @@ async function simulatePayment(cardNumber: string): Promise<{ success: boolean; 
 
 type PaymentMethod = "card" | "momo";
 
-export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }: Props) {
+export default function CheckoutModal({ open, plan, cycle, organisationId, onClose, onSuccess }: Props) {
   const [payMethod, setPayMethod]     = useState<PaymentMethod>("card");
   const [cardData, setCardData]       = useState<CardData | null>(null);
   const [momoData, setMomoData]       = useState<MoMoData | null>(null);
@@ -51,8 +53,8 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
   const [showTestCards, setShowTestCards] = useState(false);
 
   const planInfo = PRICING_PLANS.find((p) => p.id === plan)!;
-  const amount   = cycle === "monthly" ? planInfo.monthlyPrice : planInfo.annualPrice;
-  const annualTotal = cycle === "annual" ? amount * 12 : null;
+  const amount   = cycle === "MONTHLY" ? planInfo.monthlyPrice : cycle === "SIX_MONTHS" ? planInfo.sixMonthsPrice : planInfo.annualPrice;
+  const annualTotal = cycle === "YEARLY" ? amount * 12 : null;
 
   if (!open || typeof document === "undefined") return null;
 
@@ -60,21 +62,73 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
     setErrorMsg("");
     setState("processing");
 
-    let result: { success: boolean; receiptId?: string; error?: string };
+    let result: { success: boolean; receiptId?: string; error?: string } = { success: false, error: "Payment processing failed." };
 
     if (payMethod === "momo") {
       if (!momoData?.isValid) return;
-      result = await simulateMoMoPayment(momoData.phone);
+      try {
+        // During onboarding (no organisationId), use simulated payment
+        if (!organisationId) {
+          result = await simulateMoMoPayment(momoData.phone);
+        } else {
+          // Call real backend MOMO endpoint
+          const response = await startMomoCheckout(organisationId, {
+            planTier: plan,
+            billingCycle: cycle,
+            phoneNumber: momoData.phone,
+          });
+          const paymentId = response.data.paymentId;
+          setReceiptId(paymentId);
+
+          // Poll for payment status
+          let attempts = 0;
+          const maxAttempts = 30;
+          while (attempts < maxAttempts) {
+            await new Promise(r => setTimeout(r, 2000));
+            const statusResponse = await getMomoPaymentStatus(paymentId);
+            if (statusResponse.data.status === "SUCCESSFUL") {
+              setState("success");
+              setTimeout(() => onSuccess(paymentId), 0);
+              return;
+            } else if (statusResponse.data.status === "FAILED") {
+              result = { success: false, error: "Payment was declined. Please try again." };
+              break;
+            }
+            attempts++;
+          }
+          if (attempts >= maxAttempts) {
+            result = { success: false, error: "Payment verification timed out." };
+          }
+        }
+      } catch (error) {
+        result = { success: false, error: error instanceof Error ? error.message : "MOMO payment failed." };
+      }
     } else {
       if (!cardData?.isValid) return;
-      // Simulate 3D Secure for amounts > $50
-      if (amount > 50) {
-        await new Promise((r) => setTimeout(r, 800));
-        setState("3dsecure");
-        await new Promise((r) => setTimeout(r, 2000));
-        setState("processing");
+      try {
+        // During onboarding (no organisationId), use simulated payment
+        if (!organisationId) {
+          result = await simulatePayment(cardData.number);
+        } else {
+          // Call real backend Card endpoint
+          const response = await startCardCheckout(organisationId, {
+            planTier: plan,
+            billingCycle: cycle,
+          });
+          const paymentId = response.data.paymentId;
+          const checkoutUrl = response.data.checkoutUrl;
+          setReceiptId(paymentId);
+
+          // Redirect to Flutterwave checkout
+          if (checkoutUrl) {
+            window.location.href = checkoutUrl;
+            return;
+          }
+          result = { success: true, receiptId: paymentId };
+        }
+      } catch (error) {
+        result = { success: false, error: error instanceof Error ? error.message : "Card payment failed." };
       }
-      result = await simulatePayment(cardData.number);
     }
 
     if (result.success) {
@@ -155,7 +209,7 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{planInfo.name} Plan</div>
                       <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                        {cycle === "monthly" ? "Billed monthly" : "Billed annually"}
+                        {cycle === "MONTHLY" ? "Billed monthly" : "Billed annually"}
                       </div>
                     </div>
                   </div>
@@ -167,7 +221,7 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
                     <span style={lineLabel}>{planInfo.name} ({cycle})</span>
                     <span style={lineValue}>${amount}/mo</span>
                   </div>
-                  {cycle === "annual" && (
+                  {cycle === "YEARLY" && (
                     <div style={lineItem}>
                       <span style={{ ...lineLabel, color: "#16a34a" }}>Annual discount (20%)</span>
                       <span style={{ ...lineValue, color: "#16a34a" }}>-${Math.round(planInfo.monthlyPrice * 0.2 * 12)}</span>
@@ -182,13 +236,13 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
 
                   <div style={{ ...lineItem, marginTop: 4 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
-                      {cycle === "annual" ? "Total today" : "Due today"}
+                      {cycle === "YEARLY" ? "Total today" : "Due today"}
                     </span>
                     <span style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>
-                      ${cycle === "annual" ? annualTotal : amount}
+                      ${cycle === "YEARLY" ? annualTotal : amount}
                     </span>
                   </div>
-                  {cycle === "annual" && (
+                  {cycle === "YEARLY" && (
                     <div style={{ fontSize: 12, color: "#94a3b8", textAlign: "right", marginTop: 2 }}>
                       ${amount}/mo × 12 months
                     </div>
@@ -315,7 +369,7 @@ export default function CheckoutModal({ open, plan, cycle, onClose, onSuccess }:
                   onClick={handlePay}
                 >
                   {payMethod === "card" ? <Lock size={15} /> : <Smartphone size={15} />}
-                  {payMethod === "card" ? "Pay" : "Pay with MoMo"} ${cycle === "annual" ? annualTotal : amount}
+                  {payMethod === "card" ? "Pay" : "Pay with MoMo"} ${cycle === "YEARLY" ? annualTotal : amount}
                   <ChevronRight size={15} />
                 </button>
 
@@ -378,8 +432,8 @@ function SuccessScreen({ planName, amount, cycle, receiptId, onClose }: {
 
       <div style={receiptBox}>
         <div style={receiptRow}><span style={receiptLabel}>Plan</span><span style={receiptValue}>{planName}</span></div>
-        <div style={receiptRow}><span style={receiptLabel}>Billing</span><span style={receiptValue}>{cycle === "monthly" ? "Monthly" : "Annual"}</span></div>
-        <div style={receiptRow}><span style={receiptLabel}>Amount charged</span><span style={{ ...receiptValue, fontWeight: 700 }}>${amount}{cycle === "annual" ? " × 12" : "/mo"}</span></div>
+        <div style={receiptRow}><span style={receiptLabel}>Billing</span><span style={receiptValue}>{cycle === "MONTHLY" ? "Monthly" : "Annual"}</span></div>
+        <div style={receiptRow}><span style={receiptLabel}>Amount charged</span><span style={{ ...receiptValue, fontWeight: 700 }}>${amount}{cycle === "YEARLY" ? " × 12" : "/mo"}</span></div>
         <div style={receiptRow}><span style={receiptLabel}>Receipt ID</span><span style={{ ...receiptValue, fontFamily: "monospace", fontSize: 12 }}>{receiptId}</span></div>
         <div style={receiptRow}><span style={receiptLabel}>Date</span><span style={receiptValue}>{new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span></div>
       </div>

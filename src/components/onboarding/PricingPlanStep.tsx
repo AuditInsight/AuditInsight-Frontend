@@ -16,12 +16,15 @@ const CHECK = (
 );
 
 export default function PricingPlanStep({ onSelect, onBack }: Props) {
-  const [cycle, setCycle] = useState<BillingCycle>("monthly");
+  const [cycle, setCycle] = useState<BillingCycle>("MONTHLY");
   const [selected, setSelected] = useState<PlanTier>("PROFESSIONAL");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
-  const price = (p: typeof PRICING_PLANS[0]) =>
-    cycle === "monthly" ? p.monthlyPrice : p.annualPrice;
+  const price = (p: typeof PRICING_PLANS[0]) => {
+    if (cycle === "MONTHLY") return p.monthlyPrice;
+    if (cycle === "SIX_MONTHS") return p.sixMonthsPrice;
+    return p.annualPrice;
+  };
 
   return (
     <div style={s.wrap}>
@@ -31,14 +34,21 @@ export default function PricingPlanStep({ onSelect, onBack }: Props) {
       {/* cycle toggle */}
       <div style={s.toggle}>
         <button
-          style={{ ...s.toggleBtn, ...(cycle === "monthly" ? s.toggleActive : {}) }}
-          onClick={() => setCycle("monthly")}
+          style={{ ...s.toggleBtn, ...(cycle === "MONTHLY" ? s.toggleActive : {}) }}
+          onClick={() => setCycle("MONTHLY")}
         >
           Monthly
         </button>
         <button
-          style={{ ...s.toggleBtn, ...(cycle === "annual" ? s.toggleActive : {}) }}
-          onClick={() => setCycle("annual")}
+          style={{ ...s.toggleBtn, ...(cycle === "SIX_MONTHS" ? s.toggleActive : {}) }}
+          onClick={() => setCycle("SIX_MONTHS")}
+        >
+          6 Months
+          <span style={s.saveBadge}>Save 11%</span>
+        </button>
+        <button
+          style={{ ...s.toggleBtn, ...(cycle === "YEARLY" ? s.toggleActive : {}) }}
+          onClick={() => setCycle("YEARLY")}
         >
           Annual
           <span style={s.saveBadge}>Save 20%</span>
@@ -64,12 +74,12 @@ export default function PricingPlanStep({ onSelect, onBack }: Props) {
               <div style={s.planName}>{plan.name}</div>
               <div style={s.priceRow}>
                 <span style={s.priceAmount}>
-                  {price(plan) === 0 ? "Free" : `$${price(plan)}`}
+                  {price(plan) === 0 ? "Free" : `${new Intl.NumberFormat("en-RW", { style: "currency", currency: "RWF", maximumFractionDigits: 0 }).format(price(plan))}`}
                 </span>
-                {price(plan) > 0 && <span style={s.perMonth}>/mo</span>}
+                {price(plan) > 0 && <span style={s.perMonth}>{cycle === "MONTHLY" ? "/mo" : cycle === "SIX_MONTHS" ? "/6mo" : "/year"}</span>}
               </div>
-              {cycle === "annual" && price(plan) > 0 && (
-                <div style={s.billed}>Billed annually</div>
+              {price(plan) > 0 && (
+                <div style={s.billed}>{cycle === "MONTHLY" ? "Billed monthly" : cycle === "SIX_MONTHS" ? "Billed every 6 months" : "Billed annually"}</div>
               )}
               <p style={s.planDesc}>{plan.description}</p>
               <ul style={s.featureList}>
