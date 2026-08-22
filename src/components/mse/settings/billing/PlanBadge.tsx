@@ -1,16 +1,15 @@
 "use client";
 
-import { Subscription, PRICING_PLANS, PaymentStatus } from "@/types/billing";
+import { Subscription, PRICING_PLANS, SubscriptionStatus } from "@/types/billing";
 
 interface Props {
   subscription: Subscription;
 }
 
-const STATUS_STYLES: Record<PaymentStatus, { bg: string; color: string; label: string }> = {
-  active:    { bg: "#dcfce7", color: "#16a34a", label: "Active" },
-  trialing:  { bg: "#dbeafe", color: "#1d4ed8", label: "Trial" },
-  past_due:  { bg: "#fef9c3", color: "#a16207", label: "Past Due" },
-  cancelled: { bg: "#fee2e2", color: "#b91c1c", label: "Cancelled" },
+const STATUS_STYLES: Record<SubscriptionStatus, { bg: string; color: string; label: string }> = {
+  ACTIVE:   { bg: "#dcfce7", color: "#16a34a", label: "Active" },
+  EXPIRED:  { bg: "#fef9c3", color: "#a16207", label: "Expired" },
+  CANCELLED: { bg: "#fee2e2", color: "#b91c1c", label: "Cancelled" },
 };
 
 function daysLeft(isoDate: string): number {
@@ -22,10 +21,10 @@ function formatDate(isoDate: string): string {
 }
 
 export default function PlanBadge({ subscription }: Props) {
-  const plan = PRICING_PLANS.find(p => p.id === subscription.plan)!;
+  const plan = PRICING_PLANS.find(p => p.id === subscription.planTier)!;
   const status = STATUS_STYLES[subscription.status];
-  const days = daysLeft(subscription.currentPeriodEnd);
-  const isWarning = days <= 7 && subscription.status === "active";
+  const days = daysLeft(subscription.endDate);
+  const isWarning = days <= 7 && subscription.status === "ACTIVE";
 
   return (
     <div style={s.card}>
@@ -34,7 +33,7 @@ export default function PlanBadge({ subscription }: Props) {
         <div>
           <div style={s.planName}>{plan.name} Plan</div>
           <div style={s.meta}>
-            {subscription.billingCycle === "annual" ? "Annual billing" : "Monthly billing"}
+            {subscription.billingCycle === "YEARLY" ? "Annual billing" : subscription.billingCycle === "SIX_MONTHS" ? "6-month billing" : "Monthly billing"}
             {" · "}
             <span style={{ ...s.statusBadge, background: status.bg, color: status.color }}>
               {status.label}
@@ -44,8 +43,8 @@ export default function PlanBadge({ subscription }: Props) {
       </div>
       <div style={s.right}>
         <div style={{ ...s.renewalBox, ...(isWarning ? s.renewalWarning : {}) }}>
-          <div style={s.renewalLabel}>{subscription.cancelAtPeriodEnd ? "Expires" : "Renews"}</div>
-          <div style={s.renewalDate}>{formatDate(subscription.currentPeriodEnd)}</div>
+          <div style={s.renewalLabel}>{subscription.status !== "ACTIVE" ? "Expired" : "Renews"}</div>
+          <div style={s.renewalDate}>{formatDate(subscription.endDate)}</div>
           <div style={{ ...s.daysLeft, color: isWarning ? "#b45309" : "#64748B" }}>
             {days === 0 ? "Today" : `${days} day${days !== 1 ? "s" : ""} left`}
           </div>

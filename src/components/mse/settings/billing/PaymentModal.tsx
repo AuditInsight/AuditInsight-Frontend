@@ -11,16 +11,18 @@ interface Props {
   open: boolean;
   plan: PlanTier;
   cycle: BillingCycle;
+  organisationId: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function PaymentModal({ open, plan, cycle, onClose, onSuccess }: Props) {
+export default function PaymentModal({ open, plan, cycle, organisationId, onClose, onSuccess }: Props) {
   return (
     <CheckoutModal
       open={open}
       plan={plan}
       cycle={cycle}
+      organisationId={organisationId}
       onClose={onClose}
       onSuccess={() => onSuccess()}
     />

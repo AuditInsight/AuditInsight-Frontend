@@ -17,18 +17,18 @@ const CHECK = (
 );
 
 export default function ChangePlanModal({ open, currentSubscription, onClose, onChangePlan }: Props) {
-  const [selected, setSelected] = useState<PlanTier>(currentSubscription.plan);
+  const [selected, setSelected] = useState<PlanTier>(currentSubscription.planTier);
   const [cycle, setCycle] = useState<BillingCycle>(currentSubscription.billingCycle);
 
   if (!open) return null;
 
-  const isSame = selected === currentSubscription.plan && cycle === currentSubscription.billingCycle;
+  const isSame = selected === currentSubscription.planTier && cycle === currentSubscription.billingCycle;
 
   const price = (p: typeof PRICING_PLANS[0]) =>
-    cycle === "monthly" ? p.monthlyPrice : p.annualPrice;
+    cycle === "MONTHLY" ? p.monthlyPrice : cycle === "SIX_MONTHS" ? p.sixMonthsPrice : p.annualPrice;
 
   const direction = (): "upgrade" | "downgrade" | "same" => {
-    const curr = PRICING_PLANS.findIndex(p => p.id === currentSubscription.plan);
+    const curr = PRICING_PLANS.findIndex(p => p.id === currentSubscription.planTier);
     const next = PRICING_PLANS.findIndex(p => p.id === selected);
     if (next > curr) return "upgrade";
     if (next < curr) return "downgrade";
@@ -43,7 +43,7 @@ export default function ChangePlanModal({ open, currentSubscription, onClose, on
         <div style={s.header}>
           <div>
             <h3 style={s.title}>Change Plan</h3>
-            <p style={s.sub}>Current plan: <strong>{PRICING_PLANS.find(p => p.id === currentSubscription.plan)?.name}</strong></p>
+            <p style={s.sub}>Current plan: <strong>{PRICING_PLANS.find(p => p.id === currentSubscription.planTier)?.name}</strong></p>
           </div>
           <button style={s.closeBtn} onClick={onClose}>✕</button>
         </div>
@@ -51,8 +51,11 @@ export default function ChangePlanModal({ open, currentSubscription, onClose, on
         {/* billing cycle toggle */}
         <div style={s.cycleWrap}>
           <div style={s.toggle}>
-            <button style={{ ...s.toggleBtn, ...(cycle === "monthly" ? s.toggleActive : {}) }} onClick={() => setCycle("monthly")}>Monthly</button>
-            <button style={{ ...s.toggleBtn, ...(cycle === "annual" ? s.toggleActive : {}) }} onClick={() => setCycle("annual")}>
+            <button style={{ ...s.toggleBtn, ...(cycle === "MONTHLY" ? s.toggleActive : {}) }} onClick={() => setCycle("MONTHLY")}>Monthly</button>
+            <button style={{ ...s.toggleBtn, ...(cycle === "SIX_MONTHS" ? s.toggleActive : {}) }} onClick={() => setCycle("SIX_MONTHS")}>
+              6 Months <span style={s.saveBadge}>Save 11%</span>
+            </button>
+            <button style={{ ...s.toggleBtn, ...(cycle === "YEARLY" ? s.toggleActive : {}) }} onClick={() => setCycle("YEARLY")}>
               Annual <span style={s.saveBadge}>Save 20%</span>
             </button>
           </div>
@@ -61,7 +64,7 @@ export default function ChangePlanModal({ open, currentSubscription, onClose, on
         {/* plan list */}
         <div style={s.planList}>
           {PRICING_PLANS.map(plan => {
-            const isCurrent = plan.id === currentSubscription.plan && cycle === currentSubscription.billingCycle;
+            const isCurrent = plan.id === currentSubscription.planTier && cycle === currentSubscription.billingCycle;
             const isSelected = selected === plan.id;
             return (
               <button
