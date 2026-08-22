@@ -1,4 +1,5 @@
-// All predefined evidence categories and subcategories
+// All predefined evidence categories and subcategories for MSE (PRIVATE)
+// Mirrors EVIDENCE_FOLDERS.PRIVATE in src/constants/evidenceFolders.ts
 // Used to ensure complete folder structure is always shown in sidebar
 
 export interface EvidenceCategory {
@@ -8,57 +9,43 @@ export interface EvidenceCategory {
 
 export const EVIDENCE_CATEGORIES: EvidenceCategory[] = [
   {
-    title: "Banking & Cash",
-    items: [
-      "Bank statements",
-      "Payment confirmations",
-      "Cash receipts",
-      "Bank reconciliation",
-    ],
-  },
-  {
-    title: "Legal & Governance",
-    items: [
-      "Contracts & agreements",
-      "Regulatory correspondence",
-      "Board minutes",
-      "Policy documents",
-    ],
-  },
-  {
-    title: "Payroll & HR",
-    items: [
-      "Payroll registers",
-      "Employee contracts",
-      "Attendance records",
-      "Leave documentation",
-    ],
-  },
-  {
-    title: "Purchases & Procurement",
-    items: [
-      "Supplier invoices",
-      "Purchase orders",
-      "Quotations",
-      "Goods receipt notes",
-    ],
-  },
-  {
     title: "Financial Reporting",
-    items: [
-      "Monthly statements",
-      "Reconciliation reports",
-      "Audit reports",
-      "Tax returns",
-    ],
+    items: ["General Ledgers", "Trial Balances", "Financial Statements"],
   },
   {
-    title: "Project Management",
-    items: [
-      "Project proposals",
-      "Implementation plans",
-      "Monitoring reports",
-      "Completion reports",
-    ],
+    title: "Banking and Cash",
+    items: ["Bank Statements", "Bank Reconciliations", "Payment Confirmations"],
+  },
+  {
+    title: "Sales Evidence",
+    items: ["Sales Invoices", "Receipts", "Credit Notes", "Sales Orders"],
+  },
+  {
+    title: "Purchases and Procurement",
+    items: ["Purchase Orders", "Supplier Invoices", "Goods Received Notes", "Supplier Contracts"],
+  },
+  {
+    title: "Payroll and HR",
+    items: ["Payroll Registers", "Employment Contracts", "Timesheets"],
+  },
+  {
+    title: "Tax and Compliance",
+    items: ["VAT Returns", "PAYE Filings", "Tax Clearance Certificates"],
+  },
+  {
+    title: "Inventory and Assets",
+    items: ["Stock Count Sheets", "Asset Registers", "Depreciation Schedules"],
+  },
+  {
+    title: "Legal and Governance",
+    items: ["Board Minutes", "Company Registration", "Contracts"],
+  },
+  {
+    title: "IT and System Evidence",
+    items: ["Access Logs", "Audit Trail Exports", "Backup Reports"],
+  },
+  {
+    title: "Other Supporting Documents",
+    items: ["Emails", "Screenshots", "Miscellaneous"],
   },
 ];
