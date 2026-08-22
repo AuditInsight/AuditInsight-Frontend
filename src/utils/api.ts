@@ -334,4 +334,136 @@ export const resolveIssue = (itemId: string, resolutionNote: string) =>
 export const getClientProfile  = () => apiClient.get("/client/profile");
 export const getAuditorProfile = () => apiClient.get("/auditor/profile");
 
+/* =========================
+   BILLING & PAYMENT TYPES
+========================= */
+export type PaymentMethodType = "card" | "momo" | "bank_transfer";
+export type PaymentProvider = "stripe" | "momo" | "paypal";
+export type SubscriptionStatus = "active" | "past_due" | "cancelled" | "trialing";
+
+export interface PaymentMethodResponse {
+  id: string;
+  type: PaymentMethodType;
+  provider: PaymentProvider;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface CardPaymentMethodResponse extends PaymentMethodResponse {
+  type: "card";
+  provider: "stripe";
+  brand: string;
+  last4: string;
+  expiryMonth: number;
+  expiryYear: number;
+}
+
+export interface MOMOPaymentMethodResponse extends PaymentMethodResponse {
+  type: "momo";
+  provider: "momo";
+  phoneNumber: string;
+  network: string;
+}
+
+export interface SubscriptionResponse {
+  id: string;
+  organisationId: string;
+  plan: string;
+  billingCycle: string;
+  status: SubscriptionStatus;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  preferredPaymentMethod?: string;
+}
+
+export interface PaymentIntentResponse {
+  id: string;
+  clientSecret: string;
+  amount: number;
+  currency: string;
+  status: string;
+}
+
+export interface ProcessPaymentRequest {
+  paymentMethodId: string;
+  amount: number;
+  currency?: string;
+  planId?: string;
+  billingCycle?: string;
+  description?: string;
+}
+
+export interface ProcessMOMOPaymentRequest {
+  phoneNumber: string;
+  amount: number;
+  currency?: string;
+  network: "mtn" | "airtel";
+  planId?: string;
+  billingCycle?: string;
+}
+
+/* =========================
+   BILLING & PAYMENT API
+========================= */
+
+// Get subscription for current organisation
+export const getSubscription = () =>
+  apiClient.get<SubscriptionResponse>("/billing/subscription");
+
+// Get all payment methods for current organisation
+export const getPaymentMethods = () =>
+  apiClient.get<(CardPaymentMethodResponse | MOMOPaymentMethodResponse)[]>("/billing/payment-methods");
+
+// Add a new payment method
+export const addPaymentMethod = (data: {
+  type: PaymentMethodType;
+  provider: PaymentProvider;
+  token?: string; // For Stripe card tokens
+  phoneNumber?: string; // For MOMO
+  network?: string; // For MOMO
+}) =>
+  apiClient.post<CardPaymentMethodResponse | MOMOPaymentMethodResponse>("/billing/payment-methods", data);
+
+// Delete payment method
+export const deletePaymentMethod = (methodId: string) =>
+  apiClient.delete<ResponseMessage>(`/billing/payment-methods/${methodId}`);
+
+// Set default payment method
+export const setDefaultPaymentMethod = (methodId: string) =>
+  apiClient.patch<PaymentMethodResponse>(`/billing/payment-methods/${methodId}/default`, {});
+
+// Process payment with card (Stripe)
+export const processCardPayment = (data: ProcessPaymentRequest) =>
+  apiClient.post<PaymentIntentResponse>("/billing/payments/card", data);
+
+// Process payment with MOMO
+export const processMOMOPayment = (data: ProcessMOMOPaymentRequest) =>
+  apiClient.post<{ id: string; status: string; checkoutUrl?: string }>("/billing/payments/momo", data);
+
+// Get payment history
+export const getPaymentHistory = () =>
+  apiClient.get<{
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    method: string;
+    createdAt: string;
+  }[]>("/billing/payments");
+
+// Change subscription plan
+export const changePlan = (data: {
+  planId: string;
+  billingCycle: string;
+  paymentMethodId: string;
+}) =>
+  apiClient.post<SubscriptionResponse>("/billing/subscription/change-plan", data);
+
+// Cancel subscription
+export const cancelSubscription = (cancelAtPeriodEnd?: boolean) =>
+  apiClient.post<SubscriptionResponse>("/billing/subscription/cancel", {
+    cancelAtPeriodEnd: cancelAtPeriodEnd ?? true,
+  });
+
 export default apiClient;
