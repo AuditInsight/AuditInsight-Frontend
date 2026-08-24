@@ -71,7 +71,9 @@ export default function Header({ title }: HeaderProps) {
       <header style={s.bar}>
         {/* LEFT — logo */}
         <div style={s.left} onClick={() => navigate(canViewAdminPanel ? "/admin/organizations" : "/dashboard")}>
-          <img src="/logo.svg" alt="AuditInsight" style={{ width: 34, height: 34, objectFit: "contain" }} />
+          <div style={s.logoMark}>
+            <img src="/logo.svg" alt="AuditInsight" style={{ width: 22, height: 22, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          </div>
           <div style={s.logoText}>
             <span style={s.logoTitle}>{title}</span>
             <span className="header-logo-sub" style={s.logoSub}>Audit Intelligence</span>
@@ -201,10 +203,11 @@ const s: Record<string, React.CSSProperties> = {
   },
   left: { display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flexShrink: 0 },
   logoMark: {
-    width: 34, height: 34, borderRadius: 10,
-    background: "linear-gradient(135deg,#fff,rgba(255,255,255,0.85))",
+    width: 42, height: 42, borderRadius: 12,
+    background: "linear-gradient(135deg,#0f3d75,#1e3a8a)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 4px 12px rgba(255,255,255,0.15)",
+    boxShadow: "0 4px 12px rgba(30,58,138,0.30)",
+    flexShrink: 0,
   },
   logoText: { display: "flex", flexDirection: "column", lineHeight: 1.15 },
   logoTitle: { fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.3px" },

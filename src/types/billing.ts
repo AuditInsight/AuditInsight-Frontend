@@ -1,11 +1,37 @@
 export type PlanTier = "FREE" | "STARTER" | "PROFESSIONAL" | "ENTERPRISE";
-export type BillingCycle = "monthly" | "annual";
-export type PaymentStatus = "active" | "past_due" | "cancelled" | "trialing";
+export type BillingCycle = "MONTHLY" | "SIX_MONTHS" | "YEARLY";
+export type PaymentStatus = "PENDING" | "SUCCESSFUL" | "FAILED";
+export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
+
+export interface MOMOPaymentMethod {
+  id: string;
+  type: "momo";
+  provider: "momo";
+  phoneNumber: string;
+  network: "mtn" | "airtel" | "other";
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface CardPaymentMethod {
+  id: string;
+  type: "card";
+  provider: "stripe";
+  brand: string;
+  last4: string;
+  expiryMonth: number;
+  expiryYear: number;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export type PaymentMethod = MOMOPaymentMethod | CardPaymentMethod;
 
 export interface PricingPlan {
   id: PlanTier;
   name: string;
   monthlyPrice: number;
+  sixMonthsPrice: number;
   annualPrice: number;
   description: string;
   features: string[];
@@ -18,21 +44,11 @@ export interface PricingPlan {
 export interface Subscription {
   id: string;
   organisationId: string;
-  plan: PlanTier;
+  planTier: PlanTier;
   billingCycle: BillingCycle;
-  status: PaymentStatus;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  cancelAtPeriodEnd: boolean;
-}
-
-export interface PaymentMethod {
-  id: string;
-  brand: "visa" | "mastercard" | "amex" | "other";
-  last4: string;
-  expiryMonth: number;
-  expiryYear: number;
-  isDefault: boolean;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate: string;
 }
 
 export const PRICING_PLANS: PricingPlan[] = [
@@ -40,6 +56,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     id: "FREE",
     name: "Free",
     monthlyPrice: 0,
+    sixMonthsPrice: 0,
     annualPrice: 0,
     description: "Get started with basic audit management",
     features: ["Up to 2 users", "5 audits per month", "1 GB storage", "Basic reports", "Email support"],
@@ -50,8 +67,9 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: "STARTER",
     name: "Starter",
-    monthlyPrice: 29,
-    annualPrice: 23,
+    monthlyPrice: 15000,
+    sixMonthsPrice: 80000,
+    annualPrice: 150000,
     description: "For small teams getting serious about audits",
     features: ["Up to 10 users", "50 audits per month", "10 GB storage", "Advanced reports", "Audit trail", "Priority support"],
     maxUsers: 10,
@@ -61,8 +79,9 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: "PROFESSIONAL",
     name: "Professional",
-    monthlyPrice: 79,
-    annualPrice: 63,
+    monthlyPrice: 15000,
+    sixMonthsPrice: 80000,
+    annualPrice: 150000,
     description: "Full-featured audit management for growing orgs",
     features: ["Up to 50 users", "Unlimited audits", "100 GB storage", "Custom workflows", "Compliance templates", "API access", "24/7 support"],
     maxUsers: 50,
@@ -73,8 +92,9 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: "ENTERPRISE",
     name: "Enterprise",
-    monthlyPrice: 199,
-    annualPrice: 159,
+    monthlyPrice: 15000,
+    sixMonthsPrice: 80000,
+    annualPrice: 150000,
     description: "Enterprise-grade security and compliance",
     features: ["Unlimited users", "Unlimited audits", "1 TB storage", "SSO / SAML", "Dedicated account manager", "Custom integrations", "SLA guarantee"],
     maxUsers: -1,
@@ -86,16 +106,9 @@ export const PRICING_PLANS: PricingPlan[] = [
 export const MOCK_SUBSCRIPTION: Subscription = {
   id: "sub_mock_001",
   organisationId: "org_001",
-  plan: "PROFESSIONAL",
-  billingCycle: "monthly",
-  status: "active",
-  currentPeriodStart: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  currentPeriodEnd: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-  cancelAtPeriodEnd: false,
+  planTier: "PROFESSIONAL",
+  billingCycle: "MONTHLY",
+  status: "ACTIVE",
+  startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+  endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
 };
-
-export const MOCK_PAYMENT_METHODS: PaymentMethod[] = [
-  { id: "pm_001", brand: "visa", last4: "4242", expiryMonth: 12, expiryYear: 2027, isDefault: true },
-];
-
-

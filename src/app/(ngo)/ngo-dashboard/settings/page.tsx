@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
 import { useToast } from "@/components/ngo/NGOToast";
 import PermissionGate from "@/components/ngo/rbac/PermissionGate";
@@ -11,8 +11,13 @@ import InviteUserModal from "@/components/mse/settings/users/InviteUserModal"; /
 import NGOUsersTable from "@/components/ngo/settings/users/NGOUsersTable";
 import SEO from "@/components/seo/SEO";
 import { theme } from "@/styles/theme";
-import { User, Lock, Bell, Building2, Users, Eye, EyeOff } from "lucide-react";
+import { User, Lock, Bell, Building2, Users, Eye, EyeOff, CreditCard } from "lucide-react";
 import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
+import BillingSettingsCard from "@/components/ngo/settings/billing/BillingSettingsCard";
+import PlanChangeConfirmModal from "@/components/ngo/settings/billing/PlanChangeConfirmModal";
+import PaymentCheckoutModal from "@/components/ngo/settings/billing/PaymentCheckoutModal";
+import { PlanTier, BillingCycle, Subscription } from "@/types/billing";
+import { usePaymentProcessor } from "@/hooks/usePaymentProcessor";
 
 // ── Primitives ─────────────────────────────────────────────────────────────────
 
@@ -79,7 +84,7 @@ function Toggle({ label, sub, defaultChecked, disabled = false }: { label: strin
 
 // ── Settings ───────────────────────────────────────────────────────────────────
 
-type Tab = "Organisation" | "Profile" | "Notifications" | "Security" | "Users";
+type Tab = "Organisation" | "Profile" | "Notifications" | "Security" | "Users" | "Billing and Plans";
 
 const TAB_ICONS: Record<Tab, React.ReactNode> = {
   Organisation:  <Building2 size={15} />,
@@ -87,22 +92,115 @@ const TAB_ICONS: Record<Tab, React.ReactNode> = {
   Notifications: <Bell size={15} />,
   Security:      <Lock size={15} />,
   Users:         <Users size={15} />,
+  "Billing and Plans": <CreditCard size={15} />,
 };
 
 function SettingsContent() {
   const { user, can } = useRBAC();
   const { members, inviteMember } = useSettings();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [subscription, setSubscription] = useState<Subscription>({
+    id: "sub_default",
+    organisationId: user.organisationId,
+    planTier: "PROFESSIONAL",
+    billingCycle: "MONTHLY",
+    status: "ACTIVE",
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+  const [loadingSubscription, setLoadingSubscription] = useState(false);
+  const [confirmPlanChange, setConfirmPlanChange] = useState<{
+    plan: PlanTier;
+    cycle: BillingCycle;
+  } | null>(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [processingPlanChange, setProcessingPlanChange] = useState(false);
+
   const toast = useToast();
   const isDonor = user.role === "DONOR_REPRESENTATIVE";
   const canEditProfile = can("settings:profile:edit");
 
-  const visibleTabs: Tab[] = isDonor ? ["Profile", "Security"] : ["Organisation", "Profile", "Notifications", "Security", "Users"];
+  const paymentProcessor = usePaymentProcessor({
+    organisationId: user.organisationId,
+    planTier: subscription.planTier,
+    billingCycle: subscription.billingCycle,
+  });
+
+
+  const visibleTabs: Tab[] = isDonor ? ["Profile", "Security", "Billing and Plans"] : ["Organisation", "Profile", "Notifications", "Security", "Users", "Billing and Plans"];
   const [active, setActive] = useState<Tab>(visibleTabs[0]);
 
   const handleSave = () => {
-    if (!canEditProfile) { toast.error("Read-only", "Your role does not have permission to save settings."); return; }
+    if (!canEditProfile) {
+      toast.error("Read-only", "Your role does not have permission to save settings.");
+      return;
+    }
     toast.success("Settings saved", "Your changes have been saved successfully.");
+  };
+
+  const handlePlanChange = (plan: PlanTier, cycle: BillingCycle) => {
+    if (!subscription) return;
+
+    // If current plan is FREE and selecting FREE, no payment needed
+    if (subscription.planTier === "FREE" && plan === "FREE") {
+      toast.success("Plan updated", "Your plan has been updated.");
+      return;
+    }
+
+    // If selecting FREE plan, allow direct downgrade
+    if (plan === "FREE") {
+      setConfirmPlanChange({ plan, cycle });
+      return;
+    }
+
+    // For paid plans, show confirmation first
+    setConfirmPlanChange({ plan, cycle });
+  };
+
+  const handleConfirmPlanChange = async () => {
+    if (!confirmPlanChange || !subscription) return;
+
+    const { plan, cycle } = confirmPlanChange;
+
+    // If current plan is FREE, open payment modal for upgrade
+    if (subscription.planTier === "FREE") {
+      setPaymentOpen(true);
+      setConfirmPlanChange(null);
+      return;
+    }
+
+    // If downgrading to FREE or same paid plan with different cycle
+    if (plan === "FREE" || (plan === subscription.planTier && cycle === subscription.billingCycle)) {
+      setProcessingPlanChange(true);
+      try {
+        // Just update the plan without payment
+        toast.success("Plan updated", `Your plan has been updated to ${plan}.`);
+        setSubscription({
+          ...subscription,
+          planTier: plan,
+          billingCycle: cycle,
+        });
+      } catch (error) {
+        toast.error("Failed", "Could not update your plan. Please try again.");
+      } finally {
+        setProcessingPlanChange(false);
+        setConfirmPlanChange(null);
+      }
+      return;
+    }
+
+    // For plan or cycle change with payment required
+    setPaymentOpen(true);
+    setConfirmPlanChange(null);
+  };
+
+  const handlePaymentSuccess = (updatedSubscription: Subscription) => {
+    setSubscription(updatedSubscription);
+    setPaymentOpen(false);
+    toast.success(
+      "Subscription updated",
+      `Your subscription to ${updatedSubscription.planTier} plan is now active.`
+    );
   };
 
   return (
@@ -115,6 +213,10 @@ function SettingsContent() {
         .ngo-settings-sidebar { width: 200px; flex-shrink: 0; }
         .ngo-settings-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
         .ngo-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
         @media (max-width: 768px) {
           .ngo-settings { flex-direction: column; }
           .ngo-settings-sidebar { width: 100%; display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px; padding: 10px !important; }
@@ -226,6 +328,89 @@ function SettingsContent() {
               onInvite={inviteMember}
             />
           </Section>
+        )}
+
+        {active === "Billing and Plans" && (
+          <>
+            <Section title="Current Subscription">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i}>
+                    <p style={{ margin: "0 0 8px 0", fontSize: 12, fontWeight: 600, color: theme.colors.textMuted }}>
+                      {loadingSubscription ? (
+                        <span style={{ display: "inline-block", height: 12, width: 80, background: theme.colors.border, borderRadius: 4 }} />
+                      ) : (
+                        ["PLAN", "BILLING CYCLE", "ACTIVE UNTIL", "STATUS"][i]
+                      )}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: theme.colors.textPrimary, minHeight: 24 }}>
+                      {loadingSubscription ? (
+                        <span style={{ display: "inline-block", height: 24, width: 120, background: theme.colors.border, borderRadius: 4 }} />
+                      ) : i === 0 ? (
+                        subscription?.planTier || "Unknown"
+                      ) : i === 1 ? (
+                        subscription?.billingCycle || "Unknown"
+                      ) : i === 2 ? (
+                        subscription ? new Date(subscription.endDate).toLocaleDateString() : "Unknown"
+                      ) : (
+                        subscription?.status || "Unknown"
+                      )}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            <Section title="Available Plans">
+              {subscription && !loadingSubscription ? (
+                <>
+                  <BillingSettingsCard
+                    subscription={subscription}
+                    onPlanChange={handlePlanChange}
+                    loading={processingPlanChange}
+                  />
+
+                  {/* Confirmation Modal */}
+                  {confirmPlanChange && (
+                    <PlanChangeConfirmModal
+                      open={!!confirmPlanChange}
+                      currentPlan={subscription.planTier}
+                      newPlan={confirmPlanChange.plan}
+                      cycle={confirmPlanChange.cycle}
+                      onConfirm={handleConfirmPlanChange}
+                      onCancel={() => setConfirmPlanChange(null)}
+                      loading={processingPlanChange}
+                    />
+                  )}
+
+                  {/* Payment Modal */}
+                  {confirmPlanChange && (
+                    <PaymentCheckoutModal
+                      open={paymentOpen}
+                      plan={confirmPlanChange.plan}
+                      cycle={confirmPlanChange.cycle}
+                      organisationId={user.organisationId}
+                      onClose={() => setPaymentOpen(false)}
+                      onSuccess={handlePaymentSuccess}
+                    />
+                  )}
+                </>
+              ) : loadingSubscription ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Skeleton loader matching BillingSettingsCard layout */}
+                  <div style={{ height: 120, background: theme.colors.appBackground, borderRadius: theme.radius.md, animation: "pulse 2s infinite" }} />
+                  <div style={{ height: 200, background: theme.colors.appBackground, borderRadius: theme.radius.md, animation: "pulse 2s infinite" }} />
+                  <div style={{ height: 160, background: theme.colors.appBackground, borderRadius: theme.radius.md, animation: "pulse 2s infinite" }} />
+                </div>
+              ) : (
+                <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <p style={{ color: theme.colors.warning }}>
+                    Could not load subscription information. Please refresh the page.
+                  </p>
+                </div>
+              )}
+            </Section>
+          </>
         )}
 
         {!isDonor && (

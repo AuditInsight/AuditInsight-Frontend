@@ -9,13 +9,6 @@ import FiscalYearSettings from "@/components/mse/settings/organization/FiscalYea
 import CurrencySettings from "@/components/mse/settings/organization/CurrencySettings";
 import UsersTable from "@/components/mse/settings/users/UsersTable";
 import InviteUserModal from "@/components/mse/settings/users/InviteUserModal";
-import PermissionsMatrix from "@/components/mse/settings/permissions/PermissionsMetrix";
-import WorkflowStatusesCard from "@/components/mse/settings/workflow/WorkflowStatusesCard";
-import EscalationRulesCard from "@/components/mse/settings/workflow/EscalationRulesCard";
-import AutoAssignmentCard from "@/components/mse/settings/workflow/AutoAssignmentCard";
-import ApprovalLimitsCard from "@/components/mse/settings/compliance/ApprovalLimitsCard";
-import SegregationRulesCard from "@/components/mse/settings/compliance/SegregationRulesCard";
-import EvidenceRequirementsCard from "@/components/mse/settings/compliance/EvidenceRequirementsCard";
 import SecuritySettingsCard from "@/components/mse/settings/security/SecuritySettingsCard";
 import PasswordPolicyCard from "@/components/mse/settings/security/PasswordPolicyCard";
 import SessionManagementCard from "@/components/mse/settings/security/SessionManagmentCard";
@@ -120,21 +113,6 @@ export default function SettingsPage() {
             </>
           )}
 
-          {active === "Permissions" && <PermissionsMatrix />}
-          {active === "Workflow" && (
-            <div style={styles.grid3} className="settings-grid3">
-              <WorkflowStatusesCard />
-              <EscalationRulesCard />
-              <AutoAssignmentCard />
-            </div>
-          )}
-          {active === "Compliance" && (
-            <div style={styles.grid3} className="settings-grid3">
-              <ApprovalLimitsCard />
-              <SegregationRulesCard />
-              <EvidenceRequirementsCard />
-            </div>
-          )}
           {active === "Security" && (
             <div style={styles.grid3} className="settings-grid3">
               <SecuritySettingsCard />

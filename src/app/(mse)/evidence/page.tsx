@@ -12,14 +12,11 @@ import { EvidenceDetailsModal } from "@/components/mse/evidence/EvidenceDetailsM
 import { ConfirmDeleteEvidenceModal } from "@/components/mse/evidence/ConfirmDeleteEvidenceModal";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
-import { MSE_EVIDENCE_SECTIONS } from "@/types/mse";
 import { EVIDENCE_CATEGORIES } from "@/constants/evidenceCategories";
 import { evidenceMatchesSearch } from "@/lib/evidenceSearch";
 import { useTransactions } from "@/hooks/useTransactions";
 import { usePermissions } from "@/security/access-control";
 import { exportEvidenceCSV } from "@/utils/export";
-
-type EvidenceSection = { title: string; items: string[] };
 
 export default function EvidencePage() {
   const { transactions, evidences, saveEvidence, deleteEvidence } = useTransactions();
@@ -198,7 +195,6 @@ export default function EvidencePage() {
           isOpen={uploadOpen}
           onClose={() => setUploadOpen(false)}
           onSave={(saved) => { saveEvidence(saved); setUploadOpen(false); setPage(1); }}
-          sections={MSE_EVIDENCE_SECTIONS}
           transactions={transactions}
           mode="add"
         />
@@ -208,7 +204,6 @@ export default function EvidencePage() {
           isOpen={!!editingEvidence}
           onClose={() => setEditingEvidence(null)}
           onSave={(saved) => { saveEvidence(saved); setEditingEvidence(null); }}
-          sections={MSE_EVIDENCE_SECTIONS}
           transactions={transactions}
           mode="edit"
           evidence={editingEvidence}

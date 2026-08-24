@@ -334,4 +334,70 @@ export const resolveIssue = (itemId: string, resolutionNote: string) =>
 export const getClientProfile  = () => apiClient.get("/client/profile");
 export const getAuditorProfile = () => apiClient.get("/auditor/profile");
 
+/* =========================
+   BILLING & PAYMENT TYPES
+========================= */
+export type PlanTier = "FREE" | "STARTER" | "PROFESSIONAL" | "ENTERPRISE";
+export type BillingCycle = "MONTHLY" | "SIX_MONTHS" | "YEARLY";
+export type PaymentProvider = "MOMO" | "CARD";
+export type PaymentStatus = "PENDING" | "SUCCESSFUL" | "FAILED";
+export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
+
+export interface StartMomoCheckoutRequest {
+  planTier: PlanTier;
+  billingCycle: BillingCycle;
+  phoneNumber: string;
+}
+
+export interface StartCardCheckoutRequest {
+  planTier: PlanTier;
+  billingCycle: BillingCycle;
+}
+
+export interface PaymentStatusResponse {
+  paymentId: string;
+  provider: PaymentProvider;
+  status: PaymentStatus;
+  usdAmount: number;
+  chargedCurrency: string;
+  chargedAmount: number;
+  subscriptionId?: string;
+  failureReason?: string;
+}
+
+export interface CardCheckoutResponse {
+  paymentId: string;
+  checkoutUrl: string;
+}
+
+export interface SubscriptionResponse {
+  id: string;
+  organisationId: string;
+  planTier: PlanTier;
+  billingCycle: BillingCycle;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate: string;
+}
+
+/* =========================
+   BILLING & PAYMENT API
+========================= */
+
+// Start MOMO checkout (pawaPay integration)
+export const startMomoCheckout = (organisationId: string, data: StartMomoCheckoutRequest) =>
+  apiClient.post<PaymentStatusResponse>(`/subscriptions/${organisationId}/checkout/momo`, data);
+
+// Get MOMO payment status
+export const getMomoPaymentStatus = (paymentId: string) =>
+  apiClient.get<PaymentStatusResponse>(`/subscriptions/payments/${paymentId}/status`);
+
+// Start card checkout (Flutterwave integration)
+export const startCardCheckout = (organisationId: string, data: StartCardCheckoutRequest) =>
+  apiClient.post<CardCheckoutResponse>(`/subscriptions/${organisationId}/checkout/card`, data);
+
+// Get active subscription for organisation
+export const getActiveSubscription = (organisationId: string) =>
+  apiClient.get<SubscriptionResponse>(`/subscriptions/${organisationId}/active`);
+
 export default apiClient;

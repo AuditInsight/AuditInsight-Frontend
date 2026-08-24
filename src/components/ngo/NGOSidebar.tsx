@@ -130,7 +130,9 @@ export default function NGOSidebar({ user, onLogout, collapsed = false, onToggle
 
       {/* ── Logo + collapse toggle ── */}
       <div style={s.logoRow}>
-        <img src="/logo.svg" alt="AuditInsight" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
+        <div style={s.logoMark}>
+          <img src="/logo.svg" alt="AuditInsight" style={{ width: 20, height: 20, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+        </div>
         {!collapsed && (
           <div style={{ flex: 1, minWidth: 0 }}>
             <span style={s.logoTitle}>AuditInsight</span>
@@ -270,10 +272,10 @@ const s: Record<string, React.CSSProperties> = {
     padding: "0 4px", marginBottom: 14,
   },
   logoMark: {
-    width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-    background: "linear-gradient(135deg,#1e40af,#3b82f6)",
+    width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+    background: "linear-gradient(135deg,#0f3d75,#1e3a8a)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 4px 12px rgba(59,130,246,0.35)",
+    boxShadow: "0 4px 12px rgba(30,58,138,0.30)",
   },
   logoTitle: { fontSize: 14.5, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.3px", display: "block", lineHeight: 1.2 },
   logoSub:   { fontSize: 9.5, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block" },

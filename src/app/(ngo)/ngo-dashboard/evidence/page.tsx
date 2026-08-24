@@ -20,7 +20,7 @@ import { exportEvidenceCSV } from "@/utils/export";
 import { useRBAC } from "@/context/RBACContext";
 import { useEvidence } from "@/hooks/useEvidence";
 import { useTransactions } from "@/hooks/useTransactions";
-import { EVIDENCE_CATEGORIES } from "@/constants/evidenceCategories";
+import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
 
 type EvidenceSection = { title: string; items: string[] };
 
@@ -97,14 +97,14 @@ function EvidenceContent() {
   }, [documents]);
 
   const sections = useMemo(() => {
-    // Start with all predefined categories
-    const mergedSections = EVIDENCE_CATEGORIES.map(cat => ({
-      title: cat.title,
-      items: [...cat.items],
+    // Start with all predefined NGO categories
+    const mergedSections: EvidenceSection[] = Object.entries(NGO_EVIDENCE_CATEGORIES).map(([title, items]) => ({
+      title,
+      items: [...items],
     }));
 
     // Add any additional folders from documents that aren't in predefined categories
-    const definedFolders = new Set(EVIDENCE_CATEGORIES.map(c => c.title));
+    const definedFolders = new Set(Object.keys(NGO_EVIDENCE_CATEGORIES));
     const additionalFolders = Array.from(
       new Set(documents.map(d => d.folder).filter(f => f && !definedFolders.has(f.trim())))
     );
@@ -226,7 +226,6 @@ function EvidenceContent() {
           isOpen={uploadOpen}
           onClose={() => setUploadOpen(false)}
           onSave={(saved) => { handleSave(saved); setUploadOpen(false); setPage(1); }}
-          sections={sections}
           transactions={transactions}
           mode="add"
         />
@@ -236,7 +235,6 @@ function EvidenceContent() {
           isOpen={!!editingEvidence}
           onClose={() => setEditingEvidence(null)}
           onSave={(saved) => { handleSave(saved); setEditingEvidence(null); }}
-          sections={sections}
           transactions={transactions}
           mode="edit"
           evidence={editingEvidence}

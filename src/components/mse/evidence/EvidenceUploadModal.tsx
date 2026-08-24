@@ -8,13 +8,12 @@ import { uploadEvidence, updateEvidence } from "@/utils/api";
 import { X, Paperclip, AlertCircle, CheckCircle2, Upload } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { useOrganisation } from "@/hooks/useOrganisation";
-import type { MSEEvidenceCategory, MSEEvidenceSubcategory } from "@/types/mse";
+import { getEvidenceFolders, getSubfolders } from "@/utils/evidenceFolderUtils";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSave: (evidence: Evidence) => void;
-  sections: readonly { title: string; items: readonly string[] }[];
   transactions: Transaction[];
   mode?: "add" | "edit";
   evidence?: Evidence | null;
@@ -28,44 +27,6 @@ const ALLOWED_TYPES: Record<string, string> = {
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
 };
 
-// Mirrors EvidenceFolderValidator.java in the backend. Keep these values in sync if the backend list changes.
-const EVIDENCE_FOLDERS_BY_ORG = {
-  PRIVATE: [
-    { folder: "Financial Reporting", subfolders: ["General Ledgers", "Trial Balances", "Financial Statements"] },
-    { folder: "Banking and Cash", subfolders: ["Bank Statements", "Bank Reconciliations", "Payment Confirmations"] },
-    { folder: "Sales Evidence", subfolders: ["Sales Invoices", "Receipts", "Credit Notes", "Sales Orders"] },
-    { folder: "Purchases and Procurement", subfolders: ["Purchase Orders", "Supplier Invoices", "Goods Received Notes", "Supplier Contracts"] },
-    { folder: "Payroll and HR", subfolders: ["Payroll Registers", "Employment Contracts", "Timesheets"] },
-    { folder: "Tax and Compliance", subfolders: ["VAT Returns", "PAYE Filings", "Tax Clearance Certificates"] },
-    { folder: "Inventory and Assets", subfolders: ["Stock Count Sheets", "Asset Registers", "Depreciation Schedules"] },
-    { folder: "Legal and Governance", subfolders: ["Board Minutes", "Company Registration", "Contracts"] },
-    { folder: "IT and System Evidence", subfolders: ["Access Logs", "Audit Trail Exports", "Backup Reports"] },
-    { folder: "Other Supporting Documents", subfolders: ["Emails", "Screenshots", "Miscellaneous"] },
-  ],
-  NGO: [
-    { folder: "Financial Reporting", subfolders: ["General Ledgers", "Trial Balances", "Financial Statements", "Project Financial Reports", "Donor Financial Reports"] },
-    { folder: "Budget Management", subfolders: ["Approved Annual Budget", "Project Budgets", "Grant Budgets", "Budget Revisions", "Budget vs Actual Reports", "Budget Approval Minutes"] },
-    { folder: "Banking and Cash", subfolders: ["Bank Statements", "Bank Reconciliations", "Payment Confirmations", "Cashbooks", "Cash Count Sheets", "Petty Cash Vouchers"] },
-    { folder: "Payment Evidence", subfolders: ["Payment Vouchers", "Signed Payment Requests", "Electronic Transfer Confirmations", "Cheque Copies", "Mobile Money Confirmations", "Payment Approval Forms"] },
-    { folder: "Grants and Donor Agreements", subfolders: ["Grant Agreements", "Funding Agreements", "Donor Contracts", "Grant Amendments", "Donor Correspondence"] },
-    { folder: "Donor Compliance", subfolders: ["Donor Guidelines", "Reporting Requirements", "Compliance Checklists", "Donor Approvals", "Waivers", "Donor Monitoring Reports"] },
-    { folder: "Project Documentation", subfolders: ["Project Proposals", "Work Plans", "Activity Reports", "Project Completion Reports", "Monitoring Reports"] },
-    { folder: "Project Activities", subfolders: ["Training Reports", "Workshop Reports", "Workshop Agendas", "Workshop Attendance Lists", "Signed Attendance Sheets", "Meeting Minutes", "Evaluation Forms", "Photographs"] },
-    { folder: "Beneficiary Documentation", subfolders: ["Beneficiary Lists", "Beneficiary Registration Forms", "Beneficiary IDs", "Distribution Lists", "Acknowledgement Receipts", "Consent Forms"] },
-    { folder: "Procurement", subfolders: ["Purchase Requisitions", "Purchase Orders", "Supplier Quotations", "Bid Evaluation Reports", "Supplier Invoices", "Goods Received Notes", "Supplier Contracts"] },
-    { folder: "Payroll and HR", subfolders: ["Payroll Registers", "Employment Contracts", "Timesheets", "Leave Records", "Staff Lists", "Performance Contracts"] },
-    { folder: "Travel", subfolders: ["Travel Authorizations", "Travel Expense Claims", "Flight Tickets", "Hotel Invoices"] },
-    { folder: "Vehicles", subfolders: ["Vehicle Logbooks", "Fuel Records", "Vehicle Maintenance Records", "Vehicle Insurance", "Vehicle Allocation Records"] },
-    { folder: "Fixed Assets", subfolders: ["Asset Register", "Asset Tags", "Purchase Documents", "Asset Transfer Forms", "Asset Disposal Forms", "Physical Verification Reports", "Maintenance Records", "Depreciation Schedules"] },
-    { folder: "Inventory", subfolders: ["Inventory Registers", "Stock Count Sheets"] },
-    { folder: "Compliance and Tax", subfolders: ["VAT Documents", "PAYE Filings", "RSSB Contributions", "Tax Clearance Certificates", "NGO Registration Certificates"] },
-    { folder: "Legal and Governance", subfolders: ["Board Minutes", "Management Meeting Minutes", "Policies", "Memorandums of Understanding", "Contracts", "Registration Documents"] },
-    { folder: "Audit Evidence", subfolders: ["Audit Requests", "Management Responses", "Audit Reports", "Management Letters", "Corrective Action Plans"] },
-    { folder: "IT and System Evidence", subfolders: ["Access Logs", "Audit Trail Exports", "Backup Reports"] },
-    { folder: "Other Supporting Documents", subfolders: ["Emails", "Approval Letters", "Miscellaneous"] },
-  ],
-} as const;
-
 function validate(fields: {
   name: string; transactionId: string; category: string; subCategory: string; file: File | null; isEdit: boolean;
 }) {
@@ -78,13 +39,13 @@ function validate(fields: {
   return e;
 }
 
-export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transactions, mode = "add", evidence = null }: Props) => {
+export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mode = "add", evidence = null }: Props) => {
   const isEdit = mode === "edit";
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [name, setName]                 = useState("");
-  const [category, setCategory]         = useState<MSEEvidenceCategory | "">("");
-  const [subCategory, setSubCategory]   = useState<MSEEvidenceSubcategory | "">("");
+  const [category, setCategory]         = useState<string>("");
+  const [subCategory, setSubCategory]   = useState<string>("");
   const [notes, setNotes]               = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [amount, setAmount]             = useState("");
@@ -103,8 +64,8 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transac
     if (isEdit && evidence) {
       queueMicrotask(() => {
         setName(evidence.documentName ?? "");
-        setCategory((evidence.folder as MSEEvidenceCategory | "") ?? "");
-        setSubCategory((evidence.subfolder as MSEEvidenceSubcategory | "") ?? "");
+        setCategory(evidence.folder ?? "");
+        setSubCategory(evidence.subfolder ?? "");
         setNotes(evidence.notes ?? "");
         setTransactionId(evidence.transactionId ? String(evidence.transactionId) : "");
         setAmount(evidence.amount != null ? String(evidence.amount) : "");
@@ -247,10 +208,8 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, sections, transac
   };
 
   const orgType = org?.industry ?? org?.orgType ?? user?.orgType ?? "PRIVATE";
-  const isNgoOrg = orgType === "NGO";
-  const folderOptions = isNgoOrg ? EVIDENCE_FOLDERS_BY_ORG.NGO : EVIDENCE_FOLDERS_BY_ORG.PRIVATE;
-  const selectedFolder = folderOptions.find((entry) => entry.folder === category);
-  const subfolderOptions = selectedFolder?.subfolders ?? [];
+  const folderOptions = getEvidenceFolders(orgType);
+  const subfolderOptions = getSubfolders(orgType, category);
   const inputSt = (field: string): React.CSSProperties => ({
     width: "100%", padding: "10px 12px", borderRadius: 10, fontSize: 14,
     border: `1.5px solid ${touched[field] && errors[field] ? "#ef4444" : "#e2e8f0"}`,
