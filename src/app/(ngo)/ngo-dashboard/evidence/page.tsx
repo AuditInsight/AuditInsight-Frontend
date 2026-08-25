@@ -235,6 +235,7 @@ function EvidenceContent() {
           isOpen={!!editingEvidence}
           onClose={() => setEditingEvidence(null)}
           onSave={(saved) => { handleSave(saved); setEditingEvidence(null); }}
+
           transactions={transactions}
           mode="edit"
           evidence={editingEvidence}

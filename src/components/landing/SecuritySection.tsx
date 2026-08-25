@@ -70,7 +70,7 @@ const s: Record<string, React.CSSProperties> = {
   sub:       { margin: "0 0 24px", fontSize: 16, color: "rgba(255,255,255,0.60)", lineHeight: 1.6 },
   badges:    { display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 10 },
   badge:     { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#93c5fd", background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)", padding: "5px 12px", borderRadius: 20 },
-  card:      { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "22px 20px" },
+  card:      { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 20, padding: "28px 24px", transition: "all 0.3s ease" },
   iconWrap:  { width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 },
   cardTitle: { margin: "0 0 8px", fontSize: 15, fontWeight: 700, color: "#fff" },
   cardDesc:  { margin: 0, fontSize: 13, color: "rgba(255,255,255,0.58)", lineHeight: 1.65 },

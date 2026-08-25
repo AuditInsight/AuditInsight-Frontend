@@ -141,18 +141,20 @@ const s: Record<string, React.CSSProperties> = {
     textDecoration: "none", display: "block",
   },
   ghostBtn: {
-    height: 40, padding: "0 18px", borderRadius: 10,
-    border: "1.5px solid #e2e8f0", background: "#fff",
-    fontSize: 14, fontWeight: 600, color: "#374151",
+    height: 42, padding: "0 20px", borderRadius: 10,
+    border: "2px solid #e2e8f0", background: "#fff",
+    fontSize: 14, fontWeight: 600, color: "#0f172a",
     cursor: "pointer", fontFamily: "inherit",
+    transition: "all 0.3s ease",
   },
   primaryBtn: {
-    height: 40, padding: "0 20px", borderRadius: 10,
+    height: 42, padding: "0 24px", borderRadius: 10,
     border: "none",
     background: "linear-gradient(135deg,#0f3d75,#1e3a8a)",
     fontSize: 14, fontWeight: 700, color: "#fff",
     cursor: "pointer", fontFamily: "inherit",
-    boxShadow: "0 4px 14px rgba(30,58,138,0.35)",
+    boxShadow: "0 6px 18px rgba(30,58,138,0.35)",
+    transition: "all 0.3s ease",
   },
 };
 

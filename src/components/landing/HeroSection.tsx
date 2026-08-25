@@ -21,7 +21,7 @@ export default function HeroSection() {
         }
         .hero-right { position: relative; display: flex; justify-content: center; }
         .hero-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .hero-stats  { display: flex; gap: 32px; padding-top: 8px; flex-wrap: wrap; }
+        .hero-stats  { display: flex; gap: 24px; padding-top: 32px; flex-wrap: nowrap; flex-direction: row; justify-content: space-between; width: 100%; }
 
         @media (max-width: 960px) {
           .hero-inner { grid-template-columns: 1fr; gap: 0; }
@@ -46,14 +46,35 @@ export default function HeroSection() {
           </div>
 
           <h1 className="hero-title">
-            The Modern{" "}
-            <span style={s.titleAccent}>Audit &amp; Compliance</span>{" "}
-            Operating System
+            DIGITAL FINANCIAL{" "}
+            <span style={s.titleAccent}>FILING &amp; AUDIT</span> READINESS
           </h1>
 
+
+          <p
+            style={{
+              ...s.desc,
+              fontSize: "1.35rem",
+              fontWeight: 700,
+              lineHeight: 1.5,
+            }}
+          >
+            Stop storing your financial records in cabinets, folders, and
+            scattered devices.
+          </p>
+
+
           <p style={s.desc}>
-            Track transactions, verify evidence, detect fraud, automate reviews,
-            and achieve audit readiness — all in one workspace built for finance teams.
+            Paper documents get lost, damaged, and difficult to retrieve. Teams
+            waste time printing, copying, and searching for the same financial
+            records again and again.
+          </p>
+
+
+          <p style={{ ...s.desc, fontWeight: 700 }}>
+            AuditInsight gives your organization one structured digital
+            workspace to upload, organize, access, and manage financial
+            documents and audit evidence—all year round.
           </p>
 
           <div className="hero-actions">
@@ -69,13 +90,13 @@ export default function HeroSection() {
 
           <div className="hero-stats">
             {[
-              { value: "98%",   label: "Evidence Accuracy"      },
-              { value: "24/7",  label: "Risk Monitoring"         },
-              { value: "1.2M+", label: "Transactions Audited"    },
-            ].map((stat) => (
-              <div key={stat.label} style={s.stat}>
-                <span style={s.statVal}>{stat.value}</span>
-                <span style={s.statLbl}>{stat.label}</span>
+              "Upload once, access anytime",
+              "Structured folders and subfolders",
+              "Reduce printing and duplicate work",
+            ].map((item) => (
+              <div key={item} style={s.stat}>
+                <span style={s.statVal}>✓</span>
+                <span style={s.statLbl}>{item}</span>
               </div>
             ))}
           </div>
@@ -94,15 +115,36 @@ export default function HeroSection() {
             </div>
 
             <div style={s.scoreRow}>
-              <p style={s.scoreLabel}>Audit Readiness</p>
-              <p style={s.scoreValue}>84%</p>
-              <div style={s.scoreBar}><div style={s.scoreBarFill} /></div>
+              <p style={s.scoreLabel}>Financial Filing</p>
+              <p style={s.scoreValue}>100%</p>
+              <div style={s.scoreBar}>
+                <div style={s.scoreBarFill} />
+              </div>
             </div>
 
+
             {[
-              { icon: <TrendingUp size={14} />,   label: "Linked Evidence",  value: "92%", color: "#15803d", bg: "#f0fdf4" },
-              { icon: <AlertTriangle size={14} />, label: "Critical Issues",  value: "14",  color: "#b45309", bg: "#fffbeb" },
-              { icon: <CheckCircle size={14} />,   label: "Resolved Flags",   value: "38",  color: "#1d4ed8", bg: "#eff6ff" },
+              {
+                icon: <TrendingUp size={14} />,
+                label: "Linked Evidence",
+                value: "92%",
+                color: "#15803d",
+                bg: "#f0fdf4",
+              },
+              {
+                icon: <AlertTriangle size={14} />,
+                label: "Flagged Critical Issues",
+                value: "95%",
+                color: "#b45309",
+                bg: "#fffbeb",
+              },
+              {
+                icon: <CheckCircle size={14} />,
+                label: "Audit Readiness",
+                value: "90%",
+                color: "#1d4ed8",
+                bg: "#eff6ff",
+              },
             ].map((row) => (
               <div key={row.label} style={s.metricRow}>
                 <div style={{ ...s.metricIcon, background: row.bg, color: row.color }}>{row.icon}</div>
@@ -117,15 +159,32 @@ export default function HeroSection() {
               ))}
             </div>
             <div style={s.chartLabels}>
-              <span>Jan</span><span>Mar</span><span>Jun</span><span>Sep</span><span>Dec</span>
+              <span>Jan</span>
+              <span>Mar</span>
+              <span>Jun</span>
+              <span>Sep</span>
+              <span>Dec</span>
             </div>
           </div>
 
           <div style={s.floatBadge}>
-            <div style={s.floatBadgeIcon}><Lock size={18} color="#1e3a8a" strokeWidth={1.75} /></div>
+            <div style={s.floatBadgeIcon}>
+              <Lock size={18} color="#1e3a8a" strokeWidth={1.75} />
+            </div>
             <div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#0f172a" }}>SOC 2 Ready</p>
-              <p style={{ margin: 0, fontSize: 11, color: "#64748b" }}>Enterprise security</p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#0f172a",
+                }}
+              >
+                SOC 2 Ready
+              </p>
+              <p style={{ margin: 0, fontSize: 11, color: "#64748b" }}>
+                Enterprise security
+              </p>
             </div>
           </div>
         </div>
@@ -154,7 +213,7 @@ const s: Record<string, React.CSSProperties> = {
     background: "radial-gradient(circle,rgba(59,130,246,0.09) 0%,transparent 70%)",
     pointerEvents: "none",
   },
-  left: { display: "flex", flexDirection: "column", gap: 24 },
+  left: { display: "flex", flexDirection: "column", gap: 28 },
   badge: {
     display: "inline-flex", alignItems: "center", gap: 8,
     padding: "7px 14px", borderRadius: 999,
@@ -187,9 +246,9 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 15, fontWeight: 600, color: "#374151",
     cursor: "pointer", fontFamily: "inherit",
   },
-  stat:    { display: "flex", flexDirection: "column", gap: 2 },
-  statVal: { fontSize: 28, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.8px" },
-  statLbl: { fontSize: 12, color: "#64748b", fontWeight: 500 },
+  stat:    { display: "flex", flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  statVal: { fontSize: 20, fontWeight: 800, color: "#22c55e", flexShrink: 0 },
+  statLbl: { fontSize: 13, color: "#475569", fontWeight: 500 },
 
   mockCard: {
     width: "100%", maxWidth: 420,

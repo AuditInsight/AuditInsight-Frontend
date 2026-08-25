@@ -4,30 +4,80 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 
 const PLANS = [
-  {
-    name: "Free Trial", price: "$0", period: "14 days",
-    desc: "Try the platform with no commitment.",
-    features: ["Up to 100 transactions", "2 users", "2 GB storage", "Basic reports"],
-    cta: "Start Free", highlight: false,
-  },
-  {
-    name: "Basic", price: "$49", period: "/month",
-    desc: "For small finance teams getting started.",
-    features: ["Up to 1,000 transactions", "5 users", "50 GB storage", "Review queue", "Evidence management", "Risk alerts"],
-    cta: "Get Started", highlight: false,
-  },
-  {
-    name: "Professional", price: "$149", period: "/month",
-    desc: "For growing audit teams that need full power.",
-    features: ["Unlimited transactions", "20 users", "250 GB storage", "AI fraud detection", "Advanced reports", "Workflow automation", "Priority support"],
-    cta: "Start Professional", highlight: true,
-  },
-  {
-    name: "Enterprise", price: "Custom", period: "",
-    desc: "Tailored for large organisations and audit firms.",
-    features: ["Unlimited everything", "SSO & SAML", "Dedicated account manager", "Custom integrations", "SLA guarantee", "On-premise option"],
-    cta: "Contact Sales", highlight: false,
-  },
+ {
+   name: "Free Trial",
+   price: "$0",
+   period: " 30 days",
+   desc: "Explore the full AuditInsight platform free for 30 days.",
+   features: [
+     "Digital financial filing",
+     "Transaction entry",
+     "Evidence linking",
+     "Review queue",
+     "Reports",
+     "Missing document flags",
+     "Risk detection",
+   ],
+   cta: "Start Free",
+   highlight: false,
+ },
+
+
+ {
+   name: "1 Month Plan",
+   price: "15,000 RWF",
+   period: "",
+   desc: "Full access to AuditInsight with flexible monthly billing.",
+   features: [
+     "Digital financial filing",
+     "Transaction entry",
+     "Evidence linking",
+     "Review queue",
+     "Reports",
+     "Missing document flags",
+     "Risk detection",
+   ],
+   cta: "Get Started",
+   highlight: false,
+ },
+
+
+ {
+   name: "6 Month Plan",
+   price: "80,000 RWF",
+   period: "",
+   desc: "Get the full AuditInsight experience and save 11% with a 6-month plan.",
+   features: [
+     "Digital financial filing",
+     "Transaction entry",
+     "Evidence linking",
+     "Review queue",
+     "Reports",
+     "Missing document flags",
+     "Risk detection",
+   ],
+   cta: "Choose 6 Months",
+   highlight: true,
+ },
+
+
+ {
+   name: "1 Year Plan",
+   price: "150,000 RWF",
+   period: "",
+   desc: "Get the full AuditInsight experience for a year and receive 2 months free.",
+   features: [
+     "Digital financial filing",
+     "Transaction entry",
+     "Evidence linking",
+     "Review queue",
+     "Reports",
+     "Missing document flags",
+     "Risk detection",
+   ],
+   cta: "Choose 1 Year",
+   highlight: false,
+ },
 ];
 
 export default function PricingSection() {
@@ -95,8 +145,8 @@ const s: Record<string, React.CSSProperties> = {
   eyebrow:      { fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#1e3a8a", margin: "0 0 12px" },
   title:        { margin: "0 0 12px", fontWeight: 800, color: "#0f172a", letterSpacing: "-1px" },
   sub:          { margin: 0, fontSize: 16, color: "#64748b" },
-  card:         { background: "#fff", borderRadius: 22, padding: "28px 24px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 20, position: "relative" },
-  cardHL:       { background: "linear-gradient(160deg,#0c2d6b,#1e3a8a)", border: "1px solid #1e3a8a", boxShadow: "0 24px 64px rgba(30,58,138,0.35)", transform: "scale(1.03)" },
+  card:         { background: "#fff", borderRadius: 24, padding: "32px", border: "1px solid #e5e7eb", display: "flex", flexDirection: "column", gap: 24, position: "relative" },
+  cardHL:       { background: "linear-gradient(160deg,#0c2d6b,#1e3a8a)", border: "1px solid #2563eb", boxShadow: "0 32px 80px rgba(30,58,138,0.40)", transform: "scale(1.04)" },
   popularBadge: { position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)", background: "#22c55e", color: "#fff", fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, whiteSpace: "nowrap" },
   planTop:      { display: "flex", flexDirection: "column", gap: 6 },
   planName:     { margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" },
