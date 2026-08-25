@@ -2,13 +2,62 @@
 
 import { AlertTriangle, Bell, CreditCard, FolderOpen, Settings, TrendingUp, type LucideIcon } from "lucide-react";
 
-const FEATURES: { icon: LucideIcon; iconColor: string; title: string; text: string; color: string; border: string }[] = [
-  { icon: CreditCard,    iconColor: "#1d4ed8", title: "Transaction Monitoring",   text: "Track every financial movement in real time with risk scoring, duplicate detection, and approval workflow tracking.",   color: "#eff6ff", border: "#bfdbfe" },
-  { icon: FolderOpen,    iconColor: "#15803d", title: "Evidence Management",      text: "Link invoices, receipts, bank statements, and approval memos directly to transactions with structured folder categories.", color: "#f0fdf4", border: "#bbf7d0" },
-  { icon: AlertTriangle, iconColor: "#c2410c", title: "AI Fraud Detection",       text: "Automatic flagging of round numbers, after-hours postings, duplicate amounts, and split-payment patterns.",            color: "#fff7ed", border: "#fed7aa" },
-  { icon: Bell,          iconColor: "#7e22ce", title: "Review Queue",             text: "Auditors flag issues with severity levels; accountants resolve with notes and evidence — all in a tracked workflow.",   color: "#fdf4ff", border: "#e9d5ff" },
-  { icon: TrendingUp,    iconColor: "#0369a1", title: "Audit Readiness Score",    text: "Live compliance scoring with evidence coverage percentage, missing docs heatmap, and exportable PDF/CSV reports.",     color: "#f0f9ff", border: "#bae6fd" },
-  { icon: Settings,      iconColor: "#a16207", title: "Role-Based Access Control",text: "Admins, Accountants, and Auditors each see only what they need — enforced at both UI and API level.",               color: "#fefce8", border: "#fde68a" },
+const FEATURES: {
+ icon: LucideIcon;
+ iconColor: string;
+ title: string;
+ text: string;
+ color: string;
+ border: string;
+}[] = [
+ {
+   icon: CreditCard,
+   iconColor: "#1d4ed8",
+   title: "Digital Financial Filing",
+   text: "Upload financial documents once and organize them into structured folders and subfolders built around how your organization works.",
+   color: "#eff6ff",
+   border: "#bfdbfe",
+ },
+ {
+   icon: FolderOpen,
+   iconColor: "#15803d",
+   title: "Evidence Management",
+   text: "Connect invoices, receipts, approvals, contracts, and other supporting documents to the transactions they support.",
+   color: "#f0fdf4",
+   border: "#bbf7d0",
+ },
+ {
+   icon: AlertTriangle,
+   iconColor: "#c2410c",
+   title: "Evidence Gap Detection",
+   text: "See where supporting documentation is missing and identify transactions or records that need attention before the audit begins.",
+   color: "#fff7ed",
+   border: "#fed7aa",
+ },
+ {
+   icon: Bell,
+   iconColor: "#7e22ce",
+   title: "Review & Resolution",
+   text: "Keep audit and finance issues in one place. Review findings, add responses, upload missing evidence, and track issues until they are resolved.",
+   color: "#fdf4ff",
+   border: "#e9d5ff",
+ },
+ {
+   icon: TrendingUp,
+   iconColor: "#0369a1",
+   title: "Audit Readiness",
+   text: "Track evidence coverage, outstanding issues, missing documentation, and overall audit readiness from one workspace.",
+   color: "#f0f9ff",
+   border: "#bae6fd",
+ },
+ {
+   icon: Settings,
+   iconColor: "#a16207",
+   title: "Role-Based Access Control",
+   text: "Admins, Accountants, and Auditors each see only what they need — enforced at both UI and API level.",
+   color: "#fefce8",
+   border: "#fde68a",
+ },
 ];
 
 export default function FeaturesGrid() {
@@ -33,8 +82,10 @@ export default function FeaturesGrid() {
       <div style={s.inner}>
         <div style={s.head}>
           <p style={s.eyebrow}>Platform Features</p>
-          <h2 className="feat-head" style={s.title}>Everything needed for modern audits</h2>
-          <p style={s.sub}>One platform for your entire financial audit cycle — from evidence upload to compliance reporting.</p>
+          <h2 className="feat-head" style={s.title}>
+            Everything You Need To From Paper Records To Contionous Audit
+            Readiness
+          </h2>
         </div>
         <div className="feat-grid">
           {FEATURES.map((f) => {

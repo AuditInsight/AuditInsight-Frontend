@@ -1,55 +1,72 @@
 "use client";
 
+
 import Link from "next/link";
 import { ArrowRight, Shield } from "lucide-react";
 
+
 export default function CTASection() {
-  return (
-    <section style={s.section}>
-      <style>{`
-        .cta-card    { padding: 72px 48px; }
-        .cta-title   { font-size: 44px; }
-        .cta-actions { display: flex; justify-content: center; gap: 14px; margin-bottom: 28px; flex-wrap: wrap; }
-        .cta-trust   { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
-        @media (max-width: 768px) {
-          .cta-card    { padding: 48px 24px; }
-          .cta-title   { font-size: 30px; }
-        }
-        @media (max-width: 480px) {
-          .cta-title   { font-size: 24px; }
-          .cta-actions { flex-direction: column; align-items: center; }
-          .cta-trust   { gap: 12px; }
-        }
-      `}</style>
-      <div style={s.inner}>
-        <div className="cta-card" style={s.card}>
-          <div style={s.blob1} /><div style={s.blob2} />
-          <div style={s.content}>
-            <div style={s.iconRow}>
-              <div style={s.shieldBox}><Shield size={24} color="#fff" /></div>
-            </div>
-            <h2 className="cta-title" style={s.title}>Start building audit intelligence today</h2>
-            <p style={s.sub}>Join finance teams who audit smarter. Free 14-day trial — no credit card required.</p>
-            <div className="cta-actions">
-              <Link href="/sign-up" style={{ textDecoration: "none" }}>
-                <button style={s.primaryBtn}>
-                  Start Free Trial <ArrowRight size={15} style={{ marginLeft: 6 }} />
-                </button>
-              </Link>
-              <Link href="/log-in" style={{ textDecoration: "none" }}>
-                <button style={s.ghostBtn}>Sign in to your workspace</button>
-              </Link>
-            </div>
-            <div className="cta-trust">
-              {["✓ No credit card", "✓ Setup in 2 minutes", "✓ Cancel anytime"].map((t) => (
-                <span key={t} style={s.trustItem}>{t}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+ return (
+   <section style={s.section}>
+     <style>{`
+       .cta-card    { padding: 72px 48px; }
+       .cta-title   { font-size: 44px; }
+       .cta-actions { display: flex; justify-content: center; gap: 14px; margin-bottom: 28px; flex-wrap: wrap; }
+       .cta-trust   { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+       @media (max-width: 768px) {
+         .cta-card    { padding: 48px 24px; }
+         .cta-title   { font-size: 30px; }
+       }
+       @media (max-width: 480px) {
+         .cta-title   { font-size: 24px; }
+         .cta-actions { flex-direction: column; align-items: center; }
+         .cta-trust   { gap: 12px; }
+       }
+     `}</style>
+     <div style={s.inner}>
+       <div className="cta-card" style={s.card}>
+         <div style={s.blob1} />
+         <div style={s.blob2} />
+         <div style={s.content}>
+           <div style={s.iconRow}>
+             <div style={s.shieldBox}>
+               <Shield size={24} color="#fff" />
+             </div>
+           </div>
+           <h2 className="cta-title" style={s.title}>
+             Stop Searching, Start Organisation
+           </h2>
+           <p style={s.sub}>
+             Your Financial Records Are Already Valuable. Make Them Easier To
+             Manage
+           </p>
+           <div className="cta-actions">
+             <Link href="/sign-up" style={{ textDecoration: "none" }}>
+               <button style={s.primaryBtn}>
+                 Start Free Trial{" "}
+                 <ArrowRight size={15} style={{ marginLeft: 6 }} />
+               </button>
+             </Link>
+             <Link href="/log-in" style={{ textDecoration: "none" }}>
+               <button style={s.ghostBtn}>Sign in to your workspace</button>
+             </Link>
+           </div>
+           <div className="cta-trust">
+             {[
+               "✓ No credit card",
+               "✓ Setup in 2 minutes",
+               "✓ Cancel anytime",
+             ].map((t) => (
+               <span key={t} style={s.trustItem}>
+                 {t}
+               </span>
+             ))}
+           </div>
+         </div>
+       </div>
+     </div>
+   </section>
+ );
 }
 
 const s: Record<string, React.CSSProperties> = {
