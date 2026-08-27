@@ -18,6 +18,7 @@ type Step = "org-setup" | "pricing";
 interface OrgData {
   orgName: string;
   industry: "NGO" | "PRIVATE";  // maps directly to backend OrganisationType
+  country: string;              // country code e.g. "RW", "US", "GB"
   size: string;
   fiscalYearStart: string;
   fiscalYearEnd: string;
@@ -49,12 +50,13 @@ export default function OnboardingPage() {
     setCompleting(true);
     setError("");
 
-    const org = orgData ?? { orgName: "My Organisation", industry: "PRIVATE" as const, size: "1-10", fiscalYearStart: "01-01", fiscalYearEnd: "12-31", currencies: ["USD"] };
+    const org = orgData ?? { orgName: "My Organisation", industry: "PRIVATE" as const, country: "US", size: "1-10", fiscalYearStart: "01-01", fiscalYearEnd: "12-31", currencies: ["USD"] };
 
     try {
       const payload: CreateOrganisationRequest = {
         name:            org.orgName,
         industry:        org.industry,   // PRIVATE | NGO — backend OrganisationType
+        countryCode:     org.country,    // country code e.g. "RW", "US", "GB"
         size:            org.size,
         fiscalYearStart: org.fiscalYearStart,
         fiscalYearEnd:   org.fiscalYearEnd,

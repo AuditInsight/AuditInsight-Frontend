@@ -6,6 +6,7 @@ import { Building2, AlertCircle } from "lucide-react";
 interface OrgData {
   orgName: string;
   industry: "NGO" | "PRIVATE";
+  country: string;
   size: string;
   fiscalYearStart: string;
   fiscalYearEnd: string;
@@ -23,12 +24,34 @@ const INDUSTRIES = [
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "RWF", "KES", "ZAR", "NGN", "GHS", "UGX", "TZS"];
 
+const COUNTRIES = [
+  { code: "RW", name: "Rwanda" },
+  { code: "UG", name: "Uganda" },
+  { code: "KE", name: "Kenya" },
+  { code: "TZ", name: "Tanzania" },
+  { code: "ZA", name: "South Africa" },
+  { code: "NG", name: "Nigeria" },
+  { code: "GH", name: "Ghana" },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "NL", name: "Netherlands" },
+  { code: "CH", name: "Switzerland" },
+  { code: "SE", name: "Sweden" },
+  { code: "NO", name: "Norway" },
+  { code: "DK", name: "Denmark" },
+];
+
 // MM-dd format validation
 const MM_DD = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
 export default function OrganisationSetupStep({ onNext }: Props) {
   const [orgName,         setOrgName]         = useState("");
   const [industry,        setIndustry]        = useState("");
+  const [country,         setCountry]         = useState("");
   const [fiscalYearStart, setFiscalYearStart] = useState("01-01");
   const [fiscalYearEnd,   setFiscalYearEnd]   = useState("12-31");
   const [employeeCount,   setEmployeeCount]   = useState("");
@@ -44,12 +67,13 @@ export default function OrganisationSetupStep({ onNext }: Props) {
   const handleNext = () => {
     if (!orgName.trim())              { setError("Organisation name is required."); return; }
     if (!industry)                    { setError("Please select your industry."); return; }
+    if (!country)                     { setError("Please select your country."); return; }
     if (!MM_DD.test(fiscalYearStart)) { setError("Fiscal year start must be in MM-DD format (e.g. 01-01)."); return; }
     if (!MM_DD.test(fiscalYearEnd))   { setError("Fiscal year end must be in MM-DD format (e.g. 12-31)."); return; }
     if (!employeeCount.trim())         { setError("Number of employees is required."); return; }
     if (currencies.length === 0)        { setError("Please select at least one currency."); return; }
     setError("");
-    onNext({ orgName: orgName.trim(), industry: industry.toLowerCase().includes("ngo") ? "NGO" : "PRIVATE", size: employeeCount.trim(), fiscalYearStart, fiscalYearEnd, currencies });
+    onNext({ orgName: orgName.trim(), industry: industry.toLowerCase().includes("ngo") ? "NGO" : "PRIVATE", country, size: employeeCount.trim(), fiscalYearStart, fiscalYearEnd, currencies });
   };
 
   return (
@@ -82,6 +106,15 @@ export default function OrganisationSetupStep({ onNext }: Props) {
         <select style={s.select} value={industry} onChange={(e) => setIndustry(e.target.value)}>
           <option value="">Select industry</option>
           {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+        </select>
+      </div>
+
+      {/* Country */}
+      <div style={s.fieldGroup}>
+        <label style={s.label}>Country <span style={s.req}>*</span></label>
+        <select style={s.select} value={country} onChange={(e) => setCountry(e.target.value)}>
+          <option value="">Select country</option>
+          {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
         </select>
       </div>
 

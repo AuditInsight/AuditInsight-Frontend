@@ -6,6 +6,7 @@ import { OrgType } from "./auth";
 export interface CreateOrganisationRequest {
   name: string;
   industry: OrgType;            // "PRIVATE" | "NGO" — maps to OrganisationType enum
+  countryCode: string;          // e.g. "RW", "US", "GB" — backend CountryCode enum
   fiscalYearStart: string;      // MM-dd format e.g. "01-01"
   fiscalYearEnd: string;        // MM-dd format e.g. "12-31"
   currencies: string[];         // e.g. ["USD", "RWF"]
@@ -18,6 +19,7 @@ export interface OrganisationApiResponse {
   name: string;
   industry: OrgType;            // PRIVATE | NGO
   orgType: OrgType;             // alias — some response shapes include this
+  countryCode?: string;         // e.g. "RW", "US", "GB"
   fiscalYearStart: string;
   fiscalYearEnd: string;
   currencies: string[];
