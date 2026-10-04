@@ -6,7 +6,7 @@ import { Shield, Check } from "lucide-react";
 import { isAxiosError } from "axios";
 import OrganisationSetupStep from "@/components/onboarding/OrganisationSetupStep";
 import PricingPlanStep from "@/components/onboarding/PricingPlanStep";
-import { PlanTier, BillingCycle } from "@/types/billing";
+import { SubscriptionType } from "@/types/billing";
 import { useAuth } from "@/context/AuthContext.production";
 import { apiClient } from "@/api/client";
 import { CreateOrganisationRequest, OrganisationApiResponse } from "@/types/tenants";
@@ -46,7 +46,7 @@ export default function OnboardingPage() {
     setStep("pricing");
   };
 
-  const handlePlanSelect = async (plan: PlanTier, cycle: BillingCycle) => {
+  const handlePlanSelect = async (plan: SubscriptionType) => {
     setCompleting(true);
     setError("");
 
@@ -79,7 +79,6 @@ export default function OnboardingPage() {
       });
 
       sessionStorage.setItem("selected_plan",  plan);
-      sessionStorage.setItem("selected_cycle", cycle);
 
       if ((data.industry ?? data.orgType) === "NGO") {
         router.replace("/ngo-dashboard");

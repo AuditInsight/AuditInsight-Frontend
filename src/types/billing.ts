@@ -1,7 +1,7 @@
-export type PlanTier = "FREE" | "STARTER" | "PROFESSIONAL" | "ENTERPRISE";
-export type BillingCycle = "MONTHLY" | "SIX_MONTHS" | "YEARLY";
+// Mirrors the backend SubscriptionType enum (fixed-price RWF periods).
+export type SubscriptionType = "MONTHLY" | "SIX_MONTHS" | "ANNUAL";
 export type PaymentStatus = "PENDING" | "SUCCESSFUL" | "FAILED";
-export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
+export type SubscriptionStatus = "TRIAL" | "PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED";
 
 export interface MOMOPaymentMethod {
   id: string;
@@ -28,87 +28,74 @@ export interface CardPaymentMethod {
 export type PaymentMethod = MOMOPaymentMethod | CardPaymentMethod;
 
 export interface PricingPlan {
-  id: PlanTier;
+  id: SubscriptionType;
   name: string;
-  monthlyPrice: number;
-  sixMonthsPrice: number;
-  annualPrice: number;
+  /** Price in RWF for the whole period. */
+  price: number;
+  durationDays: number;
+  /** Short billing note, e.g. "Billed every 6 months". */
+  billed: string;
   description: string;
   features: string[];
   highlighted?: boolean;
-  maxUsers: number;
-  maxAudits: number;
-  storageGB: number;
+  /** CTA label used on the public landing page. */
+  cta: string;
 }
 
 export interface Subscription {
   id: string;
   organisationId: string;
-  planTier: PlanTier;
-  billingCycle: BillingCycle;
+  subscriptionType: SubscriptionType | null;
   status: SubscriptionStatus;
   startDate: string;
   endDate: string;
 }
 
+const PLAN_FEATURES = [
+  "Digital financial filing",
+  "Transaction entry",
+  "Evidence linking",
+  "Review queue",
+  "Reports",
+  "Missing document flags",
+  "Risk detection",
+];
+
 export const PRICING_PLANS: PricingPlan[] = [
   {
-    id: "FREE",
-    name: "Free",
-    monthlyPrice: 0,
-    sixMonthsPrice: 0,
-    annualPrice: 0,
-    description: "Get started with basic audit management",
-    features: ["Up to 2 users", "5 audits per month", "1 GB storage", "Basic reports", "Email support"],
-    maxUsers: 2,
-    maxAudits: 5,
-    storageGB: 1,
+    id: "MONTHLY",
+    name: "1 Month Plan",
+    price: 15000,
+    durationDays: 30,
+    billed: "Billed monthly",
+    description: "Full access to AuditInsight with flexible monthly billing.",
+    features: PLAN_FEATURES,
+    cta: "Get Started",
   },
   {
-    id: "STARTER",
-    name: "Starter",
-    monthlyPrice: 15000,
-    sixMonthsPrice: 80000,
-    annualPrice: 150000,
-    description: "For small teams getting serious about audits",
-    features: ["Up to 10 users", "50 audits per month", "10 GB storage", "Advanced reports", "Audit trail", "Priority support"],
-    maxUsers: 10,
-    maxAudits: 50,
-    storageGB: 10,
-  },
-  {
-    id: "PROFESSIONAL",
-    name: "Professional",
-    monthlyPrice: 15000,
-    sixMonthsPrice: 80000,
-    annualPrice: 150000,
-    description: "Full-featured audit management for growing orgs",
-    features: ["Up to 50 users", "Unlimited audits", "100 GB storage", "Custom workflows", "Compliance templates", "API access", "24/7 support"],
-    maxUsers: 50,
-    maxAudits: -1,
-    storageGB: 100,
+    id: "SIX_MONTHS",
+    name: "6 Month Plan",
+    price: 80000,
+    durationDays: 180,
+    billed: "Billed every 6 months",
+    description: "Get the full AuditInsight experience and save 11% with a 6-month plan.",
+    features: PLAN_FEATURES,
     highlighted: true,
+    cta: "Choose 6 Months",
   },
   {
-    id: "ENTERPRISE",
-    name: "Enterprise",
-    monthlyPrice: 15000,
-    sixMonthsPrice: 80000,
-    annualPrice: 150000,
-    description: "Enterprise-grade security and compliance",
-    features: ["Unlimited users", "Unlimited audits", "1 TB storage", "SSO / SAML", "Dedicated account manager", "Custom integrations", "SLA guarantee"],
-    maxUsers: -1,
-    maxAudits: -1,
-    storageGB: 1000,
+    id: "ANNUAL",
+    name: "1 Year Plan",
+    price: 150000,
+    durationDays: 365,
+    billed: "Billed annually",
+    description: "Get the full AuditInsight experience for a year and receive 2 months free.",
+    features: PLAN_FEATURES,
+    cta: "Choose 1 Year",
   },
 ];
 
-export const MOCK_SUBSCRIPTION: Subscription = {
-  id: "sub_mock_001",
-  organisationId: "org_001",
-  planTier: "PROFESSIONAL",
-  billingCycle: "MONTHLY",
-  status: "ACTIVE",
-  startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-};
+export const getPlan = (id: SubscriptionType | null | undefined) =>
+  PRICING_PLANS.find((p) => p.id === id);
+
+export const formatRwf = (amount: number) => `${new Intl.NumberFormat("en-US").format(amount)} RWF`;

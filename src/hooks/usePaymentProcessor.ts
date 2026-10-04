@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import apiClient from "@/api/client";
-import { PlanTier, BillingCycle, Subscription } from "@/types/billing";
+import { SubscriptionType, Subscription } from "@/types/billing";
 
 export interface PaymentCheckoutResponse {
   paymentId: string;
@@ -18,23 +18,20 @@ export interface PaymentStatusResponse {
 export interface SubscriptionResponse {
   id: string;
   organisationId: string;
-  planTier: PlanTier;
-  billingCycle: BillingCycle;
-  status: "ACTIVE" | "EXPIRED" | "CANCELLED";
+  subscriptionType: SubscriptionType | null;
+  status: Subscription["status"];
   startDate: string;
   endDate: string;
 }
 
 interface UsePaymentProcessorOptions {
   organisationId: string;
-  planTier: PlanTier;
-  billingCycle: BillingCycle;
+  subscriptionType: SubscriptionType;
 }
 
 export function usePaymentProcessor({
   organisationId,
-  planTier,
-  billingCycle,
+  subscriptionType,
 }: UsePaymentProcessorOptions) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,8 +47,7 @@ export function usePaymentProcessor({
         const response = await apiClient.post<PaymentCheckoutResponse>(
           `/subscriptions/${organisationId}/checkout/momo`,
           {
-            planTier,
-            billingCycle,
+            subscriptionType,
             phoneNumber,
           }
         );
@@ -70,7 +66,7 @@ export function usePaymentProcessor({
         setLoading(false);
       }
     },
-    [organisationId, planTier, billingCycle]
+    [organisationId, subscriptionType]
   );
 
   // Start Card Checkout
@@ -81,8 +77,7 @@ export function usePaymentProcessor({
       const response = await apiClient.post<PaymentCheckoutResponse>(
         `/subscriptions/${organisationId}/checkout/card`,
         {
-          planTier,
-          billingCycle,
+          subscriptionType,
           returnUrl: `${typeof window !== "undefined" ? window.location.origin : ""}/ngo-dashboard/settings?tab=Billing%20and%20Plans`,
         }
       );
@@ -101,7 +96,7 @@ export function usePaymentProcessor({
     } finally {
       setLoading(false);
     }
-  }, [organisationId, planTier, billingCycle]);
+  }, [organisationId, subscriptionType]);
 
   // Poll Payment Status
   const pollPaymentStatus = useCallback(

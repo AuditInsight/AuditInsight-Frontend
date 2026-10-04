@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { PlanTier, BillingCycle, PRICING_PLANS, Subscription } from "@/types/billing";
+import { SubscriptionType, getPlan, formatRwf, Subscription } from "@/types/billing";
 import { theme } from "@/styles/theme";
 import { X, Loader, CheckCircle2, AlertCircle } from "lucide-react";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
@@ -12,8 +12,7 @@ type PaymentState = "selecting" | "processing" | "success" | "error";
 
 interface Props {
   open: boolean;
-  plan: PlanTier;
-  cycle: BillingCycle;
+  plan: SubscriptionType;
   organisationId: string;
   onClose: () => void;
   onSuccess: (subscription: Subscription) => void;
@@ -22,13 +21,12 @@ interface Props {
 export default function PaymentCheckoutModal({
   open,
   plan,
-  cycle,
   organisationId,
   onClose,
   onSuccess,
 }: Props) {
   const [state, setState] = useState<PaymentState>("selecting");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CARD");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("MOMO");
   const [localError, setLocalError] = useState<string | null>(null);
 
   const {
@@ -41,14 +39,13 @@ export default function PaymentCheckoutModal({
     resetState,
   } = usePaymentProcessor({
     organisationId,
-    planTier: plan,
-    billingCycle: cycle,
+    subscriptionType: plan,
   });
 
-  const planInfo = PRICING_PLANS.find((p) => p.id === plan);
+  const planInfo = getPlan(plan);
   if (!planInfo) return null;
 
-  const price = cycle === "MONTHLY" ? planInfo.monthlyPrice : planInfo.annualPrice;
+  const price = planInfo.price;
 
   const handlePaymentStart = async (method: PaymentMethod, phoneNumber?: string) => {
     setLocalError(null);
@@ -231,7 +228,7 @@ export default function PaymentCheckoutModal({
                         color: theme.colors.textPrimary,
                       }}
                     >
-                      {cycle === "MONTHLY" ? "Monthly" : "Yearly"}
+                      {planInfo.billed}
                     </div>
                   </div>
                 </div>
@@ -260,11 +257,7 @@ export default function PaymentCheckoutModal({
                       color: theme.colors.textPrimary,
                     }}
                   >
-                    {new Intl.NumberFormat("en-RW", {
-                      style: "currency",
-                      currency: "RWF",
-                      maximumFractionDigits: 0,
-                    }).format(price)}
+                    {formatRwf(price)}
                   </div>
                 </div>
               </div>
@@ -396,7 +389,7 @@ export default function PaymentCheckoutModal({
                 maxWidth: 300,
               }}
             >
-              Your subscription to {planInfo.name} plan has been activated. Welcome!
+              Your {planInfo.name} has been activated. Welcome!
             </div>
           </div>
         )}

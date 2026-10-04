@@ -2,83 +2,8 @@
 
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { PRICING_PLANS, formatRwf } from "@/types/billing";
 
-const PLANS = [
- {
-   name: "Free Trial",
-   price: "$0",
-   period: " 30 days",
-   desc: "Explore the full AuditInsight platform free for 30 days.",
-   features: [
-     "Digital financial filing",
-     "Transaction entry",
-     "Evidence linking",
-     "Review queue",
-     "Reports",
-     "Missing document flags",
-     "Risk detection",
-   ],
-   cta: "Start Free",
-   highlight: false,
- },
-
-
- {
-   name: "1 Month Plan",
-   price: "15,000 RWF",
-   period: "",
-   desc: "Full access to AuditInsight with flexible monthly billing.",
-   features: [
-     "Digital financial filing",
-     "Transaction entry",
-     "Evidence linking",
-     "Review queue",
-     "Reports",
-     "Missing document flags",
-     "Risk detection",
-   ],
-   cta: "Get Started",
-   highlight: false,
- },
-
-
- {
-   name: "6 Month Plan",
-   price: "80,000 RWF",
-   period: "",
-   desc: "Get the full AuditInsight experience and save 11% with a 6-month plan.",
-   features: [
-     "Digital financial filing",
-     "Transaction entry",
-     "Evidence linking",
-     "Review queue",
-     "Reports",
-     "Missing document flags",
-     "Risk detection",
-   ],
-   cta: "Choose 6 Months",
-   highlight: true,
- },
-
-
- {
-   name: "1 Year Plan",
-   price: "150,000 RWF",
-   period: "",
-   desc: "Get the full AuditInsight experience for a year and receive 2 months free.",
-   features: [
-     "Digital financial filing",
-     "Transaction entry",
-     "Evidence linking",
-     "Review queue",
-     "Reports",
-     "Missing document flags",
-     "Risk detection",
-   ],
-   cta: "Choose 1 Year",
-   highlight: false,
- },
-];
 
 export default function PricingSection() {
   return (
@@ -86,13 +11,13 @@ export default function PricingSection() {
       <style>{`
         .pricing-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(3, 1fr);
           gap: 20px;
           align-items: start;
         }
         .pricing-title { font-size: 40px; }
         @media (max-width: 1024px) {
-          .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+          .pricing-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
         }
         @media (max-width: 600px) {
           .pricing-grid { grid-template-columns: 1fr; }
@@ -103,32 +28,31 @@ export default function PricingSection() {
         <div style={s.head}>
           <p style={s.eyebrow}>Pricing</p>
           <h2 className="pricing-title" style={s.title}>Flexible plans for every team size</h2>
-          <p style={s.sub}>All plans include a 14-day free trial. No credit card required.</p>
+          <p style={s.sub}>Every plan includes full access to AuditInsight. Pay monthly, every 6 months, or yearly.</p>
         </div>
         <div className="pricing-grid">
-          {PLANS.map((plan) => (
-            <div key={plan.name} style={{ ...s.card, ...(plan.highlight ? s.cardHL : {}) }}>
-              {plan.highlight && <div style={s.popularBadge}>Most Popular</div>}
+          {PRICING_PLANS.map((plan) => (
+            <div key={plan.id} style={{ ...s.card, ...(plan.highlighted ? s.cardHL : {}) }}>
+              {plan.highlighted && <div style={s.popularBadge}>Most Popular</div>}
               <div style={s.planTop}>
-                <p style={{ ...s.planName, color: plan.highlight ? "#fff" : "#0f172a" }}>{plan.name}</p>
+                <p style={{ ...s.planName, color: plan.highlighted ? "#fff" : "#0f172a" }}>{plan.name}</p>
                 <div style={s.priceRow}>
-                  <span style={{ ...s.price, color: plan.highlight ? "#fff" : "#0f172a" }}>{plan.price}</span>
-                  {plan.period && <span style={{ ...s.period, color: plan.highlight ? "rgba(255,255,255,0.7)" : "#64748b" }}>{plan.period}</span>}
+                  <span style={{ ...s.price, color: plan.highlighted ? "#fff" : "#0f172a" }}>{formatRwf(plan.price)}</span>
                 </div>
-                <p style={{ ...s.planDesc, color: plan.highlight ? "rgba(255,255,255,0.75)" : "#64748b" }}>{plan.desc}</p>
+                <p style={{ ...s.planDesc, color: plan.highlighted ? "rgba(255,255,255,0.75)" : "#64748b" }}>{plan.description}</p>
               </div>
               <div style={s.featureList}>
                 {plan.features.map((f) => (
                   <div key={f} style={s.featureRow}>
-                    <div style={{ ...s.checkIcon, background: plan.highlight ? "rgba(255,255,255,0.15)" : "#f0fdf4", color: plan.highlight ? "#fff" : "#16a34a" }}>
+                    <div style={{ ...s.checkIcon, background: plan.highlighted ? "rgba(255,255,255,0.15)" : "#f0fdf4", color: plan.highlighted ? "#fff" : "#16a34a" }}>
                       <Check size={11} strokeWidth={3} />
                     </div>
-                    <span style={{ fontSize: 13, color: plan.highlight ? "rgba(255,255,255,0.88)" : "#374151" }}>{f}</span>
+                    <span style={{ fontSize: 13, color: plan.highlighted ? "rgba(255,255,255,0.88)" : "#374151" }}>{f}</span>
                   </div>
                 ))}
               </div>
               <Link href="/sign-up" style={{ textDecoration: "none", display: "block", marginTop: "auto" }}>
-                <button style={{ ...s.btn, ...(plan.highlight ? s.btnHL : {}) }}>{plan.cta}</button>
+                <button style={{ ...s.btn, ...(plan.highlighted ? s.btnHL : {}) }}>{plan.cta}</button>
               </Link>
             </div>
           ))}
