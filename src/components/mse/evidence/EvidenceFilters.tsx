@@ -5,17 +5,11 @@ import { EvidenceDropdown } from "./EvidenceDropdown";
 import { theme } from "@/styles/theme";
 import { SlidersHorizontal } from "lucide-react";
 
-export type EvidenceTab = "All" | "Complete" | "Pending";
-
 interface EvidenceFiltersProps {
-  activeTab: EvidenceTab;
-  setActiveTab: (tab: EvidenceTab) => void;
   search: string;
   setSearch: (value: string) => void;
   categoryFilter: string;
   setCategoryFilter: (value: string) => void;
-  statusFilter: string;
-  setStatusFilter: (value: string) => void;
   yearFilter: string;
   setYearFilter: (value: string) => void;
   categoryOptions: string[];
@@ -24,47 +18,17 @@ interface EvidenceFiltersProps {
   setPage: (page: number) => void;
 }
 
-const TAB_CONFIG: { tab: EvidenceTab; color: string; bg: string }[] = [
-  { tab: "All",      color: "#1e3a8a", bg: "#eff6ff" },
-  { tab: "Complete", color: "#15803d", bg: "#f0fdf4" },
-  { tab: "Pending",  color: "#b45309", bg: "#fffbeb" },
-];
-
 export const EvidenceFilters = ({
-  activeTab, setActiveTab,
   search, setSearch,
   categoryFilter, setCategoryFilter,
-  statusFilter, setStatusFilter,
   yearFilter, setYearFilter,
   categoryOptions, yearOptions,
   total, setPage,
 }: EvidenceFiltersProps) => {
   return (
     <div style={card}>
-      {/* Row 1: Tabs + Filters */}
+      {/* Row 1: Filters */}
       <div style={row}>
-        {/* Tabs */}
-        <div style={tabGroup}>
-          {TAB_CONFIG.map(({ tab, color, bg }) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => { setActiveTab(tab); setPage(1); }}
-                style={{
-                  ...tabBtn,
-                  background: isActive ? bg : "transparent",
-                  color: isActive ? color : theme.colors.textSecondary,
-                  borderColor: isActive ? color + "44" : "transparent",
-                  fontWeight: isActive ? 700 : 500,
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
-
         {/* Filters */}
         <div style={filterGroup}>
           <SlidersHorizontal size={14} color={theme.colors.textMuted} />
@@ -72,11 +36,6 @@ export const EvidenceFilters = ({
             label={categoryFilter === "All" ? "Category" : `Category: ${categoryFilter}`}
             options={categoryOptions}
             onChange={(opt) => { setCategoryFilter(opt); setPage(1); }}
-          />
-          <EvidenceDropdown
-            label={statusFilter === "All" ? "Status" : `Status: ${statusFilter}`}
-            options={["All", "Verified", "Pending"]}
-            onChange={(opt) => { setStatusFilter(opt); setPage(1); }}
           />
           <EvidenceDropdown
             label={yearFilter === "All" ? "Year" : `Year: ${yearFilter}`}
@@ -116,24 +75,6 @@ const row: React.CSSProperties = {
   flexWrap: "wrap",
   gap: 10,
   marginBottom: 12,
-};
-
-const tabGroup: React.CSSProperties = {
-  display: "flex",
-  gap: 4,
-  background: theme.colors.appBackground,
-  padding: 4,
-  borderRadius: 10,
-};
-
-const tabBtn: React.CSSProperties = {
-  padding: "5px 16px",
-  borderRadius: 7,
-  border: "1px solid transparent",
-  fontSize: 13,
-  cursor: "pointer",
-  transition: "all 0.15s ease",
-  fontFamily: "inherit",
 };
 
 const filterGroup: React.CSSProperties = {

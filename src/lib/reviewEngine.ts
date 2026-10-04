@@ -48,23 +48,6 @@ export function buildReviewQueue(
       });
     }
 
-    const pendingEvidence = relatedEvidence.some((e) => e.status === "Pending");
-    if (pendingEvidence) {
-      const risk: ReviewItem["risk"] = "Medium";
-      reviews.push({
-        id: `verify-${tx.id}`,
-        type: "Verification Problems",
-        transactionId: String(tx.id),
-        counterparty: tx.counterparty,
-        amount: `RWF ${tx.amount.toLocaleString()}`,
-        risk,
-        severity: mapSeverity(risk),
-        due: tx.date,
-        status: "In Review",
-        transactionType: tx.type,
-      });
-    }
-
     if (dupes.has(tx.id)) {
       const risk: ReviewItem["risk"] = "Medium";
       reviews.push({

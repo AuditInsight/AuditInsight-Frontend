@@ -158,7 +158,6 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
           documentName: data.documentName,
           notes: data.notes,
           uploadedAt: data.uploadedAt,
-          status: evidence.status ?? "Verified",
           amount: evidence.amount,
           counterparty: evidence.counterparty,
         };
@@ -190,7 +189,6 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
           notes: data.notes,
           uploadedBy: String(data.uploadedBy),
           uploadedAt: data.uploadedAt,
-          status: "Verified",
           amount: Number(amount) || undefined,
           counterparty: counterparty || undefined,
         };

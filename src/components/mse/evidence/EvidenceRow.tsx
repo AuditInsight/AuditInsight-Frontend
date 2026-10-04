@@ -14,17 +14,10 @@ interface Props {
   isEven?: boolean;
 }
 
-const STATUS_STYLE: Record<string, { bg: string; color: string; dot: string }> = {
-  Verified: { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
-  Pending:  { bg: "#fef3c7", color: "#d97706", dot: "#f59e0b" },
-  Missing:  { bg: "#fee2e2", color: "#dc2626", dot: "#ef4444" },
-};
-
 export const EvidenceRow = ({ evidence, onView, onEdit, onDelete, isEven }: Props) => {
   const router = useRouter();
 
   const uploadDate = evidence.uploadedAt ? evidence.uploadedAt.split("T")[0] : "—";
-  const st = STATUS_STYLE[evidence.status ?? "Pending"] ?? STATUS_STYLE.Pending;
 
   return (
     <tr
@@ -75,14 +68,6 @@ export const EvidenceRow = ({ evidence, onView, onEdit, onDelete, isEven }: Prop
             {evidence.transactionId}
           </button>
         ) : "—"}
-      </td>
-
-      {/* Status */}
-      <td style={td}>
-        <span style={{ ...statusBadge, background: st.bg, color: st.color }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: st.dot, flexShrink: 0 }} />
-          {evidence.status ?? "Pending"}
-        </span>
       </td>
 
       {/* Actions */}
@@ -153,14 +138,4 @@ const txLink: React.CSSProperties = {
   fontSize: 13,
   textDecoration: "underline",
   textDecorationStyle: "dotted",
-};
-
-const statusBadge: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 5,
-  padding: "3px 10px",
-  borderRadius: 20,
-  fontSize: 11.5,
-  fontWeight: 700,
 };

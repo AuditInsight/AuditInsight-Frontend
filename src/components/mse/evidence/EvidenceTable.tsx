@@ -12,13 +12,7 @@ interface Props {
   onDelete?: (evidence: Evidence) => void;
 }
 
-export const statusStyles = {
-  Verified: { background: "#dcfce7", color: "#15803d" },
-  Pending:  { background: "#fef3c7", color: "#d97706" },
-  Missing:  { background: "#fee2e2", color: "#dc2626" },
-};
-
-const COLUMNS = ["Document", "Category", "Amount", "Counterparty", "Date", "Linked Transaction", "Verification", "Actions"];
+const COLUMNS = ["Document", "Category", "Amount", "Counterparty", "Date", "Linked Transaction", "Actions"];
 
 export const EvidenceTable = ({ data, onView, onEdit, onDelete }: Props) => {
   return (

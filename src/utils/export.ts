@@ -48,14 +48,13 @@ export function exportTransactionsCSV(transactions: Transaction[], filename?: st
 
 export function exportEvidenceCSV(documents: Evidence[], filename?: string) {
   const csv = rowsToCsv(
-    ["Evidence ID", "Transaction ID", "Amount", "Counterparty Name", "Upload Date", "Status"],
+    ["Evidence ID", "Transaction ID", "Amount", "Counterparty Name", "Upload Date"],
     documents.map((e) => [
       e.id,
       e.transactionId,
       e.amount ?? "",
       e.counterparty ?? "",
       e.uploadedAt ? e.uploadedAt.split("T")[0] : "",
-      e.status ?? "",
     ])
   );
   downloadFile(filename ?? datedFilename("evidence", "csv"), csv);
