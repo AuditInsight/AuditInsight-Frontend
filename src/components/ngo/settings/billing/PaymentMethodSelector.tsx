@@ -6,6 +6,9 @@ import { Phone, CreditCard, AlertCircle, Loader } from "lucide-react";
 
 export type PaymentMethod = "MOMO" | "CARD";
 
+// Only MTN Mobile Money is supported for now.
+const CARD_ENABLED = false;
+
 interface Props {
   selectedMethod: PaymentMethod;
   onMethodChange: (method: PaymentMethod) => void;
@@ -177,7 +180,8 @@ export default function PaymentMethodSelector({
           </div>
         )}
 
-        {/* Card Option */}
+        {/* Card Option — hidden until card payments are supported */}
+        {CARD_ENABLED && (
         <button
           onClick={() => !loading && !isProcessing && onMethodChange("CARD")}
           disabled={loading || isProcessing}
@@ -252,6 +256,7 @@ export default function PaymentMethodSelector({
             </div>
           )}
         </button>
+        )}
       </div>
 
       {/* Error Display */}
@@ -301,7 +306,7 @@ export default function PaymentMethodSelector({
             Processing...
           </>
         ) : (
-          `Pay with ${selectedMethod === "MOMO" ? "Mobile Money" : "Card"}`
+          `Pay with ${selectedMethod === "MOMO" ? "MTN Mobile Money" : "Card"}`
         )}
       </button>
 

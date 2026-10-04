@@ -337,30 +337,27 @@ export const getAuditorProfile = () => apiClient.get("/auditor/profile");
 /* =========================
    BILLING & PAYMENT TYPES
 ========================= */
-export type PlanTier = "FREE" | "STARTER" | "PROFESSIONAL" | "ENTERPRISE";
-export type BillingCycle = "MONTHLY" | "SIX_MONTHS" | "YEARLY";
+export type SubscriptionType = "MONTHLY" | "SIX_MONTHS" | "ANNUAL";
 export type PaymentProvider = "MOMO" | "CARD";
-export type PaymentStatus = "PENDING" | "SUCCESSFUL" | "FAILED";
-export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
+export type PaymentStatus = "PENDING" | "SUCCESSFUL" | "FAILED" | "CANCELLED" | "EXPIRED" | "UNDERPAID";
+export type SubscriptionStatus = "TRIAL" | "PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED";
 
 export interface StartMomoCheckoutRequest {
-  planTier: PlanTier;
-  billingCycle: BillingCycle;
+  subscriptionType: SubscriptionType;
   phoneNumber: string;
 }
 
 export interface StartCardCheckoutRequest {
-  planTier: PlanTier;
-  billingCycle: BillingCycle;
+  subscriptionType: SubscriptionType;
 }
 
 export interface PaymentStatusResponse {
   paymentId: string;
   provider: PaymentProvider;
   status: PaymentStatus;
-  usdAmount: number;
-  chargedCurrency: string;
-  chargedAmount: number;
+  expectedAmount: number;
+  receivedAmount?: number;
+  currency: string;
   subscriptionId?: string;
   failureReason?: string;
 }
@@ -373,8 +370,7 @@ export interface CardCheckoutResponse {
 export interface SubscriptionResponse {
   id: string;
   organisationId: string;
-  planTier: PlanTier;
-  billingCycle: BillingCycle;
+  subscriptionType?: SubscriptionType;
   status: SubscriptionStatus;
   startDate: string;
   endDate: string;

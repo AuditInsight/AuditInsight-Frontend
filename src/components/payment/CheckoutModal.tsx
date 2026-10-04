@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { PlanTier, BillingCycle, PRICING_PLANS } from "@/types/billing";
+import { SubscriptionType, getPlan, formatRwf } from "@/types/billing";
 import StripeCardInput, { CardData } from "./StripeCardInput";
 import MoMoInput from "./MoMoInput";
 import { TEST_CARDS } from "./cardUtils";
-import { MoMoData, TEST_PHONES, simulateMoMoPayment } from "./momoUtils";
+import { MoMoData, simulateMoMoPayment } from "./momoUtils";
 import { CheckCircle2, XCircle, Lock, ChevronRight, CreditCard, Smartphone } from "lucide-react";
 import { startMomoCheckout, startCardCheckout, getMomoPaymentStatus } from "@/utils/api";
 
@@ -15,8 +15,7 @@ type PaymentState = "idle" | "processing" | "3dsecure" | "success" | "failed";
 
 interface Props {
   open: boolean;
-  plan: PlanTier;
-  cycle: BillingCycle;
+  plan: SubscriptionType;
   organisationId?: string;
   onClose: () => void;
   onSuccess: (receiptId: string) => void;
@@ -42,21 +41,21 @@ async function simulatePayment(cardNumber: string): Promise<{ success: boolean; 
 
 type PaymentMethod = "card" | "momo";
 
-export default function CheckoutModal({ open, plan, cycle, organisationId, onClose, onSuccess }: Props) {
-  const [payMethod, setPayMethod]     = useState<PaymentMethod>("card");
+// Only MTN Mobile Money is supported for now; flip to re-enable card payments.
+const CARD_ENABLED = false;
+
+export default function CheckoutModal({ open, plan, organisationId, onClose, onSuccess }: Props) {
+  const [payMethod, setPayMethod]     = useState<PaymentMethod>("momo");
   const [cardData, setCardData]       = useState<CardData | null>(null);
   const [momoData, setMomoData]       = useState<MoMoData | null>(null);
   const [state, setState]             = useState<PaymentState>("idle");
   const [receiptId, setReceiptId]     = useState("");
   const [errorMsg, setErrorMsg]       = useState("");
   const [saveCard, setSaveCard]       = useState(true);
-  const [showTestCards, setShowTestCards] = useState(false);
 
-  const planInfo = PRICING_PLANS.find((p) => p.id === plan)!;
-  const amount   = cycle === "MONTHLY" ? planInfo.monthlyPrice : cycle === "SIX_MONTHS" ? planInfo.sixMonthsPrice : planInfo.annualPrice;
-  const annualTotal = cycle === "YEARLY" ? amount * 12 : null;
-
-  if (!open || typeof document === "undefined") return null;
+  const planInfo = getPlan(plan);
+  if (!open || typeof document === "undefined" || !planInfo) return null;
+  const amount = planInfo.price;
 
   const handlePay = async () => {
     setErrorMsg("");
@@ -73,8 +72,7 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
         } else {
           // Call real backend MOMO endpoint
           const response = await startMomoCheckout(organisationId, {
-            planTier: plan,
-            billingCycle: cycle,
+            subscriptionType: plan,
             phoneNumber: momoData.phone,
           });
           const paymentId = response.data.paymentId;
@@ -112,8 +110,7 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
         } else {
           // Call real backend Card endpoint
           const response = await startCardCheckout(organisationId, {
-            planTier: plan,
-            billingCycle: cycle,
+            subscriptionType: plan,
           });
           const paymentId = response.data.paymentId;
           const checkoutUrl = response.data.checkoutUrl;
@@ -166,7 +163,7 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
           <SuccessScreen
             planName={planInfo.name}
             amount={amount}
-            cycle={cycle}
+            billed={planInfo.billed}
             receiptId={receiptId}
             onClose={handleClose}
           />
@@ -207,9 +204,9 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
                   <div style={planRow}>
                     <div style={planIcon}>💎</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{planInfo.name} Plan</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{planInfo.name}</div>
                       <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                        {cycle === "MONTHLY" ? "Billed monthly" : "Billed annually"}
+                        {planInfo.billed}
                       </div>
                     </div>
                   </div>
@@ -218,35 +215,20 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
 
                   {/* Line items */}
                   <div style={lineItem}>
-                    <span style={lineLabel}>{planInfo.name} ({cycle})</span>
-                    <span style={lineValue}>${amount}/mo</span>
+                    <span style={lineLabel}>{planInfo.name}</span>
+                    <span style={lineValue}>{formatRwf(amount)}</span>
                   </div>
-                  {cycle === "YEARLY" && (
-                    <div style={lineItem}>
-                      <span style={{ ...lineLabel, color: "#16a34a" }}>Annual discount (20%)</span>
-                      <span style={{ ...lineValue, color: "#16a34a" }}>-${Math.round(planInfo.monthlyPrice * 0.2 * 12)}</span>
-                    </div>
-                  )}
                   <div style={lineItem}>
                     <span style={lineLabel}>Tax</span>
-                    <span style={lineValue}>$0.00</span>
+                    <span style={lineValue}>{formatRwf(0)}</span>
                   </div>
 
                   <div style={divider} />
 
                   <div style={{ ...lineItem, marginTop: 4 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
-                      {cycle === "YEARLY" ? "Total today" : "Due today"}
-                    </span>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>
-                      ${cycle === "YEARLY" ? annualTotal : amount}
-                    </span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Due today</span>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: "#0f172a" }}>{formatRwf(amount)}</span>
                   </div>
-                  {cycle === "YEARLY" && (
-                    <div style={{ fontSize: 12, color: "#94a3b8", textAlign: "right", marginTop: 2 }}>
-                      ${amount}/mo × 12 months
-                    </div>
-                  )}
 
                   {/* Features */}
                   <div style={{ marginTop: 20 }}>
@@ -262,50 +244,6 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
                   </div>
                 </div>
 
-                {/* Test data hint */}
-                <button
-                  style={testCardsToggle}
-                  onClick={() => setShowTestCards((v) => !v)}
-                >
-                  🧪 Test {payMethod === "card" ? "cards" : "phones"} {showTestCards ? "▲" : "▼"}
-                </button>
-                {showTestCards && payMethod === "card" && (
-                  <div style={testCardsBox}>
-                    {TEST_CARDS.map((c) => (
-                      <div key={c.number} style={testCardRow}>
-                        <span style={{ fontFamily: "monospace", fontSize: 12 }}>{c.number}</span>
-                        <span style={{
-                          fontSize: 11, fontWeight: 600,
-                          color: c.result === "success" ? "#16a34a" : "#dc2626",
-                          background: c.result === "success" ? "#dcfce7" : "#fee2e2",
-                          padding: "2px 7px", borderRadius: 10,
-                        }}>
-                          {c.result}
-                        </span>
-                      </div>
-                    ))}
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>
-                      Use any future expiry (e.g. 12/28) and any 3-digit CVV.
-                    </div>
-                  </div>
-                )}
-                {showTestCards && payMethod === "momo" && (
-                  <div style={testCardsBox}>
-                    {TEST_PHONES.map((t) => (
-                      <div key={t.phone} style={testCardRow}>
-                        <span style={{ fontFamily: "monospace", fontSize: 12 }}>{t.phone}</span>
-                        <span style={{
-                          fontSize: 11, fontWeight: 600,
-                          color: t.result === "success" ? "#16a34a" : "#dc2626",
-                          background: t.result === "success" ? "#dcfce7" : "#fee2e2",
-                          padding: "2px 7px", borderRadius: 10,
-                        }}>
-                          {t.label.split("— ")[1]}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* RIGHT — Payment form */}
@@ -313,6 +251,7 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
                 <div style={formTitle}>Payment Details</div>
 
                 {/* ── Payment method tabs ── */}
+                {CARD_ENABLED && (
                 <div style={tabsRow}>
                   <button
                     style={tabBtn(payMethod === "card")}
@@ -326,9 +265,10 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
                     onClick={() => setPayMethod("momo")}
                   >
                     <Smartphone size={14} />
-                    Mobile Money
+                    MTN Mobile Money
                   </button>
                 </div>
+                )}
 
                 {payMethod === "card" ? (
                   <StripeCardInput onChange={setCardData} disabled={false} />
@@ -369,7 +309,7 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
                   onClick={handlePay}
                 >
                   {payMethod === "card" ? <Lock size={15} /> : <Smartphone size={15} />}
-                  {payMethod === "card" ? "Pay" : "Pay with MoMo"} ${cycle === "YEARLY" ? annualTotal : amount}
+                  {payMethod === "card" ? "Pay" : "Pay with MoMo"} {formatRwf(amount)}
                   <ChevronRight size={15} />
                 </button>
 
@@ -378,7 +318,7 @@ export default function CheckoutModal({ open, plan, cycle, organisationId, onClo
                   <span style={{ color: "#1e3a8a", cursor: "pointer" }}>Terms of Service</span>{" "}
                   and{" "}
                   <span style={{ color: "#1e3a8a", cursor: "pointer" }}>Privacy Policy</span>.
-                  Subscriptions renew automatically. Cancel anytime.
+                  Your plan runs for its full period and does not renew automatically.
                 </p>
               </div>
             </div>
@@ -419,8 +359,8 @@ function ThreeDSecureScreen() {
   );
 }
 
-function SuccessScreen({ planName, amount, cycle, receiptId, onClose }: {
-  planName: string; amount: number; cycle: BillingCycle; receiptId: string; onClose: () => void;
+function SuccessScreen({ planName, amount, billed, receiptId, onClose }: {
+  planName: string; amount: number; billed: string; receiptId: string; onClose: () => void;
 }) {
   return (
     <div style={centeredScreen}>
@@ -432,8 +372,8 @@ function SuccessScreen({ planName, amount, cycle, receiptId, onClose }: {
 
       <div style={receiptBox}>
         <div style={receiptRow}><span style={receiptLabel}>Plan</span><span style={receiptValue}>{planName}</span></div>
-        <div style={receiptRow}><span style={receiptLabel}>Billing</span><span style={receiptValue}>{cycle === "MONTHLY" ? "Monthly" : "Annual"}</span></div>
-        <div style={receiptRow}><span style={receiptLabel}>Amount charged</span><span style={{ ...receiptValue, fontWeight: 700 }}>${amount}{cycle === "YEARLY" ? " × 12" : "/mo"}</span></div>
+        <div style={receiptRow}><span style={receiptLabel}>Billing</span><span style={receiptValue}>{billed}</span></div>
+        <div style={receiptRow}><span style={receiptLabel}>Amount charged</span><span style={{ ...receiptValue, fontWeight: 700 }}>{formatRwf(amount)}</span></div>
         <div style={receiptRow}><span style={receiptLabel}>Receipt ID</span><span style={{ ...receiptValue, fontFamily: "monospace", fontSize: 12 }}>{receiptId}</span></div>
         <div style={receiptRow}><span style={receiptLabel}>Date</span><span style={receiptValue}>{new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span></div>
       </div>
@@ -556,24 +496,6 @@ const lineItem: React.CSSProperties = {
 
 const lineLabel: React.CSSProperties = { fontSize: 13, color: "#64748b" };
 const lineValue: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: "#0f172a" };
-
-const testCardsToggle: React.CSSProperties = {
-  marginTop: 12, width: "100%", padding: "8px 12px",
-  borderRadius: 8, border: "1px dashed #e2e8f0",
-  background: "transparent", color: "#64748b",
-  fontSize: 12, fontWeight: 600, cursor: "pointer",
-  fontFamily: "inherit", textAlign: "left",
-};
-
-const testCardsBox: React.CSSProperties = {
-  background: "#f8fafc", border: "1px solid #e2e8f0",
-  borderRadius: 10, padding: "12px 14px", marginTop: 6,
-};
-
-const testCardRow: React.CSSProperties = {
-  display: "flex", justifyContent: "space-between", alignItems: "center",
-  marginBottom: 6,
-};
 
 const formTitle: React.CSSProperties = {
   fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 14,

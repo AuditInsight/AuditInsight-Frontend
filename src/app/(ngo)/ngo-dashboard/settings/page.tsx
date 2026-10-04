@@ -16,8 +16,8 @@ import NGOPageHeader from "@/components/ngo/dashboard/NGOPageHeader";
 import BillingSettingsCard from "@/components/ngo/settings/billing/BillingSettingsCard";
 import PlanChangeConfirmModal from "@/components/ngo/settings/billing/PlanChangeConfirmModal";
 import PaymentCheckoutModal from "@/components/ngo/settings/billing/PaymentCheckoutModal";
-import { PlanTier, BillingCycle, Subscription } from "@/types/billing";
-import { usePaymentProcessor } from "@/hooks/usePaymentProcessor";
+import { SubscriptionType, Subscription, getPlan } from "@/types/billing";
+import { getActiveSubscription } from "@/utils/api";
 
 // ── Primitives ─────────────────────────────────────────────────────────────────
 
@@ -99,33 +99,31 @@ function SettingsContent() {
   const { user, can } = useRBAC();
   const { members, inviteMember } = useSettings();
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [subscription, setSubscription] = useState<Subscription>({
-    id: "sub_default",
-    organisationId: user.organisationId,
-    planTier: "PROFESSIONAL",
-    billingCycle: "MONTHLY",
-    status: "ACTIVE",
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  });
-  const [loadingSubscription, setLoadingSubscription] = useState(false);
-  const [confirmPlanChange, setConfirmPlanChange] = useState<{
-    plan: PlanTier;
-    cycle: BillingCycle;
-  } | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [confirmPlanChange, setConfirmPlanChange] = useState<SubscriptionType | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [processingPlanChange, setProcessingPlanChange] = useState(false);
 
   const toast = useToast();
   const isDonor = user.role === "DONOR_REPRESENTATIVE";
   const canEditProfile = can("settings:profile:edit");
 
-  const paymentProcessor = usePaymentProcessor({
-    organisationId: user.organisationId,
-    planTier: subscription.planTier,
-    billingCycle: subscription.billingCycle,
-  });
+  const loadSubscription = async () => {
+    try {
+      const { data } = await getActiveSubscription(user.organisationId);
+      setSubscription({ ...data, subscriptionType: data.subscriptionType ?? null });
+    } catch {
+      // No active subscription yet (or request failed) — plans are still selectable.
+      setSubscription(null);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  };
 
+  useEffect(() => {
+    loadSubscription();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.organisationId]);
 
   const visibleTabs: Tab[] = isDonor ? ["Profile", "Security", "Billing and Plans"] : ["Organisation", "Profile", "Notifications", "Security", "Users", "Billing and Plans"];
   const [active, setActive] = useState<Tab>(visibleTabs[0]);
@@ -138,69 +136,23 @@ function SettingsContent() {
     toast.success("Settings saved", "Your changes have been saved successfully.");
   };
 
-  const handlePlanChange = (plan: PlanTier, cycle: BillingCycle) => {
-    if (!subscription) return;
-
-    // If current plan is FREE and selecting FREE, no payment needed
-    if (subscription.planTier === "FREE" && plan === "FREE") {
-      toast.success("Plan updated", "Your plan has been updated.");
-      return;
-    }
-
-    // If selecting FREE plan, allow direct downgrade
-    if (plan === "FREE") {
-      setConfirmPlanChange({ plan, cycle });
-      return;
-    }
-
-    // For paid plans, show confirmation first
-    setConfirmPlanChange({ plan, cycle });
+  const handlePlanChange = (plan: SubscriptionType) => {
+    setConfirmPlanChange(plan);
   };
 
-  const handleConfirmPlanChange = async () => {
-    if (!confirmPlanChange || !subscription) return;
-
-    const { plan, cycle } = confirmPlanChange;
-
-    // If current plan is FREE, open payment modal for upgrade
-    if (subscription.planTier === "FREE") {
-      setPaymentOpen(true);
-      setConfirmPlanChange(null);
-      return;
-    }
-
-    // If downgrading to FREE or same paid plan with different cycle
-    if (plan === "FREE" || (plan === subscription.planTier && cycle === subscription.billingCycle)) {
-      setProcessingPlanChange(true);
-      try {
-        // Just update the plan without payment
-        toast.success("Plan updated", `Your plan has been updated to ${plan}.`);
-        setSubscription({
-          ...subscription,
-          planTier: plan,
-          billingCycle: cycle,
-        });
-      } catch (error) {
-        toast.error("Failed", "Could not update your plan. Please try again.");
-      } finally {
-        setProcessingPlanChange(false);
-        setConfirmPlanChange(null);
-      }
-      return;
-    }
-
-    // For plan or cycle change with payment required
+  const handleConfirmPlanChange = () => {
     setPaymentOpen(true);
-    setConfirmPlanChange(null);
   };
 
   const handlePaymentSuccess = (updatedSubscription: Subscription) => {
     setSubscription(updatedSubscription);
     setPaymentOpen(false);
+    setConfirmPlanChange(null);
     toast.success(
       "Subscription updated",
-      `Your subscription to ${updatedSubscription.planTier} plan is now active.`
+      `Your ${getPlan(updatedSubscription.subscriptionType)?.name ?? "plan"} is now active.`
     );
+    loadSubscription();
   };
 
   return (
@@ -340,20 +292,20 @@ function SettingsContent() {
                       {loadingSubscription ? (
                         <span style={{ display: "inline-block", height: 12, width: 80, background: theme.colors.border, borderRadius: 4 }} />
                       ) : (
-                        ["PLAN", "BILLING CYCLE", "ACTIVE UNTIL", "STATUS"][i]
+                        ["PLAN", "BILLING", "ACTIVE UNTIL", "STATUS"][i]
                       )}
                     </p>
                     <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: theme.colors.textPrimary, minHeight: 24 }}>
                       {loadingSubscription ? (
                         <span style={{ display: "inline-block", height: 24, width: 120, background: theme.colors.border, borderRadius: 4 }} />
                       ) : i === 0 ? (
-                        subscription?.planTier || "Unknown"
+                        getPlan(subscription?.subscriptionType)?.name || "No active plan"
                       ) : i === 1 ? (
-                        subscription?.billingCycle || "Unknown"
+                        getPlan(subscription?.subscriptionType)?.billed || "—"
                       ) : i === 2 ? (
-                        subscription ? new Date(subscription.endDate).toLocaleDateString() : "Unknown"
+                        subscription ? new Date(subscription.endDate).toLocaleDateString() : "—"
                       ) : (
-                        subscription?.status || "Unknown"
+                        subscription?.status || "—"
                       )}
                     </p>
                   </div>
@@ -362,24 +314,21 @@ function SettingsContent() {
             </Section>
 
             <Section title="Available Plans">
-              {subscription && !loadingSubscription ? (
+              {!loadingSubscription ? (
                 <>
                   <BillingSettingsCard
                     subscription={subscription}
                     onPlanChange={handlePlanChange}
-                    loading={processingPlanChange}
                   />
 
                   {/* Confirmation Modal */}
                   {confirmPlanChange && (
                     <PlanChangeConfirmModal
-                      open={!!confirmPlanChange}
-                      currentPlan={subscription.planTier}
-                      newPlan={confirmPlanChange.plan}
-                      cycle={confirmPlanChange.cycle}
+                      open={!!confirmPlanChange && !paymentOpen}
+                      currentPlan={subscription?.subscriptionType ?? null}
+                      newPlan={confirmPlanChange}
                       onConfirm={handleConfirmPlanChange}
                       onCancel={() => setConfirmPlanChange(null)}
-                      loading={processingPlanChange}
                     />
                   )}
 
@@ -387,10 +336,9 @@ function SettingsContent() {
                   {confirmPlanChange && (
                     <PaymentCheckoutModal
                       open={paymentOpen}
-                      plan={confirmPlanChange.plan}
-                      cycle={confirmPlanChange.cycle}
+                      plan={confirmPlanChange}
                       organisationId={user.organisationId}
-                      onClose={() => setPaymentOpen(false)}
+                      onClose={() => { setPaymentOpen(false); setConfirmPlanChange(null); }}
                       onSuccess={handlePaymentSuccess}
                     />
                   )}

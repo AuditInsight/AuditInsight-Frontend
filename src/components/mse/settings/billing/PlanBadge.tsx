@@ -1,12 +1,14 @@
 "use client";
 
-import { Subscription, PRICING_PLANS, SubscriptionStatus } from "@/types/billing";
+import { Subscription, getPlan, SubscriptionStatus } from "@/types/billing";
 
 interface Props {
   subscription: Subscription;
 }
 
 const STATUS_STYLES: Record<SubscriptionStatus, { bg: string; color: string; label: string }> = {
+  TRIAL:    { bg: "#e0f2fe", color: "#0369a1", label: "Trial" },
+  PENDING:  { bg: "#fef9c3", color: "#a16207", label: "Pending" },
   ACTIVE:   { bg: "#dcfce7", color: "#16a34a", label: "Active" },
   EXPIRED:  { bg: "#fef9c3", color: "#a16207", label: "Expired" },
   CANCELLED: { bg: "#fee2e2", color: "#b91c1c", label: "Cancelled" },
@@ -21,7 +23,7 @@ function formatDate(isoDate: string): string {
 }
 
 export default function PlanBadge({ subscription }: Props) {
-  const plan = PRICING_PLANS.find(p => p.id === subscription.planTier)!;
+  const plan = getPlan(subscription.subscriptionType);
   const status = STATUS_STYLES[subscription.status];
   const days = daysLeft(subscription.endDate);
   const isWarning = days <= 7 && subscription.status === "ACTIVE";
@@ -31,9 +33,9 @@ export default function PlanBadge({ subscription }: Props) {
       <div style={s.left}>
         <div style={s.planIcon}>💎</div>
         <div>
-          <div style={s.planName}>{plan.name} Plan</div>
+          <div style={s.planName}>{plan?.name ?? "No active plan"}</div>
           <div style={s.meta}>
-            {subscription.billingCycle === "YEARLY" ? "Annual billing" : subscription.billingCycle === "SIX_MONTHS" ? "6-month billing" : "Monthly billing"}
+            {plan?.billed ?? "—"}
             {" · "}
             <span style={{ ...s.statusBadge, background: status.bg, color: status.color }}>
               {status.label}

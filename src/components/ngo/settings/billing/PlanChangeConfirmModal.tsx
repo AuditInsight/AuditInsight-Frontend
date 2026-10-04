@@ -1,15 +1,14 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { PlanTier, BillingCycle, PRICING_PLANS } from "@/types/billing";
+import { SubscriptionType, getPlan, formatRwf } from "@/types/billing";
 import { theme } from "@/styles/theme";
 import { AlertTriangle, X } from "lucide-react";
 
 interface Props {
   open: boolean;
-  currentPlan: PlanTier;
-  newPlan: PlanTier;
-  cycle: BillingCycle;
+  currentPlan: SubscriptionType | null;
+  newPlan: SubscriptionType;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
@@ -19,23 +18,19 @@ export default function PlanChangeConfirmModal({
   open,
   currentPlan,
   newPlan,
-  cycle,
   onConfirm,
   onCancel,
   loading = false,
 }: Props) {
   if (!open || typeof document === "undefined") return null;
 
-  const currentPlanInfo = PRICING_PLANS.find((p) => p.id === currentPlan);
-  const newPlanInfo = PRICING_PLANS.find((p) => p.id === newPlan);
+  const currentPlanInfo = getPlan(currentPlan);
+  const newPlanInfo = getPlan(newPlan);
 
-  if (!currentPlanInfo || !newPlanInfo) return null;
+  if (!newPlanInfo) return null;
 
-  const currentPrice = cycle === "MONTHLY" ? currentPlanInfo.monthlyPrice : currentPlanInfo.annualPrice;
-  const newPrice = cycle === "MONTHLY" ? newPlanInfo.monthlyPrice : newPlanInfo.annualPrice;
-  const priceDiff = newPrice - currentPrice;
-  const isUpgrade = priceDiff > 0;
-  const isDowngrade = priceDiff < 0;
+  const currentPrice = currentPlanInfo?.price ?? 0;
+  const newPrice = newPlanInfo.price;
 
   const overlay = {
     position: "fixed" as const,
@@ -142,11 +137,11 @@ export default function PlanChangeConfirmModal({
             <AlertTriangle
               size={20}
               style={{
-                color: isUpgrade ? "#d97706" : isDowngrade ? "#2563eb" : "#64748b",
+                color: "#2563eb",
               }}
             />
             <h2 style={title as React.CSSProperties}>
-              {isUpgrade ? "Upgrade Plan" : isDowngrade ? "Downgrade Plan" : "Change Plan"}
+              {currentPlanInfo ? "Change Plan" : "Subscribe to a Plan"}
             </h2>
           </div>
           <button
@@ -172,84 +167,36 @@ export default function PlanChangeConfirmModal({
           <div style={planComparison}>
             <div style={planBox}>
               <div style={label}>Current Plan</div>
-              <div style={planName}>{currentPlanInfo.name}</div>
-              <div style={planPrice}>
-                {currentPrice === 0
-                  ? "Free"
-                  : new Intl.NumberFormat("en-RW", {
-                      style: "currency",
-                      currency: "RWF",
-                      maximumFractionDigits: 0,
-                    }).format(currentPrice)}
-              </div>
+              <div style={planName}>{currentPlanInfo?.name ?? "No active plan"}</div>
+              <div style={planPrice}>{currentPlanInfo ? formatRwf(currentPrice) : "—"}</div>
               <div style={{ fontSize: theme.typography.xs, color: theme.colors.textMuted }}>
-                /{cycle === "MONTHLY" ? "month" : "year"}
+                {currentPlanInfo?.billed ?? ""}
               </div>
             </div>
 
             <div style={planBox}>
               <div style={label}>New Plan</div>
               <div style={planName}>{newPlanInfo.name}</div>
-              <div style={planPrice}>
-                {newPrice === 0
-                  ? "Free"
-                  : new Intl.NumberFormat("en-RW", {
-                      style: "currency",
-                      currency: "RWF",
-                      maximumFractionDigits: 0,
-                    }).format(newPrice)}
-              </div>
+              <div style={planPrice}>{formatRwf(newPrice)}</div>
               <div style={{ fontSize: theme.typography.xs, color: theme.colors.textMuted }}>
-                /{cycle === "MONTHLY" ? "month" : "year"}
+                {newPlanInfo.billed}
               </div>
             </div>
           </div>
 
-          {/* Price Change Info */}
-          {priceDiff !== 0 && (
-            <div
-              style={{
-                padding: "12px",
-                borderRadius: theme.radius.md,
-                background:
-                  isUpgrade
-                    ? "rgba(217, 119, 6, 0.05)"
-                    : isDowngrade
-                      ? "rgba(37, 99, 235, 0.05)"
-                      : "transparent",
-                border: `1px solid ${isUpgrade ? "#fed7aa" : isDowngrade ? "#93c5fd" : "transparent"}`,
-              }}
-            >
-              <div style={{ fontSize: theme.typography.sm, color: theme.colors.textPrimary }}>
-                {isUpgrade ? "Upgrade" : "Downgrade"} Cost:{" "}
-                <span
-                  style={{
-                    fontWeight: 700,
-                    color: isUpgrade ? "#d97706" : "#2563eb",
-                  }}
-                >
-                  +{" "}
-                  {new Intl.NumberFormat("en-RW", {
-                    style: "currency",
-                    currency: "RWF",
-                    maximumFractionDigits: 0,
-                  }).format(Math.abs(priceDiff))}
-                </span>{" "}
-                {cycle === "MONTHLY" ? "per month" : "per year"}
-              </div>
-              <div
-                style={{
-                  fontSize: theme.typography.xs,
-                  color: theme.colors.textMuted,
-                  marginTop: 6,
-                }}
-              >
-                {isUpgrade
-                  ? "The price difference will be charged to your payment method."
-                  : "Your account will be credited the difference."}
-              </div>
-            </div>
-          )}
+          <div
+            style={{
+              padding: "12px",
+              borderRadius: theme.radius.md,
+              background: "rgba(37, 99, 235, 0.05)",
+              border: "1px solid #93c5fd",
+              marginBottom: 20,
+              fontSize: theme.typography.sm,
+              color: theme.colors.textPrimary,
+            }}
+          >
+            You will be charged <strong>{formatRwf(newPrice)}</strong> for the {newPlanInfo.name.toLowerCase()}.
+          </div>
 
           {/* Details */}
           <div style={section}>
@@ -290,28 +237,6 @@ export default function PlanChangeConfirmModal({
             </ul>
           </div>
 
-          {/* Warning for downgrade */}
-          {isDowngrade && (
-            <div
-              style={{
-                padding: "12px",
-                borderRadius: theme.radius.md,
-                background: "rgba(37, 99, 235, 0.05)",
-                border: `1px solid #93c5fd`,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: theme.typography.sm,
-                  color: "#1e40af",
-                  fontWeight: 500,
-                }}
-              >
-                Note: Downgrading may affect your team's access and features. Some users or features
-                may become unavailable.
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
@@ -352,7 +277,7 @@ export default function PlanChangeConfirmModal({
               transition: "all 0.2s",
             }}
           >
-            {loading ? "Processing..." : "Confirm & Continue"}
+            {loading ? "Processing..." : "Continue to Payment"}
           </button>
         </div>
       </div>
