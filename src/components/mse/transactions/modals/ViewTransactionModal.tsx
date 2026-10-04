@@ -106,20 +106,6 @@ export default function ViewTransactionModal({ transaction, evidence, onClose }:
                       <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
                         {ev.folder} › {ev.subfolder} • {ev.fileType.toUpperCase()} • {ev.uploadedAt?.split("T")[0]}
                       </div>
-                      {ev.status && (
-                        <span style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          padding: "2px 7px",
-                          borderRadius: 10,
-                          background: ev.status === "Verified" ? "#dcfce7" : "#fef9c3",
-                          color: ev.status === "Verified" ? "#15803d" : "#92400e",
-                          marginTop: 4,
-                          display: "inline-block",
-                        }}>
-                          {ev.status}
-                        </span>
-                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>

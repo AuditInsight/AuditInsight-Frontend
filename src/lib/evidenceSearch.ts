@@ -12,7 +12,6 @@ export function evidenceMatchesSearch(
     evidence.documentName,
     evidence.folder,
     evidence.subfolder,
-    evidence.status,
     evidence.fileType,
     evidence.notes,
     evidence.counterparty,

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/layout/evidenceSidebar";
 import { EvidenceHeader } from "@/components/mse/evidence/EvidenceHeader";
-import { EvidenceFilters, EvidenceTab } from "@/components/mse/evidence/EvidenceFilters";
+import { EvidenceFilters } from "@/components/mse/evidence/EvidenceFilters";
 import { EvidenceTable } from "@/components/mse/evidence/EvidenceTable";
 import { EvidencePagination } from "@/components/mse/evidence/EvidencePagination";
 import { PageSizeSelector } from "@/components/mse/evidence/PageSizeSelector";
@@ -24,11 +24,9 @@ export default function EvidencePage() {
   const { canUploadEvidence, canEditEvidence, canDeleteEvidence } = usePermissions();
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab]           = useState<EvidenceTab>("All");
   const [search, setSearch]                 = useState("");
   const [page, setPage]                     = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [statusFilter, setStatusFilter]     = useState("All");
   const [yearFilter, setYearFilter]         = useState("All");
   const [sidebarOpen, setSidebarOpen]       = useState(false);
 
@@ -42,19 +40,16 @@ export default function EvidencePage() {
   const filteredData = useMemo(() => {
     return documents.filter((e) => {
       if (categoryFilter !== "All" && e.folder !== categoryFilter) return false;
-      if (statusFilter !== "All" && e.status !== statusFilter) return false;
       if (yearFilter !== "All") {
         const year = e.uploadedAt ? e.uploadedAt.slice(0, 4) : "";
         if (year !== yearFilter) return false;
       }
       if (activeCategory && e.subfolder && e.subfolder !== activeCategory) return false;
       if (activeCategory && !e.subfolder) return false;
-      if (activeTab === "Pending" && e.status !== "Pending") return false;
-      if (activeTab === "Complete" && e.status !== "Verified") return false;
       if (search && !evidenceMatchesSearch(e, search)) return false;
       return true;
     });
-  }, [documents, activeCategory, activeTab, search, categoryFilter, statusFilter, yearFilter]);
+  }, [documents, activeCategory, search, categoryFilter, yearFilter]);
 
   const categoryOptions = useMemo(() => {
     const values = Array.from(new Set(documents.map((d) => d.folder).filter(Boolean))) as string[];
@@ -147,14 +142,10 @@ export default function EvidencePage() {
           />
 
           <EvidenceFilters
-            activeTab={activeTab}
-            setActiveTab={(tab) => { setActiveTab(tab); setPage(1); }}
             search={search}
             setSearch={(v) => { setSearch(v); setPage(1); }}
             categoryFilter={categoryFilter}
             setCategoryFilter={(v) => { setCategoryFilter(v); setPage(1); }}
-            statusFilter={statusFilter}
-            setStatusFilter={(v) => { setStatusFilter(v); setPage(1); }}
             yearFilter={yearFilter}
             setYearFilter={(v) => { setYearFilter(v); setPage(1); }}
             categoryOptions={categoryOptions}

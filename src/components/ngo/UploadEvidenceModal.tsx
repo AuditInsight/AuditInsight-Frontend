@@ -87,7 +87,6 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
           notes:         data.notes,
           uploadedBy:    String(data.uploadedBy),
           uploadedAt:    data.uploadedAt,
-          status:        "Verified" as const,
         };
       }
       if (lastSaved) onSubmit(lastSaved);

@@ -344,7 +344,7 @@ export function TransactionIntegrityDashboard({ transactions, evidence, user, ro
           <CardShell title="Recent Evidence" count={`${evidence.length} files`} onRefresh={handleRefresh}>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {evidence.slice(0, 5).map((e) => (
-                <ListItem key={e.id} icon={<Paperclip size={16} />} iconBg="#f8fafc" iconColor="#475569" title={e.documentName} subtitle={`${e.transactionId} · ${e.counterparty ?? ""}`} rightLabel={e.status ?? "Pending"} rightColor={e.status === "Verified" ? "#16a34a" : "#d97706"} onClick={() => router.push("/evidence")} />
+                <ListItem key={e.id} icon={<Paperclip size={16} />} iconBg="#f8fafc" iconColor="#475569" title={e.documentName} subtitle={`${e.transactionId} · ${e.counterparty ?? ""}`} onClick={() => router.push("/evidence")} />
               ))}
               {evidence.length === 0 && <EmptyState icon={<FileText size={24} />} message="No evidence uploaded yet" />}
             </div>

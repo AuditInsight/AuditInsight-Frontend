@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Transaction } from "@/types/transaction.types";
 import { Evidence } from "@/types/evidence.types";
 import {
@@ -12,6 +12,7 @@ import {
   CreateTransactionRequest,
 } from "@/utils/api";
 import { enrichTransactions, findDuplicateIds } from "@/lib/transactionMetrics";
+import { withTransactionInfo } from "@/lib/evidenceEnrich";
 import { useAuth } from "@/context/AuthContext.production";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 
@@ -193,9 +194,12 @@ export function useTransactions() {
     refreshStatuses(evidences.filter((e) => e.id !== id));
   };
 
+  // The evidence API has no amount/counterparty — take them from the linked transaction.
+  const evidencesWithTx = useMemo(() => withTransactionInfo(evidences, transactions), [evidences, transactions]);
+
   return {
     transactions,
-    evidences,
+    evidences: evidencesWithTx,
     loading,
     error,
     addTransaction,

@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Evidence } from "@/types/evidence.types";
 import {
   getEvidence,
+  getTransactions,
   uploadEvidence as apiUploadEvidence,
   deleteEvidence as apiDeleteEvidence,
 } from "@/utils/api";
 import { useAuth } from "@/context/AuthContext.production";
 import { normalizeOrganisationId } from "@/utils/organisationId";
+import { withTransactionInfo } from "@/lib/evidenceEnrich";
 
 export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
   const { user } = useAuth();
-  const [documents, setDocuments] = useState<Evidence[]>([]);
+  const [rawDocuments, setDocuments] = useState<Evidence[]>([]);
+  const [txInfo, setTxInfo] = useState<{ id: string; amount: number; counterparty?: string }[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState<string | null>(null);
 
@@ -21,6 +24,7 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
     if (!orgId) {
       queueMicrotask(() => {
         setDocuments([]);
+        setTxInfo([]);
         setError(null);
         setLoading(false);
       });
@@ -29,8 +33,9 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
 
     queueMicrotask(() => {
       setLoading(true);
-      getEvidence(orgId)
-        .then(({ data }) => {
+      Promise.all([getEvidence(orgId), getTransactions(orgId)])
+        .then(([{ data }, { data: txns }]) => {
+        setTxInfo((txns ?? []).map((t) => ({ id: t.id, amount: Number(t.amount), counterparty: t.counterparty })));
         const mapped: Evidence[] = (data ?? []).map((e) => ({
           id:            e.id,
           transactionId: e.transactionId,
@@ -42,7 +47,6 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
           notes:         e.notes,
           uploadedBy:    String(e.uploadedBy),
           uploadedAt:    e.uploadedAt,
-          status:        "Verified" as const,
         }));
         setDocuments(mapped);
         })
@@ -53,6 +57,9 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
         .finally(() => setLoading(false));
     });
   }, [user?.organisationId]);
+
+  // The evidence API has no amount/counterparty — take them from the linked transaction.
+  const documents = useMemo(() => withTransactionInfo(rawDocuments, txInfo), [rawDocuments, txInfo]);
 
   const saveEvidence = (saved: Evidence) => {
     if (!saved.transactionId) return;
@@ -75,14 +82,13 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
   };
 
   const exportCSV = (data: Evidence[]) => {
-    const header = ["Evidence ID", "Transaction ID", "Amount", "Counterparty Name", "Upload Date", "Status"];
+    const header = ["Evidence ID", "Transaction ID", "Amount", "Counterparty Name", "Upload Date"];
     const rows   = data.map((e) => [
       e.id,
       e.transactionId,
       e.amount ?? "",
       `"${e.counterparty ?? ""}"`,
       e.uploadedAt ? e.uploadedAt.split("T")[0] : "",
-      e.status ?? "",
     ]);
     const csv  = [header.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });

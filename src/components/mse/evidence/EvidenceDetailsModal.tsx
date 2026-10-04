@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
-import { statusStyles } from "./EvidenceTable";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { Download, Eye, X, FileText, ExternalLink } from "lucide-react";
 
@@ -26,9 +25,6 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
   const router = useRouter();
 
   if (!isOpen || !evidence) return null;
-
-  const statusStyle =
-    statusStyles[evidence.status as keyof typeof statusStyles] ?? statusStyles.Pending;
 
   const uploadDate = evidence.uploadedAt ? evidence.uploadedAt.split("T")[0] : "—";
 
@@ -55,17 +51,6 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
 
         {/* Body */}
         <div style={body}>
-          {/* Status banner */}
-          <div style={{ ...statusBanner, background: statusStyle.background }}>
-            <span style={{ ...statusDot, background: statusStyle.color }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: statusStyle.color }}>
-              {evidence.status ?? "Pending"}
-            </span>
-            <span style={{ fontSize: 12, color: statusStyle.color, opacity: 0.7, marginLeft: 4 }}>
-              verification status
-            </span>
-          </div>
-
           {/* Details grid */}
           <div style={grid}>
             <DetailRow label="Evidence ID" value={<code style={codeStyle}>{evidence.id}</code>} />

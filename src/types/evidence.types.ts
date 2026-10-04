@@ -12,7 +12,6 @@ export interface Evidence {
   uploadedBy?: string | number;
   uploadedAt?: string;
   notes?: string;
-  status?: "Pending" | "Verified";
 
   // Inherited from the linked transaction (denormalised for display)
   amount?: number;
