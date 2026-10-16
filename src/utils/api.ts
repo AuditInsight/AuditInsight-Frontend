@@ -201,6 +201,63 @@ export const updateEvidence = (
 ) => apiClient.put<EvidenceResponse>(`/evidence/${evidenceId}`, data);
 
 /* =========================
+   E-SIGNATURES (optional — anyone in the org can sign a document without being asked)
+========================= */
+
+export interface SignatureResponse {
+  id: string;
+  evidenceId: string;
+  signerId: number;
+  signerName: string;
+  typedName?: string | null;
+  signatureImage?: string | null;
+  signedAt: string;
+  /** true when someone asked this person to sign; false when they signed on their own */
+  requested: boolean;
+}
+
+export interface SignatureRequestResponse {
+  id: string;
+  evidenceId: string;
+  documentName: string;
+  organisationId: string;
+  requestedBy: number;
+  requestedByName: string;
+  requestedUserId: number;
+  requestedUserName: string;
+  message?: string | null;
+  status: "PENDING" | "SIGNED" | "DECLINED";
+  createdAt: string;
+  respondedAt?: string | null;
+}
+
+export interface EvidenceSignaturesResponse {
+  signatures: SignatureResponse[];
+  pendingRequests: SignatureRequestResponse[];
+  signedByMe: boolean;
+  myPendingRequest: SignatureRequestResponse | null;
+}
+
+export const getEvidenceSignatures = (evidenceId: string) =>
+  apiClient.get<EvidenceSignaturesResponse>(`/evidence/${evidenceId}/signatures`);
+
+export const signEvidence = (
+  evidenceId: string,
+  data: { typedName?: string; signatureImage?: string }
+) => apiClient.post<SignatureResponse>(`/evidence/${evidenceId}/signatures`, data);
+
+export const requestEvidenceSignatures = (
+  evidenceId: string,
+  data: { userIds: number[]; message?: string }
+) => apiClient.post<SignatureRequestResponse[]>(`/evidence/${evidenceId}/signature-requests`, data);
+
+export const getPendingSignatureRequests = () =>
+  apiClient.get<SignatureRequestResponse[]>("/signature-requests/pending");
+
+export const declineSignatureRequest = (requestId: string) =>
+  apiClient.post<SignatureRequestResponse>(`/signature-requests/${requestId}/decline`);
+
+/* =========================
    ORGANISATION TYPES
 ========================= */
 export interface Organisation {
