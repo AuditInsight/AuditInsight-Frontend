@@ -106,6 +106,7 @@ export function EvidenceSignaturesSection({ evidenceId, onChanged }: Props) {
           <div style={avatar}>{s.signerName.charAt(0).toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={signerName}>{s.signerName}</div>
+            {s.signerTitle && <div style={typedNameStyle}>{s.signerTitle}</div>}
             <div style={signedAtStyle}>
               Signed {formatSignedAt(s.signedAt)}
               <span style={s.requested ? tagRequested : tagVoluntary}>
@@ -186,6 +187,8 @@ function SignPanel({
   onSigned: () => void;
 }) {
   const [mode, setMode] = useState<"type" | "draw">("type");
+  const [fullName, setFullName] = useState(defaultName);
+  const [title, setTitle] = useState("");
   const [typedName, setTypedName] = useState("");
   const [hasInk, setHasInk] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -233,13 +236,15 @@ function SignPanel({
     setHasInk(false);
   };
 
-  const canSubmit = !submitting && (mode === "type" || hasInk);
+  const canSubmit = !submitting && fullName.trim().length > 0 && (mode === "type" || hasInk);
 
   const submit = async () => {
     setSubmitting(true);
     setError(null);
     try {
       await signEvidence(evidenceId, {
+        fullName: fullName.trim(),
+        title: title.trim() || undefined,
         typedName: mode === "type" && typedName.trim() ? typedName.trim() : undefined,
         signatureImage: mode === "draw" ? canvasRef.current?.toDataURL("image/png") : undefined,
       });
@@ -252,6 +257,27 @@ function SignPanel({
 
   return (
     <div style={panelBox}>
+      <label style={fieldLabel} htmlFor="sign-full-name">Full names <span style={{ color: "#b91c1c" }}>*</span></label>
+      <input
+        id="sign-full-name"
+        style={input}
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+        placeholder="All your names, as they should appear on the document"
+        maxLength={255}
+      />
+
+      <label style={{ ...fieldLabel, marginTop: 10 }} htmlFor="sign-title">Title <span style={{ fontWeight: 400 }}>(optional)</span></label>
+      <input
+        id="sign-title"
+        style={input}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="e.g. Finance Manager"
+        maxLength={255}
+      />
+
+      <label style={{ ...fieldLabel, marginTop: 10 }}>Signature</label>
       <div style={tabs}>
         <button type="button" style={mode === "type" ? tabActive : tab} onClick={() => setMode("type")}>Type</button>
         <button type="button" style={mode === "draw" ? tabActive : tab} onClick={() => setMode("draw")}>Draw</button>
@@ -284,7 +310,7 @@ function SignPanel({
         </div>
       )}
 
-      <p style={hint}>Signing records your account name and the current time.</p>
+      <p style={hint}>Signing records your full names, title and the current time.</p>
       {error && <p style={errorText}>{error}</p>}
 
       <div style={actions}>
@@ -628,6 +654,14 @@ const emailChipRemove: React.CSSProperties = {
   fontSize: 14,
   lineHeight: 1,
   padding: 0,
+};
+
+const fieldLabel: React.CSSProperties = {
+  display: "block",
+  marginBottom: 4,
+  fontSize: 12,
+  fontWeight: 600,
+  color: theme.colors.textMuted,
 };
 
 const memberRow: React.CSSProperties = {

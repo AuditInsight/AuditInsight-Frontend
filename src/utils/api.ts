@@ -209,6 +209,7 @@ export interface SignatureResponse {
   evidenceId: string;
   signerId: number;
   signerName: string;
+  signerTitle?: string | null;
   typedName?: string | null;
   signatureImage?: string | null;
   signedAt: string;
@@ -243,7 +244,7 @@ export const getEvidenceSignatures = (evidenceId: string) =>
 
 export const signEvidence = (
   evidenceId: string,
-  data: { typedName?: string; signatureImage?: string }
+  data: { fullName?: string; title?: string; typedName?: string; signatureImage?: string }
 ) => apiClient.post<SignatureResponse>(`/evidence/${evidenceId}/signatures`, data);
 
 export const requestEvidenceSignatures = (
