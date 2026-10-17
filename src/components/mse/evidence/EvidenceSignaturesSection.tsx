@@ -320,8 +320,26 @@ function RequestPanel({
   const members = organisationId ? fetchedMembers : NO_MEMBERS;
   const [selected, setSelected] = useState<number[]>([]);
   const [message, setMessage] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [emails, setEmails] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const addEmail = () => {
+    const value = emailInput.trim().toLowerCase();
+    if (!value) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (value === myEmail?.toLowerCase()) {
+      setError("You cannot request your own signature — just sign the document.");
+      return;
+    }
+    setError(null);
+    setEmails((prev) => (prev.includes(value) ? prev : [...prev, value]));
+    setEmailInput("");
+  };
 
   useEffect(() => {
     if (!organisationId) return;
@@ -350,7 +368,11 @@ function RequestPanel({
     setSubmitting(true);
     setError(null);
     try {
-      await requestEvidenceSignatures(evidenceId, { userIds: selected, message: message.trim() || undefined });
+      await requestEvidenceSignatures(evidenceId, {
+        userIds: selected,
+        emails,
+        message: message.trim() || undefined,
+      });
       onSent();
     } catch (err) {
       setError(errorMessage(err, "Could not send the request."));
@@ -377,7 +399,45 @@ function RequestPanel({
         </label>
       ))}
 
-      {candidates.length > 0 && (
+      <div style={{ marginTop: 10 }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <input
+            type="email"
+            style={{ ...input, flex: 1 }}
+            value={emailInput}
+            onChange={(e) => setEmailInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addEmail();
+              }
+            }}
+            placeholder="Or ask someone by email (must be in your organisation)"
+          />
+          <button type="button" style={outlineBtn} onClick={addEmail}>
+            Add
+          </button>
+        </div>
+        {emails.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+            {emails.map((e) => (
+              <span key={e} style={emailChip}>
+                {e}
+                <button
+                  type="button"
+                  style={emailChipRemove}
+                  aria-label={`Remove ${e}`}
+                  onClick={() => setEmails((prev) => prev.filter((x) => x !== e))}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {(candidates.length > 0 || emails.length > 0) && (
         <textarea
           style={{ ...input, marginTop: 8, minHeight: 56, resize: "vertical" }}
           value={message}
@@ -395,11 +455,11 @@ function RequestPanel({
         </button>
         <button
           type="button"
-          style={{ ...primaryBtn, opacity: selected.length > 0 && !submitting ? 1 : 0.5 }}
+          style={{ ...primaryBtn, opacity: selected.length + emails.length > 0 && !submitting ? 1 : 0.5 }}
           onClick={submit}
-          disabled={selected.length === 0 || submitting}
+          disabled={selected.length + emails.length === 0 || submitting}
         >
-          <Send size={13} /> {submitting ? "Sending…" : `Send request${selected.length > 1 ? "s" : ""}`}
+          <Send size={13} /> {submitting ? "Sending…" : `Send request${selected.length + emails.length > 1 ? "s" : ""}`}
         </button>
       </div>
     </div>
@@ -549,6 +609,27 @@ const canvasStyle: React.CSSProperties = {
   touchAction: "none",
   cursor: "crosshair",
 };
+const emailChip: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "3px 8px",
+  borderRadius: 999,
+  background: "#e0e7ff",
+  color: "#1e3a8a",
+  fontSize: 12,
+};
+
+const emailChipRemove: React.CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "inherit",
+  cursor: "pointer",
+  fontSize: 14,
+  lineHeight: 1,
+  padding: 0,
+};
+
 const memberRow: React.CSSProperties = {
   display: "flex",
   alignItems: "center",

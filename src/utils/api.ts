@@ -248,8 +248,46 @@ export const signEvidence = (
 
 export const requestEvidenceSignatures = (
   evidenceId: string,
-  data: { userIds: number[]; message?: string }
+  data: { userIds?: number[]; emails?: string[]; message?: string }
 ) => apiClient.post<SignatureRequestResponse[]>(`/evidence/${evidenceId}/signature-requests`, data);
+
+/**
+ * Downloads the document as a PDF with a signature page (signature, name, email, time of each signer)
+ * and saves it in the browser. Throws an Error carrying the server's message (e.g. nobody has signed yet).
+ */
+export const downloadSignedEvidence = async (evidenceId: string, fallbackName: string): Promise<void> => {
+  try {
+    const res = await apiClient.get<Blob>(`/evidence/${evidenceId}/download-signed`, {
+      responseType: "blob",
+      timeout: 60_000,
+    });
+    const disposition = String(res.headers["content-disposition"] ?? "");
+    const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+    const fileName = match ? decodeURIComponent(match[1]) : `${fallbackName.replace(/\.[^.]+$/, "")}-signed.pdf`;
+
+    const url = URL.createObjectURL(res.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    // With responseType "blob" the error body is a Blob too — read it to surface the server's message.
+    const data = (err as { response?: { data?: unknown } })?.response?.data;
+    let message = "Could not download the signed document.";
+    if (data instanceof Blob) {
+      try {
+        const body = JSON.parse(await data.text()) as { error?: string; message?: string };
+        message = body.error ?? body.message ?? message;
+      } catch {
+        // body was not JSON — keep the generic message
+      }
+    }
+    throw new Error(message);
+  }
+};
 
 export const getPendingSignatureRequests = () =>
   apiClient.get<SignatureRequestResponse[]>("/signature-requests/pending");

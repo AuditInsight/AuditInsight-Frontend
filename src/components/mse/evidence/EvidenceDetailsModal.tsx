@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
-import { Download, Eye, X, FileText, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Download, Eye, X, FileText, ExternalLink, PenLine } from "lucide-react";
+import { downloadSignedEvidence } from "@/utils/api";
 import { EvidenceSignaturesSection } from "./EvidenceSignaturesSection";
 
 interface Props {
@@ -24,8 +26,22 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
   const router = useRouter();
+  const [signedBusy, setSignedBusy] = useState(false);
+  const [signedError, setSignedError] = useState<string | null>(null);
 
   if (!isOpen || !evidence) return null;
+
+  const downloadSigned = async () => {
+    setSignedBusy(true);
+    setSignedError(null);
+    try {
+      await downloadSignedEvidence(evidence.id, evidence.documentName);
+    } catch (err) {
+      setSignedError(err instanceof Error ? err.message : "Could not download the signed document.");
+    } finally {
+      setSignedBusy(false);
+    }
+  };
 
   const uploadDate = evidence.uploadedAt ? evidence.uploadedAt.split("T")[0] : "—";
 
@@ -89,6 +105,10 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
 
         <div style={divider} />
 
+        {signedError && (
+          <p style={{ margin: "0 24px 8px", fontSize: 12, color: "#b91c1c" }}>{signedError}</p>
+        )}
+
         {/* Footer */}
         <div style={footer}>
           <button
@@ -111,6 +131,15 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
             style={downloadBtn}
           >
             <Download size={13} /> Download
+          </button>
+          <button
+            type="button"
+            onClick={downloadSigned}
+            disabled={signedBusy}
+            style={{ ...downloadBtn, opacity: signedBusy ? 0.6 : 1 }}
+            title="PDF with a signature page listing everyone who signed"
+          >
+            <PenLine size={13} /> {signedBusy ? "Preparing…" : "Download with signatures"}
           </button>
           <button type="button" onClick={onClose} style={closeButton}>
             Close
@@ -262,6 +291,7 @@ const footer: React.CSSProperties = {
   display: "flex",
   justifyContent: "flex-end",
   gap: 8,
+  flexWrap: "wrap",
 };
 
 const outlineBtn: React.CSSProperties = {
