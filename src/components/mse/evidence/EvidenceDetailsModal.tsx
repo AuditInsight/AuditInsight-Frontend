@@ -5,6 +5,7 @@ import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { Download, Eye, X, FileText, ExternalLink } from "lucide-react";
+import { EvidenceSignaturesSection } from "./EvidenceSignaturesSection";
 
 interface Props {
   isOpen: boolean;
@@ -81,6 +82,9 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
               </div>
             )}
           </div>
+
+          {/* Optional e-signatures */}
+          <EvidenceSignaturesSection evidenceId={evidence.id} />
         </div>
 
         <div style={divider} />
