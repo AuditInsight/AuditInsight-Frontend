@@ -28,6 +28,7 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
   const router = useRouter();
   const [signedBusy, setSignedBusy] = useState(false);
   const [signedError, setSignedError] = useState<string | null>(null);
+  const [signFirst, setSignFirst] = useState(false);
 
   if (!isOpen || !evidence) return null;
 
@@ -99,8 +100,10 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
             )}
           </div>
 
-          {/* Optional e-signatures */}
-          <EvidenceSignaturesSection evidenceId={evidence.id} />
+          {/* Optional e-signatures — moved to the top when someone asked the user to sign */}
+          <div style={{ order: signFirst ? -1 : 0 }}>
+            <EvidenceSignaturesSection evidenceId={evidence.id} onPendingRequestChange={setSignFirst} />
+          </div>
         </div>
 
         <div style={divider} />
