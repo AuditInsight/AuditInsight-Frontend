@@ -19,6 +19,8 @@ interface Props {
   evidenceId: string;
   /** Called after a signature is added so the parent can refresh badges/counts. */
   onChanged?: () => void;
+  /** Reports whether someone has asked the logged-in user to sign (and they haven't yet), so the parent can show this first. */
+  onPendingRequestChange?: (pending: boolean) => void;
 }
 
 // The backend sends LocalDateTime without a zone (server time is UTC) — treat it as UTC.
@@ -34,7 +36,7 @@ function errorMessage(err: unknown, fallback: string): string {
   return e?.response?.data?.error ?? e?.response?.data?.message ?? fallback;
 }
 
-export function EvidenceSignaturesSection({ evidenceId, onChanged }: Props) {
+export function EvidenceSignaturesSection({ evidenceId, onChanged, onPendingRequestChange }: Props) {
   const { user } = useAuth();
   const [data, setData] = useState<EvidenceSignaturesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,11 @@ export function EvidenceSignaturesSection({ evidenceId, onChanged }: Props) {
       setLoading(false);
     }
   }, [evidenceId]);
+
+  const hasPendingRequest = Boolean(data?.myPendingRequest && !data.signedByMe);
+  useEffect(() => {
+    onPendingRequestChange?.(hasPendingRequest);
+  }, [hasPendingRequest, onPendingRequestChange]);
 
   useEffect(() => {
     setLoading(true);
@@ -93,6 +100,9 @@ export function EvidenceSignaturesSection({ evidenceId, onChanged }: Props) {
               <div style={{ marginTop: 2, color: theme.colors.textMuted }}>“{data.myPendingRequest.message}”</div>
             )}
           </div>
+          <button type="button" style={primaryBtn} onClick={() => setPanel("sign")}>
+            <PenLine size={13} /> Sign now
+          </button>
           <button type="button" style={ghostBtn} onClick={handleDecline}>Decline</button>
         </div>
       )}
