@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { SubscriptionType, getPlan, formatRwf } from "@/types/billing";
 import StripeCardInput, { CardData } from "./StripeCardInput";
@@ -8,11 +8,93 @@ import MoMoInput from "./MoMoInput";
 import { TEST_CARDS } from "./cardUtils";
 import { MoMoData, simulateMoMoPayment } from "./momoUtils";
 import { CheckCircle2, XCircle, Lock, ChevronRight, CreditCard, Smartphone } from "lucide-react";
-import { startMomoCheckout, startCardCheckout, getMomoPaymentStatus } from "@/utils/api";
+import { startMomoCheckout, startCardCheckout, getMomoPaymentStatus, PaymentStatusResponse } from "@/utils/api";
 import { usePlans } from "@/hooks/usePlans";
 
 // ── Payment result ─────────────────────────────────────────────────
-type PaymentState = "idle" | "processing" | "3dsecure" | "success" | "failed";
+type PaymentState = "idle" | "processing" | "3dsecure" | "success" | "failed" | "awaiting-confirmation";
+
+// ── Pending MoMo payment persistence (resume after a close/reload) ──
+const PENDING_PAYMENT_PREFIX = "ai_pending_momo_payment:";
+// Matches the backend's reconciliation expiry window — a payment that old has either long since
+// resolved or been given up on server-side, so there's nothing left here worth resuming.
+const PENDING_PAYMENT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function savePendingPayment(organisationId: string, paymentId: string) {
+  try {
+    localStorage.setItem(PENDING_PAYMENT_PREFIX + organisationId, JSON.stringify({ paymentId, savedAt: Date.now() }));
+  } catch {
+    // localStorage unavailable (private browsing, etc.) — resume-on-reload just won't work.
+  }
+}
+
+function clearPendingPayment(organisationId: string) {
+  try {
+    localStorage.removeItem(PENDING_PAYMENT_PREFIX + organisationId);
+  } catch {
+    // ignore
+  }
+}
+
+function readPendingPayment(organisationId: string): string | null {
+  try {
+    const raw = localStorage.getItem(PENDING_PAYMENT_PREFIX + organisationId);
+    if (!raw) return null;
+    const { paymentId, savedAt } = JSON.parse(raw) as { paymentId?: string; savedAt?: number };
+    if (!paymentId || !savedAt || Date.now() - savedAt > PENDING_PAYMENT_MAX_AGE_MS) {
+      clearPendingPayment(organisationId);
+      return null;
+    }
+    return paymentId;
+  } catch {
+    return null;
+  }
+}
+
+// Backend validation/error messages (e.g. "Your membership is not active") live in
+// error.response.data.message — axios's own error.message is just the HTTP status text.
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object" && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (response?.data?.message) return response.data.message;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
+type MomoOutcome = { status: "SUCCESSFUL" | "PENDING" | "terminal"; message?: string };
+
+function resolveMomoOutcome(data: PaymentStatusResponse): MomoOutcome {
+  switch (data.status) {
+    case "SUCCESSFUL":
+      return { status: "SUCCESSFUL" };
+    case "PENDING":
+      return { status: "PENDING" };
+    case "UNDERPAID":
+      return { status: "terminal", message: data.failureReason ?? "The full subscription amount was not received." };
+    case "CANCELLED":
+      return { status: "terminal", message: "Payment was cancelled." };
+    case "EXPIRED":
+      return { status: "terminal", message: "Payment timed out waiting for confirmation. Please try again." };
+    default: // FAILED
+      return { status: "terminal", message: data.failureReason ?? "Payment was declined. Please try again." };
+  }
+}
+
+/** The active, foreground checking window — after this, we stop blocking the user (see bug #3). */
+async function pollMomoForeground(paymentId: string): Promise<MomoOutcome> {
+  const maxAttempts = 30;
+  for (let attempts = 0; attempts < maxAttempts; attempts++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      const { data } = await getMomoPaymentStatus(paymentId);
+      const outcome = resolveMomoOutcome(data);
+      if (outcome.status !== "PENDING") return outcome;
+    } catch {
+      // Transient poll error (network blip, timeout) — retry rather than treating it as a failure.
+    }
+  }
+  return { status: "PENDING" };
+}
 
 interface Props {
   open: boolean;
@@ -53,9 +135,54 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
   const [receiptId, setReceiptId]     = useState("");
   const [errorMsg, setErrorMsg]       = useState("");
   const [saveCard, setSaveCard]       = useState(true);
+  const [backgroundPaymentId, setBackgroundPaymentId] = useState<string | null>(null);
 
   const { plans } = usePlans();
   const planInfo = getPlan(plan, plans);
+
+  // Resume checking a payment that was still unresolved the last time this page was open —
+  // the component instance (and its state) persists across open/close since the parent always
+  // renders <CheckoutModal open={...} />, but a full page reload needs this to pick back up.
+  useEffect(() => {
+    if (!organisationId) return;
+    const pending = readPendingPayment(organisationId);
+    if (pending) setBackgroundPaymentId(pending);
+  }, [organisationId]);
+
+  // Keeps checking a payment that outlasted the active foreground window, even if the user has
+  // since closed the modal — it only stops once pawaPay (or the server-side reconciliation sweep)
+  // reports a terminal outcome. onSuccess() still fires so the subscription display refreshes.
+  useEffect(() => {
+    if (!backgroundPaymentId || !organisationId) return;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await getMomoPaymentStatus(backgroundPaymentId);
+        const outcome = resolveMomoOutcome(data);
+        if (outcome.status === "PENDING" || cancelled) return;
+
+        clearInterval(interval);
+        clearPendingPayment(organisationId);
+        setBackgroundPaymentId(null);
+        if (outcome.status === "SUCCESSFUL") {
+          setReceiptId(backgroundPaymentId);
+          setState("success");
+          onSuccess(backgroundPaymentId);
+        } else {
+          setErrorMsg(outcome.message ?? "Payment failed.");
+          setState("failed");
+        }
+      } catch {
+        // Transient poll error — try again on the next tick.
+      }
+    }, 8000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backgroundPaymentId, organisationId]);
+
   if (!open || typeof document === "undefined" || !planInfo) return null;
   const amount = planInfo.price;
 
@@ -79,29 +206,28 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
           });
           const paymentId = response.data.paymentId;
           setReceiptId(paymentId);
+          savePendingPayment(organisationId, paymentId);
 
-          // Poll for payment status
-          let attempts = 0;
-          const maxAttempts = 30;
-          while (attempts < maxAttempts) {
-            await new Promise(r => setTimeout(r, 2000));
-            const statusResponse = await getMomoPaymentStatus(paymentId);
-            if (statusResponse.data.status === "SUCCESSFUL") {
-              setState("success");
-              setTimeout(() => onSuccess(paymentId), 0);
-              return;
-            } else if (statusResponse.data.status === "FAILED") {
-              result = { success: false, error: "Payment was declined. Please try again." };
-              break;
-            }
-            attempts++;
+          const outcome = await pollMomoForeground(paymentId);
+          if (outcome.status === "SUCCESSFUL") {
+            clearPendingPayment(organisationId);
+            setState("success");
+            setTimeout(() => onSuccess(paymentId), 0);
+            return;
           }
-          if (attempts >= maxAttempts) {
-            result = { success: false, error: "Payment verification timed out." };
+          if (outcome.status === "PENDING") {
+            // Not resolved within the active window — stop blocking the user instead of claiming
+            // it failed. The saved payment id lets this resume on reload, this tab keeps checking
+            // in the background, and the pawaPay callback/reconciliation sweep resolves it too.
+            setBackgroundPaymentId(paymentId);
+            setState("awaiting-confirmation");
+            return;
           }
+          clearPendingPayment(organisationId);
+          result = { success: false, error: outcome.message ?? "Payment failed." };
         }
       } catch (error) {
-        result = { success: false, error: error instanceof Error ? error.message : "MOMO payment failed." };
+        result = { success: false, error: extractErrorMessage(error, "MOMO payment failed.") };
       }
     } else {
       if (!cardData?.isValid) return;
@@ -126,7 +252,7 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
           result = { success: true, receiptId: paymentId };
         }
       } catch (error) {
-        result = { success: false, error: error instanceof Error ? error.message : "Card payment failed." };
+        result = { success: false, error: extractErrorMessage(error, "Card payment failed.") };
       }
     }
 
@@ -175,6 +301,9 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
         {state === "failed" && (
           <FailedScreen error={errorMsg} onRetry={handleRetry} onClose={handleClose} />
         )}
+
+        {/* ── AWAITING CONFIRMATION SCREEN ── */}
+        {state === "awaiting-confirmation" && <AwaitingConfirmationScreen onClose={handleClose} />}
 
         {/* ── 3D SECURE SCREEN ── */}
         {state === "3dsecure" && <ThreeDSecureScreen />}
@@ -386,6 +515,26 @@ function SuccessScreen({ planName, amount, billed, receiptId, onClose }: {
 
       <button style={payBtn} onClick={onClose}>
         Continue to Dashboard →
+      </button>
+    </div>
+  );
+}
+
+function AwaitingConfirmationScreen({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={centeredScreen}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      <div style={spinner} />
+      <div style={screenTitle}>Still confirming your payment…</div>
+      <div style={screenSub}>
+        This is taking longer than usual. We&apos;ll activate your plan automatically once it&apos;s
+        confirmed — you don&apos;t need to keep this window open.
+      </div>
+      <button
+        style={{ ...payBtn, background: "#fff", color: "#374151", border: "1.5px solid #e2e8f0" }}
+        onClick={onClose}
+      >
+        Close and keep waiting
       </button>
     </div>
   );
