@@ -1,7 +1,8 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { PRICING_PLANS, SubscriptionType, formatRwf } from "@/types/billing";
+import { SubscriptionType, formatRwf } from "@/types/billing";
+import { usePlans } from "@/hooks/usePlans";
 
 interface Props {
   selected?: SubscriptionType | null;
@@ -13,6 +14,7 @@ interface Props {
 
 /** Plan cards that mirror the landing-page pricing section. */
 export default function PlanCards({ selected, current, onSelect, disabled = false }: Props) {
+  const { plans } = usePlans();
   return (
     <>
       <style>{`
@@ -28,7 +30,7 @@ export default function PlanCards({ selected, current, onSelect, disabled = fals
         }
       `}</style>
       <div className="plan-cards-grid">
-        {PRICING_PLANS.map((plan) => {
+        {plans.map((plan) => {
           const hl = !!plan.highlighted;
           const isSelected = selected === plan.id;
           const isCurrent = current === plan.id;

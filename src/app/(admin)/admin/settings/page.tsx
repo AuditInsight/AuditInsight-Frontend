@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { isAxiosError } from "axios";
 import { usePermissions } from "@/security/access-control";
 import { useAuth } from "@/context/AuthContext.production";
 import {
   Settings, Shield, Bell, CreditCard, Globe, Lock,
   Users, Database, Mail, ChevronRight, Check, AlertCircle,
 } from "lucide-react";
+import PlanPricesEditor from "@/components/admin/PlanPricesEditor";
+import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
+import { getAdminAuditLog, AdminAuditLogResponse, PageResult } from "@/api/admin";
 
 type Section =
   | "Platform"
@@ -23,15 +27,6 @@ const SECTIONS: { id: Section; icon: typeof Settings; desc: string }[] = [
   { id: "Billing",       icon: CreditCard,desc: "Subscription plans & invoices" },
   { id: "Integrations",  icon: Database,  desc: "Third-party connections" },
   { id: "Audit Logs",    icon: Lock,      desc: "System-wide audit trail" },
-];
-
-const AUDIT_LOGS = [
-  { id: 1, action: "User login",           user: "ceo@insightai.rw",        time: "2024-06-20 09:14", ip: "196.12.50.1"  },
-  { id: 2, action: "Auditor approved",     user: "admin@auditinsight.com",  time: "2024-06-20 09:02", ip: "196.12.50.4"  },
-  { id: 3, action: "Organisation created", user: "admin@auditinsight.com",  time: "2024-06-19 17:45", ip: "196.12.50.4"  },
-  { id: 4, action: "User login",           user: "auditor@audit.rw",        time: "2024-06-19 14:33", ip: "41.211.8.22"  },
-  { id: 5, action: "Password changed",     user: "accountant@insightai.rw", time: "2024-06-19 11:10", ip: "196.12.50.2"  },
-  { id: 6, action: "Organisation blocked", user: "admin@auditinsight.com",  time: "2024-06-18 16:05", ip: "196.12.50.4"  },
 ];
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -115,6 +110,33 @@ export default function AdminSettingsPage() {
   const [loginAlerts, setLoginAlerts]             = useState(true);
   const [auditSummary, setAuditSummary]           = useState(true);
   const [fraudAlerts, setFraudAlerts]             = useState(true);
+
+  // Audit log state
+  const [auditResult, setAuditResult] = useState<PageResult<AdminAuditLogResponse> | null>(null);
+  const [auditPage, setAuditPage]     = useState(1);
+  const [auditLoading, setAuditLoading] = useState(true);
+  const [auditError, setAuditError]     = useState<string | null>(null);
+
+  const fetchAuditLog = useCallback(async () => {
+    setAuditLoading(true);
+    setAuditError(null);
+    try {
+      const { data } = await getAdminAuditLog({ page: auditPage });
+      setAuditResult(data);
+    } catch (err) {
+      if (isAxiosError(err)) {
+        setAuditError(err.response?.data?.message ?? "Failed to load audit log.");
+      } else {
+        setAuditError("Failed to load audit log.");
+      }
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [auditPage]);
+
+  useEffect(() => {
+    if (active === "Audit Logs") fetchAuditLog();
+  }, [active, fetchAuditLog]);
 
   if (!canViewAdminPanel) {
     return (
@@ -232,29 +254,9 @@ export default function AdminSettingsPage() {
 
           {active === "Billing" && (
             <Card>
-              <SectionTitle>Billing Overview</SectionTitle>
-              <p style={s.sectionDesc}>Platform subscription status and active plan details.</p>
-              <div style={s.billingGrid}>
-                {[
-                  { label: "Active subscriptions", value: "3", color: "#1e3a8a" },
-                  { label: "Monthly revenue",       value: "RWF 1,240,000", color: "#15803d" },
-                  { label: "Unpaid invoices",       value: "2", color: "#b91c1c" },
-                  { label: "Trial accounts",        value: "1", color: "#92400e" },
-                ].map((item) => (
-                  <div key={item.label} style={s.billingCard}>
-                    <span style={{ fontSize: 24, fontWeight: 800, color: item.color }}>{item.value}</span>
-                    <span style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{item.label}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 20, padding: "14px 18px", background: "#eff6ff", borderRadius: 10, border: "1px solid #bfdbfe" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <AlertCircle size={16} color="#1d4ed8" />
-                  <p style={{ margin: 0, fontSize: 13, color: "#1d4ed8", fontWeight: 500 }}>
-                    2 organisations have unpaid invoices older than 30 days.
-                  </p>
-                </div>
-              </div>
+              <SectionTitle>Subscription Plan Pricing</SectionTitle>
+              <p style={s.sectionDesc}>Edit the price and duration of each fixed subscription period. Changes apply to new checkouts only — existing active subscriptions keep their original price until renewal.</p>
+              <PlanPricesEditor />
             </Card>
           )}
 
@@ -290,27 +292,46 @@ export default function AdminSettingsPage() {
             <Card>
               <SectionTitle>System Audit Logs</SectionTitle>
               <p style={s.sectionDesc}>Full audit trail of administrative actions across the platform.</p>
-              <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
-                <thead>
-                  <tr style={{ background: "#f8fafc" }}>
-                    {["Action", "User", "Time", "IP Address"].map((h) => (
-                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {AUDIT_LOGS.map((log) => (
-                    <tr key={log.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "12px 14px", fontSize: 13.5, fontWeight: 600, color: "#0f172a" }}>{log.action}</td>
-                      <td style={{ padding: "12px 14px", fontSize: 13, color: "#475569" }}>{log.user}</td>
-                      <td style={{ padding: "12px 14px", fontSize: 13, color: "#64748b", whiteSpace: "nowrap" }}>{log.time}</td>
-                      <td style={{ padding: "12px 14px", fontSize: 13, color: "#64748b", fontFamily: "monospace" }}>{log.ip}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {auditError && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", fontSize: 13, marginTop: 12 }}>
+                  <AlertCircle size={14} />
+                  <span>{auditError}</span>
+                </div>
+              )}
+              {auditLoading ? (
+                <p style={{ textAlign: "center", padding: "24px 0", color: "#94a3b8", fontSize: 13.5 }}>Loading audit log…</p>
+              ) : !auditResult?.items.length ? (
+                <p style={{ textAlign: "center", padding: "24px 0", color: "#94a3b8", fontSize: 13.5 }}>No admin activity recorded yet.</p>
+              ) : (
+                <>
+                  <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
+                    <thead>
+                      <tr style={{ background: "#f8fafc" }}>
+                        {["Action", "Target", "Admin", "Time"].map((h) => (
+                          <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#64748b", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditResult.items.map((log) => (
+                        <tr key={log.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                          <td style={{ padding: "12px 14px", fontSize: 13.5, fontWeight: 600, color: "#0f172a" }}>{log.action}</td>
+                          <td style={{ padding: "12px 14px", fontSize: 13, color: "#475569" }}>{log.targetType} · {log.targetId}</td>
+                          <td style={{ padding: "12px 14px", fontSize: 13, color: "#475569" }}>{log.adminUsername}</td>
+                          <td style={{ padding: "12px 14px", fontSize: 13, color: "#64748b", whiteSpace: "nowrap" }}>
+                            {new Date(log.createdAt).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {auditResult.totalPages > 1 && (
+                    <TransactionsPagination page={auditPage} setPage={setAuditPage} totalPages={auditResult.totalPages} />
+                  )}
+                </>
+              )}
             </Card>
           )}
 
@@ -343,8 +364,6 @@ const s: Record<string, React.CSSProperties> = {
   sideItemHover:  { background: "#f1f5f9", color: "#0f172a" },
   content:     { display: "flex", flexDirection: "column", gap: 20 },
   sectionDesc: { margin: "4px 0 18px", fontSize: 13.5, color: "#64748b" },
-  billingGrid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 },
-  billingCard: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "16px 18px", display: "flex", flexDirection: "column" },
 };
 
 

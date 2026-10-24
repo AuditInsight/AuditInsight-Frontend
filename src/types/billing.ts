@@ -95,7 +95,9 @@ export const PRICING_PLANS: PricingPlan[] = [
   },
 ];
 
-export const getPlan = (id: SubscriptionType | null | undefined) =>
-  PRICING_PLANS.find((p) => p.id === id);
+export const getPlan = (
+  id: SubscriptionType | null | undefined,
+  plans: PricingPlan[] = PRICING_PLANS
+) => plans.find((p) => p.id === id);
 
 export const formatRwf = (amount: number) => `${new Intl.NumberFormat("en-US").format(amount)} RWF`;

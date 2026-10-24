@@ -492,4 +492,19 @@ export const startCardCheckout = (organisationId: string, data: StartCardCheckou
 export const getActiveSubscription = (organisationId: string) =>
   apiClient.get<SubscriptionResponse>(`/subscriptions/${organisationId}/active`);
 
+/* =========================
+   PLAN CATALOG TYPES
+========================= */
+export interface PlanResponse {
+  code: SubscriptionType;
+  durationDays: number;
+  amount: number;
+  currency: string;
+}
+
+/* =========================
+   PLAN CATALOG API
+========================= */
+export const getPlans = () => apiClient.get<PlanResponse[]>("/plans");
+
 export default apiClient;

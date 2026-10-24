@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { SubscriptionType, getPlan, formatRwf } from "@/types/billing";
 import { theme } from "@/styles/theme";
 import { AlertTriangle, X } from "lucide-react";
+import { usePlans } from "@/hooks/usePlans";
 
 interface Props {
   open: boolean;
@@ -22,10 +23,11 @@ export default function PlanChangeConfirmModal({
   onCancel,
   loading = false,
 }: Props) {
+  const { plans } = usePlans();
   if (!open || typeof document === "undefined") return null;
 
-  const currentPlanInfo = getPlan(currentPlan);
-  const newPlanInfo = getPlan(newPlan);
+  const currentPlanInfo = getPlan(currentPlan, plans);
+  const newPlanInfo = getPlan(newPlan, plans);
 
   if (!newPlanInfo) return null;
 
