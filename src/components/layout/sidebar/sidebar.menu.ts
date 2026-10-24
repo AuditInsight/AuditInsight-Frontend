@@ -15,7 +15,9 @@ const CORE_NAV: NavItem[] = [
 ];
 
 const ADMIN_NAV: NavItem[] = [
+  { label: "Overview",          path: "/admin",               icon: "📊" },
   { label: "Organizations",     path: "/admin/organizations", icon: "🏢" },
+  { label: "Users",             path: "/admin/users",         icon: "👤" },
   { label: "Auditor Approvals", path: "/admin/approvals",     icon: "✅" },
   { label: "Settings",          path: "/admin/settings",      icon: "⚙️" },
 ];

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { PRICING_PLANS, SubscriptionType, Subscription, getPlan, formatRwf } from "@/types/billing";
+import { SubscriptionType, Subscription, getPlan, formatRwf } from "@/types/billing";
+import { usePlans } from "@/hooks/usePlans";
 
 interface Props {
   open: boolean;
@@ -13,11 +14,12 @@ interface Props {
 export default function ChangePlanModal({ open, currentSubscription, onClose, onChangePlan }: Props) {
   const current = currentSubscription.subscriptionType;
   const [selected, setSelected] = useState<SubscriptionType>(current ?? "SIX_MONTHS");
+  const { plans } = usePlans();
 
   if (!open) return null;
 
   const isSame = selected === current;
-  const selectedPlan = getPlan(selected);
+  const selectedPlan = getPlan(selected, plans);
 
   return (
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -25,13 +27,13 @@ export default function ChangePlanModal({ open, currentSubscription, onClose, on
         <div style={s.header}>
           <div>
             <h3 style={s.title}>Change Plan</h3>
-            <p style={s.sub}>Current plan: <strong>{getPlan(current)?.name ?? "None"}</strong></p>
+            <p style={s.sub}>Current plan: <strong>{getPlan(current, plans)?.name ?? "None"}</strong></p>
           </div>
           <button style={s.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <div style={s.planList}>
-          {PRICING_PLANS.map(plan => {
+          {plans.map(plan => {
             const isCurrent = plan.id === current;
             const isSelected = selected === plan.id;
             return (

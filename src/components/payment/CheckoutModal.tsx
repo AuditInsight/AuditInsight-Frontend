@@ -9,6 +9,7 @@ import { TEST_CARDS } from "./cardUtils";
 import { MoMoData, simulateMoMoPayment } from "./momoUtils";
 import { CheckCircle2, XCircle, Lock, ChevronRight, CreditCard, Smartphone } from "lucide-react";
 import { startMomoCheckout, startCardCheckout, getMomoPaymentStatus } from "@/utils/api";
+import { usePlans } from "@/hooks/usePlans";
 
 // ── Payment result ─────────────────────────────────────────────────
 type PaymentState = "idle" | "processing" | "3dsecure" | "success" | "failed";
@@ -53,7 +54,8 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
   const [errorMsg, setErrorMsg]       = useState("");
   const [saveCard, setSaveCard]       = useState(true);
 
-  const planInfo = getPlan(plan);
+  const { plans } = usePlans();
+  const planInfo = getPlan(plan, plans);
   if (!open || typeof document === "undefined" || !planInfo) return null;
   const amount = planInfo.price;
 

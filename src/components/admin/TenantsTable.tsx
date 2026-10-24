@@ -1,20 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { MockTenant } from "@/mock/admin.mock";
+import { useRouter } from "next/navigation";
+import { AdminOrganisationResponse } from "@/api/admin";
 
 interface Props {
-  tenants: MockTenant[];
+  tenants: AdminOrganisationResponse[];
 }
 
-export default function TenantsTable({ tenants }: Props) {
-  const [data, setData] = useState(tenants);
+const SUBSCRIPTION_BADGE: Record<string, { bg: string; color: string }> = {
+  ACTIVE: { bg: "#dcfce7", color: "#15803d" },
+  TRIAL: { bg: "#e0f2fe", color: "#0369a1" },
+  PENDING: { bg: "#fef9c3", color: "#a16207" },
+  EXPIRED: { bg: "#fef9c3", color: "#a16207" },
+  CANCELLED: { bg: "#fee2e2", color: "#b91c1c" },
+};
 
-  const toggleBlock = (id: string) => {
-    setData((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, isBlocked: !t.isBlocked } : t))
-    );
-  };
+export default function TenantsTable({ tenants }: Props) {
+  const router = useRouter();
 
   return (
     <div style={tableWrap}>
@@ -23,39 +25,38 @@ export default function TenantsTable({ tenants }: Props) {
           <tr style={headRow}>
             <th style={th}>Company</th>
             <th style={th}>Industry</th>
-            <th style={th}>Owner Email</th>
+            <th style={th}>Members</th>
             <th style={th}>Registered</th>
-            <th style={th}>Billing</th>
-            <th style={th}>Status</th>
+            <th style={th}>Subscription</th>
             <th style={th}>Action</th>
           </tr>
         </thead>
         <tbody>
-          {data.map((t) => (
+          {tenants.map((t) => (
             <tr key={t.id} style={row}>
               <td style={td}>{t.name}</td>
               <td style={td}>{t.industry}</td>
-              <td style={td}>{t.ownerEmail}</td>
-              <td style={td}>{t.createdAt}</td>
+              <td style={td}>{t.memberCount}</td>
+              <td style={td}>{new Date(t.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
               <td style={td}>
-                <span style={{ ...billingBadge, background: t.billingStatus === "PAID" ? "#dcfce7" : "#fee2e2", color: t.billingStatus === "PAID" ? "#15803d" : "#b91c1c" }}>
-                  {t.billingStatus === "PAID" ? "🟢 PAID" : "🔴 UNPAID"}
-                </span>
+                {t.subscriptionStatus ? (
+                  <span style={{ ...statusBadge, ...(SUBSCRIPTION_BADGE[t.subscriptionStatus] ?? { bg: "#f1f5f9", color: "#64748b" }) }}>
+                    {t.subscriptionType ? `${t.subscriptionType} · ` : ""}{t.subscriptionStatus}
+                  </span>
+                ) : (
+                  <span style={{ ...statusBadge, background: "#f1f5f9", color: "#64748b" }}>No subscription</span>
+                )}
               </td>
               <td style={td}>
-                <span style={{ ...statusBadge, background: t.isBlocked ? "#fef9c3" : "#f0fdf4", color: t.isBlocked ? "#92400e" : "#166534" }}>
-                  {t.isBlocked ? "Blocked" : "Active"}
-                </span>
-              </td>
-              <td style={td}>
-                <button onClick={() => toggleBlock(t.id)} style={{ ...actionBtn, background: t.isBlocked ? "#1e3a8a" : "#ef4444" }}>
-                  {t.isBlocked ? "Unblock" : "Block"}
+                <button onClick={() => router.push(`/admin/organizations/${t.id}`)} style={actionBtn}>
+                  View / Change Tier
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {tenants.length === 0 && <p style={emptyState}>No organisations match this search.</p>}
     </div>
   );
 }
@@ -66,8 +67,6 @@ const headRow: React.CSSProperties = { background: "#f8fafc" };
 const th: React.CSSProperties = { padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" };
 const row: React.CSSProperties = { borderBottom: "1px solid #f1f5f9" };
 const td: React.CSSProperties = { padding: "12px 16px", color: "#1f2937" };
-const billingBadge: React.CSSProperties = { padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600 };
-const statusBadge: React.CSSProperties = { padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600 };
-const actionBtn: React.CSSProperties = { padding: "5px 14px", borderRadius: 8, border: "none", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 12 };
-
-
+const statusBadge: React.CSSProperties = { padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" };
+const actionBtn: React.CSSProperties = { padding: "5px 14px", borderRadius: 8, border: "1px solid #1e3a8a", background: "#fff", color: "#1e3a8a", cursor: "pointer", fontWeight: 600, fontSize: 12 };
+const emptyState: React.CSSProperties = { textAlign: "center", padding: "32px 16px", color: "#94a3b8", fontSize: 13.5, margin: 0 };

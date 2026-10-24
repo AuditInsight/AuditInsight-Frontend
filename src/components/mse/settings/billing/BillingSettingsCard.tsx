@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PRICING_PLANS, SubscriptionType, Subscription, getPlan, formatRwf } from "@/types/billing";
+import { SubscriptionType, Subscription, getPlan, formatRwf } from "@/types/billing";
 import PlanCards from "@/components/billing/PlanCards";
 import CheckoutModal from "@/components/payment/CheckoutModal";
 import { useSettings } from "@/hooks/useSettings";
 import { getActiveSubscription } from "@/utils/api";
+import { usePlans } from "@/hooks/usePlans";
 
 export default function BillingSettingsCard() {
   const { org } = useSettings();
@@ -30,9 +31,10 @@ export default function BillingSettingsCard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organisationId]);
 
-  const currentPlan = getPlan(subscription?.subscriptionType);
+  const { plans } = usePlans();
+  const currentPlan = getPlan(subscription?.subscriptionType, plans);
   const target = selectedPlan ?? subscription?.subscriptionType ?? "SIX_MONTHS";
-  const targetPlan = PRICING_PLANS.find(p => p.id === target);
+  const targetPlan = plans.find(p => p.id === target);
 
   const handlePaymentSuccess = () => {
     setCheckoutOpen(false);
