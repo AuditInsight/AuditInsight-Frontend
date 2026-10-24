@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { PRICING_PLANS, formatRwf } from "@/types/billing";
+import { formatRwf } from "@/types/billing";
+import { usePlans } from "@/hooks/usePlans";
 
 
 export default function PricingSection() {
+  const { plans } = usePlans();
   return (
     <section id="pricing" style={s.section}>
       <style>{`
@@ -31,7 +33,7 @@ export default function PricingSection() {
           <p style={s.sub}>Every plan includes full access to AuditInsight. Pay monthly, every 6 months, or yearly.</p>
         </div>
         <div className="pricing-grid">
-          {PRICING_PLANS.map((plan) => (
+          {plans.map((plan) => (
             <div key={plan.id} style={{ ...s.card, ...(plan.highlighted ? s.cardHL : {}) }}>
               {plan.highlighted && <div style={s.popularBadge}>Most Popular</div>}
               <div style={s.planTop}>

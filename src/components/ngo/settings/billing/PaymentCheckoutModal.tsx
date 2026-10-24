@@ -7,6 +7,7 @@ import { theme } from "@/styles/theme";
 import { X, Loader, CheckCircle2, AlertCircle } from "lucide-react";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
 import { usePaymentProcessor } from "@/hooks/usePaymentProcessor";
+import { usePlans } from "@/hooks/usePlans";
 
 type PaymentState = "selecting" | "processing" | "success" | "error";
 
@@ -42,7 +43,8 @@ export default function PaymentCheckoutModal({
     subscriptionType: plan,
   });
 
-  const planInfo = getPlan(plan);
+  const { plans } = usePlans();
+  const planInfo = getPlan(plan, plans);
   if (!planInfo) return null;
 
   const price = planInfo.price;

@@ -1,13 +1,3 @@
-export interface MockTenant {
-  id: string;
-  name: string;
-  industry: string;
-  ownerEmail: string;
-  createdAt: string;
-  billingStatus: "PAID" | "UNPAID";
-  isBlocked: boolean;
-}
-
 export interface MockPendingAuditor {
   id: number;
   firstName: string;
@@ -17,45 +7,6 @@ export interface MockPendingAuditor {
   submittedAt: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
 }
-
-export const MOCK_TENANTS: MockTenant[] = [
-  {
-    id: "org-001",
-    name: "InsightAI Rwanda Ltd",
-    industry: "Financial Technology",
-    ownerEmail: "ceo@insightai.rw",
-    createdAt: "2024-01-15",
-    billingStatus: "PAID",
-    isBlocked: false,
-  },
-  {
-    id: "org-002",
-    name: "Kigali Trade Co.",
-    industry: "Retail & Commerce",
-    ownerEmail: "owner@kigalitrade.rw",
-    createdAt: "2024-02-20",
-    billingStatus: "UNPAID",
-    isBlocked: false,
-  },
-  {
-    id: "org-003",
-    name: "East Africa Logistics",
-    industry: "Logistics & Transport",
-    ownerEmail: "cfo@ealogistics.rw",
-    createdAt: "2024-03-05",
-    billingStatus: "PAID",
-    isBlocked: false,
-  },
-  {
-    id: "org-004",
-    name: "Rwanda Health Partners",
-    industry: "Healthcare",
-    ownerEmail: "admin@rhp.rw",
-    createdAt: "2024-04-10",
-    billingStatus: "UNPAID",
-    isBlocked: true,
-  },
-];
 
 export const MOCK_PENDING_AUDITORS: MockPendingAuditor[] = [
   {
