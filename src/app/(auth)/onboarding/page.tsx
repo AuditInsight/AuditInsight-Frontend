@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, Check } from "lucide-react";
 import { isAxiosError } from "axios";
@@ -32,14 +32,22 @@ const STEPS: { id: Step; label: string }[] = [
 
 export default function OnboardingPage() {
   const router      = useRouter();
-  const { user, completeOnboarding } = useAuth();
+  const { user, status, completeOnboarding } = useAuth();
 
   const [step, setStep]         = useState<Step>("org-setup");
   const [orgData, setOrgData]   = useState<OrgData | null>(null);
   const [completing, setCompleting] = useState(false);
   const [error, setError]       = useState("");
 
+  // Without a valid session, every call this page makes (create organisation,
+  // fetch plans) fails server-side — redirect before the wizard ever renders.
+  useEffect(() => {
+    if (status === "unauthenticated") router.replace("/log-in");
+  }, [status, router]);
+
   const stepIndex = STEPS.findIndex((s) => s.id === step);
+
+  if (status === "loading" || status === "unauthenticated") return null;
 
   const handleOrgNext = (data: OrgData) => {
     setOrgData(data);
