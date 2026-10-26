@@ -1,23 +1,27 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { isAxiosError } from "axios";
 import { useAuth } from "@/context/AuthContext.production";
-import { uploadEvidence } from "@/utils/api";
+import { uploadEvidence, signEvidence } from "@/utils/api";
 import type { Evidence } from "@/types/evidence.types";
 import type { NGOTransaction, NGOEvidenceCategory } from "@/types/ngo";
 import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
 import { normalizeOrganisationId } from "@/utils/organisationId";
+import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "@/components/signature/SignaturePad";
+import { FileSignature } from "lucide-react";
 
 interface Props {
   open: boolean;
   transaction: NGOTransaction | null;
   onClose: () => void;
   onSubmit: (saved: Evidence) => void;
+  /** Pre-check "Sign this document now" when the modal opens. */
+  defaultSignNow?: boolean;
 }
 
-export default function UploadEvidenceModal({ open, transaction, onClose, onSubmit }: Props) {
+export default function UploadEvidenceModal({ open, transaction, onClose, onSubmit, defaultSignNow = false }: Props) {
   const { user } = useAuth();
   const [files,      setFiles]      = useState<File[]>([]);
   const [notes,      setNotes]      = useState("");
@@ -27,9 +31,18 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
   const [dragOver,   setDragOver]   = useState(false);
   const [category,   setCategory]   = useState<NGOEvidenceCategory | "">("");
   const [docType,    setDocType]    = useState("");
+  const [signNow,       setSignNow]       = useState(defaultSignNow);
+  const [signaturePad,  setSignaturePad]  = useState<SignaturePadValue>(EMPTY_SIGNATURE);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const docTypes = category ? NGO_EVIDENCE_CATEGORIES[category] : [];
+
+  useEffect(() => {
+    if (open) {
+      setSignNow(defaultSignNow);
+      setSignaturePad(EMPTY_SIGNATURE);
+    }
+  }, [open, defaultSignNow]);
 
   if (!open || !transaction) return null;
 
@@ -46,6 +59,7 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
   const reset = () => {
     setFiles([]); setNotes(""); setError(""); setSuccess(false); setDragOver(false);
     setCategory(""); setDocType("");
+    setSignNow(defaultSignNow); setSignaturePad(EMPTY_SIGNATURE);
   };
 
   const handleClose = () => {
@@ -58,6 +72,10 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
     if (!category)          { setError("Please select an evidence category."); return; }
     if (!docType)           { setError("Please select a document type."); return; }
     if (files.length === 0) { setError("Please attach at least one file."); return; }
+    if (signNow && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
+      setError("Draw or type your signature, or turn off “Sign this document now”.");
+      return;
+    }
     setError(""); setSubmitting(true);
     try {
       // Upload each file sequentially; call onSubmit with the last saved Evidence
@@ -88,6 +106,17 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
           uploadedBy:    String(data.uploadedBy),
           uploadedAt:    data.uploadedAt,
         };
+
+        if (signNow && (signaturePad.typedName.trim() || signaturePad.signatureImage)) {
+          try {
+            await signEvidence(data.id, {
+              typedName: signaturePad.typedName.trim() || undefined,
+              signatureImage: signaturePad.signatureImage ?? undefined,
+            });
+          } catch (signErr) {
+            console.error("Auto-sign after upload failed", signErr);
+          }
+        }
       }
       if (lastSaved) onSubmit(lastSaved);
       setSuccess(true);
@@ -242,6 +271,20 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
                   onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
+
+              {/* Sign now */}
+              <div style={{ marginTop: 14 }}>
+                <label style={s.signToggle}>
+                  <input type="checkbox" checked={signNow} onChange={(e) => setSignNow(e.target.checked)} />
+                  <FileSignature size={14} />
+                  Sign this document now
+                </label>
+                {signNow && (
+                  <div style={s.signBox}>
+                    <SignaturePad value={signaturePad} onChange={setSignaturePad} disabled={submitting} />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div style={s.footer}>
@@ -278,6 +321,8 @@ const s: Record<string, React.CSSProperties> = {
   removeBtn:    { width: 24, height: 24, borderRadius: 6, border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", flexShrink: 0 },
   label:        { display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 },
   textarea:     { width: "100%", padding: "10px 13px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 13.5, color: "#0f172a", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#f8fafc", resize: "vertical" },
+  signToggle:   { display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" },
+  signBox:      { marginTop: 10, padding: 12, borderRadius: 10, border: "1px solid #e2e8f0", background: "#f8fafc" },
   footer:       { padding: "14px 24px", borderTop: "1px solid #f1f5f9", display: "flex", gap: 10, position: "sticky", bottom: 0, background: "#fff" },
   cancelBtn:    { padding: "10px 20px", borderRadius: 9, border: "1.5px solid #e2e8f0", background: "#fff", color: "#374151", fontWeight: 600, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit" },
   submitBtn:    { flex: 1, padding: "10px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", fontWeight: 600, fontSize: 13.5, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },

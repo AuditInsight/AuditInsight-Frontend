@@ -4,11 +4,12 @@ import { useRef, useState, useEffect, type Dispatch, type SetStateAction } from 
 import { useAuth } from "@/context/AuthContext.production";
 import { Evidence } from "@/types/evidence.types";
 import { Transaction } from "@/types/transaction.types";
-import { uploadEvidence, updateEvidence } from "@/utils/api";
-import { X, Paperclip, AlertCircle, CheckCircle2, Upload } from "lucide-react";
+import { uploadEvidence, updateEvidence, signEvidence } from "@/utils/api";
+import { X, Paperclip, AlertCircle, CheckCircle2, Upload, FileSignature } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { useOrganisation } from "@/hooks/useOrganisation";
 import { getEvidenceFolders, getSubfolders } from "@/utils/evidenceFolderUtils";
+import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "@/components/signature/SignaturePad";
 
 interface Props {
   isOpen: boolean;
@@ -17,6 +18,8 @@ interface Props {
   transactions: Transaction[];
   mode?: "add" | "edit";
   evidence?: Evidence | null;
+  /** Pre-check "Sign this document now" when the modal opens (add mode only). */
+  defaultSignNow?: boolean;
 }
 
 const ALLOWED_TYPES: Record<string, string> = {
@@ -39,7 +42,7 @@ function validate(fields: {
   return e;
 }
 
-export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mode = "add", evidence = null }: Props) => {
+export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mode = "add", evidence = null, defaultSignNow = false }: Props) => {
   const isEdit = mode === "edit";
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +61,9 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
   const [errors, setErrors]             = useState<Record<string, string>>({});
   const [touched, setTouched]           = useState<Record<string, boolean>>({});
   const [saving, setSaving]             = useState(false);
+  const [signNow, setSignNow]           = useState(defaultSignNow);
+  const [signaturePad, setSignaturePad] = useState<SignaturePadValue>(EMPTY_SIGNATURE);
+  const [signError, setSignError]       = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -78,8 +84,11 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
         setTransactionId(""); setAmount(""); setCounterparty(""); setFile(null);
       });
     }
-    queueMicrotask(() => { setErrors({}); setTouched({}); setFileError(""); });
-  }, [isOpen, mode, evidence]);
+    queueMicrotask(() => {
+      setErrors({}); setTouched({}); setFileError("");
+      setSignNow(defaultSignNow); setSignaturePad(EMPTY_SIGNATURE); setSignError("");
+    });
+  }, [isOpen, mode, evidence, defaultSignNow]);
 
   if (!isOpen) return null;
 
@@ -142,8 +151,14 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
       return;
     }
 
+    if (!isEdit && signNow && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
+      setSignError("Draw or type your signature, or turn off “Sign this document now”.");
+      return;
+    }
+
     setSaving(true);
     setSubmitError("");
+    setSignError("");
 
     try {
       let saved: Evidence;
@@ -192,6 +207,17 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
           amount: Number(amount) || undefined,
           counterparty: counterparty || undefined,
         };
+
+        if (signNow && (signaturePad.typedName.trim() || signaturePad.signatureImage)) {
+          try {
+            await signEvidence(saved.id, {
+              typedName: signaturePad.typedName.trim() || undefined,
+              signatureImage: signaturePad.signatureImage ?? undefined,
+            });
+          } catch (signErr) {
+            console.error("Auto-sign after upload failed", signErr);
+          }
+        }
       }
 
       onSave(saved);
@@ -319,6 +345,27 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
             </div>
           )}
 
+          {/* Sign now */}
+          {!isEdit && (
+            <div>
+              <label style={s.signToggle}>
+                <input
+                  type="checkbox"
+                  checked={signNow}
+                  onChange={(e) => { setSignNow(e.target.checked); setSignError(""); }}
+                />
+                <FileSignature size={14} />
+                Sign this document now
+              </label>
+              {signNow && (
+                <div style={s.signBox}>
+                  <SignaturePad value={signaturePad} onChange={(v) => { setSignaturePad(v); setSignError(""); }} disabled={saving} />
+                  {signError && <p style={s.err}><AlertCircle size={11} />{signError}</p>}
+                </div>
+              )}
+            </div>
+          )}
+
           {isEdit && submitError && (
             <div style={s.errSummary}>
               <AlertCircle size={14} /> {submitError}
@@ -363,6 +410,8 @@ const s: Record<string, React.CSSProperties> = {
   autoValue: { fontSize: 12, color: "#0f172a", fontWeight: 600 },
   fileBtn: { display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px dashed #cbd5e1", background: "#f8fafc", cursor: "pointer", fontSize: 13, color: "#475569", fontFamily: "inherit", textAlign: "left" },
   fileChip: { display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: 12, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "5px 10px" },
+  signToggle: { display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer" },
+  signBox: { marginTop: 10, padding: 12, borderRadius: 10, border: "1px solid #e2e8f0", background: "#f8fafc" },
   footer: { padding: "14px 24px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", gap: 10, background: "#fafafa", flexShrink: 0 },
   cancelBtn: { padding: "10px 20px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 500, fontFamily: "inherit" },
   saveBtn: { display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#0f3d75,#1e3a8a)", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "inherit" },

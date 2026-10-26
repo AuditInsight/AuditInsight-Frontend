@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, ArrowLeftRight, FileCheck, ClipboardList,
   Settings, LogOut, Building2, UserCheck, Bell,
-  Menu, X,
+  Menu, X, FileSignature,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { usePermissions } from "@/security/access-control";
@@ -28,6 +28,7 @@ const STANDARD_NAV = [
   { label: "Dashboard",    icon: LayoutDashboard, path: "/dashboard"    },
   { label: "Transactions", icon: ArrowLeftRight,  path: "/transactions" },
   { label: "Evidence",     icon: FileCheck,       path: "/evidence"     },
+  { label: "Signature",    icon: FileSignature,   path: "/signature"    },
   { label: "Review Queue", icon: ClipboardList,   path: "/review-queue" },
   { label: "Settings",     icon: Settings,        path: "/settings"     },
 ];

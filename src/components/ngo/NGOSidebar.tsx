@@ -6,7 +6,7 @@ import {
   Shield, LayoutDashboard, CreditCard, FolderOpen,
   Handshake, ClipboardList, Users, ShieldCheck,
   Flag, Settings, LogOut, FileText, ChevronLeft,
-  ChevronRight, Lock,
+  ChevronRight, Lock, FileSignature,
 } from "lucide-react";
 import type { NGORole } from "@/types/ngo";
 
@@ -36,6 +36,7 @@ const NAV: Record<NGORole, NavGroup[]> = {
         { label: "Dashboard",             path: "/ngo-dashboard",               icon: <LayoutDashboard size={16} /> },
         { label: "Transactions",          path: "/ngo-dashboard/transactions",  icon: <CreditCard size={16} /> },
         { label: "Evidence Vault",        path: "/ngo-dashboard/evidence",      icon: <FolderOpen size={16} /> },
+        { label: "Signatures",            path: "/ngo-dashboard/signatures",    icon: <FileSignature size={16} /> },
       ],
     },
     {
@@ -60,6 +61,7 @@ const NAV: Record<NGORole, NavGroup[]> = {
         { label: "Dashboard",             path: "/ngo-dashboard",               icon: <LayoutDashboard size={16} /> },
         { label: "Transactions",          path: "/ngo-dashboard/transactions",  icon: <CreditCard size={16} /> },
         { label: "Evidence Vault",        path: "/ngo-dashboard/evidence",      icon: <FolderOpen size={16} /> },
+        { label: "Signatures",            path: "/ngo-dashboard/signatures",    icon: <FileSignature size={16} /> },
       ],
     },
     {
@@ -79,6 +81,7 @@ const NAV: Record<NGORole, NavGroup[]> = {
         { label: "Dashboard",             path: "/ngo-dashboard",               icon: <LayoutDashboard size={16} /> },
         { label: "Transactions",          path: "/ngo-dashboard/transactions",  icon: <CreditCard size={16} /> },
         { label: "Document Vault",        path: "/ngo-dashboard/evidence",      icon: <FileText size={16} /> },
+        { label: "Signatures",            path: "/ngo-dashboard/signatures",    icon: <FileSignature size={16} /> },
       ],
     },
     {
@@ -103,6 +106,7 @@ const NAV: Record<NGORole, NavGroup[]> = {
         { label: "My Projects",           path: "/ngo-dashboard",               icon: <ClipboardList size={16} /> },
         { label: "Transactions",          path: "/ngo-dashboard/transactions",  icon: <CreditCard size={16} /> },
         { label: "Evidence",              path: "/ngo-dashboard/evidence",      icon: <FolderOpen size={16} /> },
+        { label: "Signatures",            path: "/ngo-dashboard/signatures",    icon: <FileSignature size={16} /> },
         { label: "Compliance Reports",    path: "/ngo-dashboard/compliance",    icon: <Handshake size={16} /> },
       ],
     },
