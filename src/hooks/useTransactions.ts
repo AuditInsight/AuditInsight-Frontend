@@ -183,7 +183,6 @@ export function useTransactions() {
   };
 
   const saveEvidence = (saved: Evidence) => {
-    if (!saved.transactionId) return;
     const updated = evidences.some((e) => e.id === saved.id)
       ? evidences.map((e) => (e.id === saved.id ? saved : e))
       : [saved, ...evidences];

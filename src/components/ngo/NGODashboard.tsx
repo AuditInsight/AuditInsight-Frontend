@@ -438,7 +438,7 @@ function NGODashboardInner() {
         open={uploadTarget !== null} transaction={uploadTarget}
         onClose={() => setUploadTarget(null)}
         onSubmit={(saved) => {
-          handleUploadSubmit(saved.transactionId, 1);
+          handleUploadSubmit(saved.transactionId ?? uploadTarget?.id ?? "", 1);
         }}
       />
       <EditTransactionModal

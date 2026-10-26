@@ -62,7 +62,6 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
   const documents = useMemo(() => withTransactionInfo(rawDocuments, txInfo), [rawDocuments, txInfo]);
 
   const saveEvidence = (saved: Evidence) => {
-    if (!saved.transactionId) return;
     setDocuments((prev) => {
       const updated = prev.some((e) => e.id === saved.id)
         ? prev.map((e) => (e.id === saved.id ? saved : e))
