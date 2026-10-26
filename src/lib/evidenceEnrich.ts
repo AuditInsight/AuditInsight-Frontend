@@ -13,7 +13,7 @@ interface TransactionInfo {
 export function withTransactionInfo(evidence: Evidence[], transactions: TransactionInfo[]): Evidence[] {
   const byId = new Map(transactions.map((t) => [t.id, t]));
   return evidence.map((e) => {
-    const tx = byId.get(e.transactionId);
+    const tx = e.transactionId ? byId.get(e.transactionId) : undefined;
     if (!tx) return e;
     return {
       ...e,

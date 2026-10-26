@@ -1,9 +1,9 @@
-// ── Evidence — must always be linked to exactly one transaction ────
+// ── Evidence — usually linked to a transaction, but may stand alone ────
 export interface Evidence {
   id: string;
   organisationId?: string;
-  // Required — evidence MUST be linked to a transaction
-  transactionId: string;
+  // Optional — a standalone document (e.g. uploaded purely to be signed) has none
+  transactionId?: string | null;
   documentName: string;
   folder: string;
   subfolder: string;

@@ -142,7 +142,7 @@ export const deleteTransaction = (txnId: string) =>
 export interface EvidenceResponse {
   id: string;
   organisationId: string;
-  transactionId: string;
+  transactionId?: string | null;
   documentName: string;
   folder: string;
   subfolder: string;
@@ -173,7 +173,8 @@ export const uploadEvidence = (
   file: File,
   data: {
     organisationId: string;
-    transactionId: string;
+    // Omit to upload a standalone document not linked to any transaction
+    transactionId?: string;
     documentName: string;
     folder: string;
     subfolder: string;
@@ -183,7 +184,7 @@ export const uploadEvidence = (
   const formData = new FormData();
   formData.append("file", file);
   formData.append("organisationId", data.organisationId);
-  formData.append("transactionId", data.transactionId);
+  if (data.transactionId) formData.append("transactionId", data.transactionId);
   formData.append("documentName", data.documentName);
   formData.append("folder", data.folder);
   formData.append("subfolder", data.subfolder);
