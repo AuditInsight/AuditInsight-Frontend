@@ -7,6 +7,7 @@ import { uploadEvidence, signEvidence } from "@/utils/api";
 import { X, Paperclip, AlertCircle, CheckCircle2, Upload, FileSignature } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { normalizeOrganisationId } from "@/utils/organisationId";
+import { friendlyEvidenceUploadError } from "@/utils/evidenceUploadErrors";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./SignaturePad";
 
 // Any document uploaded here goes into a generic bucket — it isn't filed into the
@@ -36,7 +37,6 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
   const [notes, setNotes]             = useState("");
   const [file, setFile]               = useState<File | null>(null);
   const [fileError, setFileError]     = useState("");
-  const [nameError, setNameError]     = useState("");
   const [submitError, setSubmitError] = useState("");
   const [saving, setSaving]           = useState(false);
   const [signNow, setSignNow]         = useState(true);
@@ -46,7 +46,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
   useEffect(() => {
     if (!isOpen) return;
     setName(""); setNotes(""); setFile(null);
-    setFileError(""); setNameError(""); setSubmitError("");
+    setFileError(""); setSubmitError("");
     setSignNow(true); setSignaturePad(EMPTY_SIGNATURE); setSignError("");
   }, [isOpen]);
 
@@ -71,8 +71,10 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
 
   const handleSave = async () => {
     const trimmedName = name.trim();
-    if (!trimmedName) { setNameError("Document name is required."); return; }
-    if (!file) { setFileError("Please select a file to upload."); return; }
+    if (!trimmedName || !file) {
+      setSubmitError("Please enter a document name and attach a file before uploading.");
+      return;
+    }
     if (signNow && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
       setSignError("Draw or type your signature, or turn off “Sign this document now”.");
       return;
@@ -86,7 +88,6 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
 
     setSaving(true);
     setSubmitError("");
-    setNameError("");
     setSignError("");
 
     try {
@@ -126,8 +127,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
       onSave(saved);
       onClose();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Upload failed. Please try again.";
-      setSubmitError(message);
+      setSubmitError(friendlyEvidenceUploadError(err));
       console.error("Standalone document upload failed", err);
     } finally {
       setSaving(false);
@@ -151,10 +151,9 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
             <input
               placeholder="e.g. Board Resolution, NDA, Policy Document"
               value={name}
-              onChange={(e) => { setName(e.target.value); setNameError(""); }}
-              style={inputSt(Boolean(nameError))}
+              onChange={(e) => { setName(e.target.value); setSubmitError(""); }}
+              style={inputSt(false)}
             />
-            {nameError && <p style={s.err}><AlertCircle size={11} />{nameError}</p>}
           </div>
 
           <div>
