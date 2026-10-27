@@ -6,9 +6,12 @@ import { theme } from "@/styles/theme";
 import { useTransactions } from "@/hooks/useTransactions";
 import { UploadDocumentModal } from "@/components/signature/UploadDocumentModal";
 import { SignDocumentModal } from "@/components/signature/SignDocumentModal";
+import { EvidencePagination } from "@/components/mse/evidence/EvidencePagination";
 import { Evidence } from "@/types/evidence.types";
 
 type LinkFilter = "all" | "linked" | "standalone";
+
+const PAGE_SIZE = 10;
 
 export default function SignaturePage() {
   const { evidences, saveEvidence, loading } = useTransactions();
@@ -17,6 +20,7 @@ export default function SignaturePage() {
   const [search, setSearch]         = useState("");
   const [folderFilter, setFolderFilter] = useState("All");
   const [linkFilter, setLinkFilter] = useState<LinkFilter>("all");
+  const [page, setPage]             = useState(1);
 
   const folderOptions = useMemo(() => {
     const values = Array.from(new Set(evidences.map((e) => e.folder).filter(Boolean))) as string[];
@@ -37,6 +41,9 @@ export default function SignaturePage() {
       .sort((a, b) => (b.uploadedAt ?? "").localeCompare(a.uploadedAt ?? ""));
   }, [evidences, search, folderFilter, linkFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div style={s.page}>
       <div style={s.header}>
@@ -55,16 +62,16 @@ export default function SignaturePage() {
           <input
             placeholder="Search by document name…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             style={s.searchInput}
           />
         </div>
-        <select value={linkFilter} onChange={(e) => setLinkFilter(e.target.value as LinkFilter)} style={s.select}>
+        <select value={linkFilter} onChange={(e) => { setLinkFilter(e.target.value as LinkFilter); setPage(1); }} style={s.select}>
           <option value="all">All documents</option>
           <option value="linked">Linked to a transaction</option>
           <option value="standalone">Standalone documents</option>
         </select>
-        <select value={folderFilter} onChange={(e) => setFolderFilter(e.target.value)} style={s.select}>
+        <select value={folderFilter} onChange={(e) => { setFolderFilter(e.target.value); setPage(1); }} style={s.select}>
           {folderOptions.map((f) => <option key={f} value={f}>{f === "All" ? "All folders" : f}</option>)}
         </select>
         <span style={s.resultCount}>{filtered.length} of {evidences.length} documents</span>
@@ -89,7 +96,7 @@ export default function SignaturePage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((e) => (
+              {paged.map((e) => (
                 <tr key={e.id} style={s.tr}>
                   <td style={s.td}>{e.documentName}</td>
                   <td style={s.tdMuted}>{e.folder} / {e.subfolder}</td>
@@ -113,10 +120,19 @@ export default function SignaturePage() {
         )}
       </div>
 
+      {filtered.length > 0 && (
+        <div style={s.paginationBar}>
+          <span style={s.paginationLabel}>
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} documents
+          </span>
+          <EvidencePagination page={page} setPage={setPage} totalPages={totalPages} />
+        </div>
+      )}
+
       <UploadDocumentModal
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        onSave={(saved) => { saveEvidence(saved); setUploadOpen(false); }}
+        onSave={(saved) => { saveEvidence(saved); setUploadOpen(false); setPage(1); }}
       />
       <SignDocumentModal isOpen={!!signing} onClose={() => setSigning(null)} evidence={signing} />
     </div>
@@ -135,6 +151,8 @@ const s: Record<string, React.CSSProperties> = {
   select: { padding: "9px 12px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", fontSize: 13, color: "#374151", fontFamily: "inherit", cursor: "pointer" },
   resultCount: { fontSize: 12.5, color: "#94a3b8", marginLeft: "auto", whiteSpace: "nowrap" as const },
   card: { background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden" },
+  paginationBar: { display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 12 },
+  paginationLabel: { fontSize: 12.5, color: "#94a3b8", whiteSpace: "nowrap" as const },
   empty: { padding: "48px 16px", textAlign: "center" as const, color: "#94a3b8", fontSize: 13.5 },
   table: { width: "100%", borderCollapse: "collapse" as const },
   th: { textAlign: "left" as const, fontSize: 11.5, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.05em", padding: "12px 18px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc" },
