@@ -7,6 +7,7 @@ import { Transaction } from "@/types/transaction.types";
 import { uploadEvidence, updateEvidence, signEvidence } from "@/utils/api";
 import { X, Paperclip, AlertCircle, CheckCircle2, Upload, FileSignature } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
+import { friendlyEvidenceUploadError } from "@/utils/evidenceUploadErrors";
 import { useOrganisation } from "@/hooks/useOrganisation";
 import { getEvidenceFolders, getSubfolders } from "@/utils/evidenceFolderUtils";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "@/components/signature/SignaturePad";
@@ -223,8 +224,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
       onSave(saved);
       onClose();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Upload failed. Please try again.";
-      setSubmitError(message);
+      setSubmitError(friendlyEvidenceUploadError(err));
       console.error("Evidence upload failed", err);
     } finally {
       setSaving(false);
@@ -263,7 +263,6 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
               onChange={(e) => handleField("name", e.target.value, setName)}
               style={inputSt("name")}
             />
-            {touched.name && errors.name && <p style={s.err}><AlertCircle size={11} />{errors.name}</p>}
           </div>
 
           {/* Transaction link */}
@@ -277,7 +276,6 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
                 </option>
               ))}
             </select>
-            {touched.transactionId && errors.transactionId && <p style={s.err}><AlertCircle size={11} />{errors.transactionId}</p>}
           </div>
 
           {/* Auto-filled info */}
@@ -296,7 +294,6 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
                 <option value="">— Select folder —</option>
                 {folderOptions.map((entry) => <option key={entry.folder} value={entry.folder}>{entry.folder}</option>)}
               </select>
-              {touched.category && errors.category && <p style={s.err}><AlertCircle size={11} />{errors.category}</p>}
             </div>
             <div>
               <label style={s.label}>Subfolder <span style={s.req}>*</span></label>
@@ -304,7 +301,6 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
                 <option value="">— Select subfolder —</option>
                 {subfolderOptions.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
-              {touched.subCategory && errors.subCategory && <p style={s.err}><AlertCircle size={11} />{errors.subCategory}</p>}
             </div>
           </div>
 
@@ -333,8 +329,6 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
                 {file ? file.name : "Choose file (PDF, PNG, JPG, XLSX, DOCX — max 10 MB)"}
               </button>
               {fileError && <p style={s.err}><AlertCircle size={11} />{fileError}</p>}
-              {submitError && <p style={s.err}><AlertCircle size={11} />{submitError}</p>}
-              {touched.file && errors.file && !fileError && <p style={s.err}><AlertCircle size={11} />{errors.file}</p>}
               {file && !fileError && (
                 <div style={s.fileChip}>
                   <CheckCircle2 size={13} color="#16a34a" />
@@ -366,15 +360,15 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
             </div>
           )}
 
-          {isEdit && submitError && (
+          {submitError && (
             <div style={s.errSummary}>
               <AlertCircle size={14} /> {submitError}
             </div>
           )}
 
-          {Object.keys(errors).length > 0 && Object.values(touched).some(Boolean) && (
+          {!submitError && Object.keys(errors).length > 0 && Object.values(touched).some(Boolean) && (
             <div style={s.errSummary}>
-              <AlertCircle size={14} /> Fix {Object.keys(errors).length} error(s) before saving.
+              <AlertCircle size={14} /> Please fill in the highlighted fields above to continue.
             </div>
           )}
         </div>
