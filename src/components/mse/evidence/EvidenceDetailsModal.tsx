@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
-import { useState } from "react";
-import { Download, Eye, X, FileText, ExternalLink, PenLine } from "lucide-react";
-import { downloadSignedEvidence } from "@/utils/api";
+import { useEffect, useState } from "react";
+import { Download, Eye, X, FileText, ExternalLink } from "lucide-react";
+import { downloadSignedEvidence, getSignedEvidenceFile } from "@/utils/api";
 import { EvidenceSignaturesSection } from "./EvidenceSignaturesSection";
 
 interface Props {
@@ -29,8 +29,28 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
   const [signedBusy, setSignedBusy] = useState(false);
   const [signedError, setSignedError] = useState<string | null>(null);
   const [signFirst, setSignFirst] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   if (!isOpen || !evidence) return null;
+
+  const previewSigned = async () => {
+    setSignedBusy(true);
+    setSignedError(null);
+    try {
+      const { blob } = await getSignedEvidenceFile(evidence.id, evidence.documentName);
+      setPreviewUrl(URL.createObjectURL(blob));
+    } catch (err) {
+      setSignedError(err instanceof Error ? err.message : "Could not load the signed document.");
+    } finally {
+      setSignedBusy(false);
+    }
+  };
 
   const downloadSigned = async () => {
     setSignedBusy(true);
@@ -116,39 +136,44 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
         <div style={footer}>
           <button
             type="button"
-            onClick={() => evidence.fileUpload && window.open(evidence.fileUpload, "_blank")}
-            style={outlineBtn}
+            onClick={previewSigned}
+            disabled={signedBusy}
+            style={{ ...outlineBtn, opacity: signedBusy ? 0.6 : 1 }}
           >
-            <Eye size={13} /> Preview
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!evidence.fileUpload) return;
-              const a = document.createElement("a");
-              a.href = evidence.fileUpload;
-              a.download = evidence.documentName;
-              a.target = "_blank";
-              a.click();
-            }}
-            style={downloadBtn}
-          >
-            <Download size={13} /> Download
+            <Eye size={13} /> {signedBusy ? "Preparing…" : "Preview signed"}
           </button>
           <button
             type="button"
             onClick={downloadSigned}
             disabled={signedBusy}
             style={{ ...downloadBtn, opacity: signedBusy ? 0.6 : 1 }}
-            title="PDF with a signature page listing everyone who signed"
           >
-            <PenLine size={13} /> {signedBusy ? "Preparing…" : "Download with signatures"}
+            <Download size={13} /> Download signed
           </button>
           <button type="button" onClick={onClose} style={closeButton}>
             Close
           </button>
         </div>
       </div>
+      {previewUrl && (
+        <div
+          style={previewOverlay}
+          onClick={(event) => {
+            event.stopPropagation();
+            setPreviewUrl(null);
+          }}
+        >
+          <div style={previewModal} onClick={(event) => event.stopPropagation()}>
+            <div style={previewHeader}>
+              <strong>Signed document preview</strong>
+              <button type="button" onClick={() => setPreviewUrl(null)} style={closeBtn} aria-label="Close preview">
+                <X size={16} />
+              </button>
+            </div>
+            <iframe title="Signed evidence document" src={previewUrl} style={previewFrame} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -216,6 +241,43 @@ const closeBtn: React.CSSProperties = {
 const divider: React.CSSProperties = {
   height: 1,
   background: theme.colors.border,
+};
+
+const previewOverlay: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 1000,
+  background: "rgba(15,23,42,0.65)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 20,
+};
+
+const previewModal: React.CSSProperties = {
+  width: "min(1100px, 96vw)",
+  height: "min(850px, 92vh)",
+  background: "#fff",
+  borderRadius: 12,
+  overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const previewHeader: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "10px 14px",
+  borderBottom: `1px solid ${theme.colors.border}`,
+  color: theme.colors.textPrimary,
+  fontSize: 13,
+};
+
+const previewFrame: React.CSSProperties = {
+  flex: 1,
+  width: "100%",
+  border: 0,
 };
 
 const body: React.CSSProperties = {

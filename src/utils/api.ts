@@ -253,11 +253,11 @@ export const requestEvidenceSignatures = (
   data: { userIds?: number[]; emails?: string[]; message?: string }
 ) => apiClient.post<SignatureRequestResponse[]>(`/evidence/${evidenceId}/signature-requests`, data);
 
-/**
- * Downloads the document as a PDF with a signature page (signature, name, email, time of each signer)
- * and saves it in the browser. Throws an Error carrying the server's message (e.g. nobody has signed yet).
- */
-export const downloadSignedEvidence = async (evidenceId: string, fallbackName: string): Promise<void> => {
+/** Fetches the signed PDF, including the server-provided filename. */
+export const getSignedEvidenceFile = async (
+  evidenceId: string,
+  fallbackName: string
+): Promise<{ blob: Blob; fileName: string }> => {
   try {
     const res = await apiClient.get<Blob>(`/evidence/${evidenceId}/download-signed`, {
       responseType: "blob",
@@ -267,18 +267,11 @@ export const downloadSignedEvidence = async (evidenceId: string, fallbackName: s
     const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
     const fileName = match ? decodeURIComponent(match[1]) : `${fallbackName.replace(/\.[^.]+$/, "")}-signed.pdf`;
 
-    const url = URL.createObjectURL(res.data);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    return { blob: res.data, fileName };
   } catch (err) {
     // With responseType "blob" the error body is a Blob too — read it to surface the server's message.
     const data = (err as { response?: { data?: unknown } })?.response?.data;
-    let message = "Could not download the signed document.";
+    let message = "Could not load the signed document.";
     if (data instanceof Blob) {
       try {
         const body = JSON.parse(await data.text()) as { error?: string; message?: string };
@@ -289,6 +282,22 @@ export const downloadSignedEvidence = async (evidenceId: string, fallbackName: s
     }
     throw new Error(message);
   }
+};
+
+/**
+ * Downloads the document as a PDF with a signature page (signature, name, email, time of each signer)
+ * and saves it in the browser. Throws an Error carrying the server's message (e.g. nobody has signed yet).
+ */
+export const downloadSignedEvidence = async (evidenceId: string, fallbackName: string): Promise<void> => {
+  const { blob, fileName } = await getSignedEvidenceFile(evidenceId, fallbackName);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 };
 
 export const getPendingSignatureRequests = () =>
