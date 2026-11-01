@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext.production";
 import Header from "@/components/layout/header/Header";
 import AppFooter from "@/components/layout/AppFooter";
 import { theme } from "@/styles/theme";
+import SubscriptionAccessGate from "@/components/billing/SubscriptionAccessGate";
 
 export default function MSELayout({ children }: { children: React.ReactNode }) {
   const { user, status } = useAuth();
@@ -55,11 +56,10 @@ export default function MSELayout({ children }: { children: React.ReactNode }) {
           boxSizing: "border-box",
         }}
       >
-        {children}
+        <SubscriptionAccessGate>{children}</SubscriptionAccessGate>
       </main>
       <AppFooter />
     </div>
   );
 }
-
 
