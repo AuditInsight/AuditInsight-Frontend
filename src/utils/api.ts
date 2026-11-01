@@ -482,6 +482,10 @@ export interface SubscriptionResponse {
   endDate: string;
 }
 
+export interface PlatformAccessResponse {
+  freeAccessEnabled: boolean;
+}
+
 /* =========================
    BILLING & PAYMENT API
 ========================= */
@@ -501,6 +505,9 @@ export const startCardCheckout = (organisationId: string, data: StartCardCheckou
 // Get active subscription for organisation
 export const getActiveSubscription = (organisationId: string) =>
   apiClient.get<SubscriptionResponse>(`/subscriptions/${organisationId}/active`);
+
+export const getPlatformAccess = () =>
+  apiClient.get<PlatformAccessResponse>("/platform/access");
 
 /* =========================
    PLAN CATALOG TYPES

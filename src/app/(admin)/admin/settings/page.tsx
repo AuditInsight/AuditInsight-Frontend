@@ -9,6 +9,7 @@ import {
   Users, Database, Mail, ChevronRight, Check, AlertCircle,
 } from "lucide-react";
 import PlanPricesEditor from "@/components/admin/PlanPricesEditor";
+import PlatformFreeAccessCard from "@/components/admin/PlatformFreeAccessCard";
 import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
 import { getAdminAuditLog, AdminAuditLogResponse, PageResult } from "@/api/admin";
 
@@ -256,6 +257,7 @@ export default function AdminSettingsPage() {
             <Card>
               <SectionTitle>Subscription Plan Pricing</SectionTitle>
               <p style={s.sectionDesc}>Edit the price and duration of each fixed subscription period. Changes apply to new checkouts only — existing active subscriptions keep their original price until renewal.</p>
+              <PlatformFreeAccessCard />
               <PlanPricesEditor />
             </Card>
           )}
@@ -365,5 +367,4 @@ const s: Record<string, React.CSSProperties> = {
   content:     { display: "flex", flexDirection: "column", gap: 20 },
   sectionDesc: { margin: "4px 0 18px", fontSize: 13.5, color: "#64748b" },
 };
-
 
