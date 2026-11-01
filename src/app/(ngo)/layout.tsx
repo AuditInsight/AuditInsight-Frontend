@@ -19,6 +19,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext.production";
 import { RBACProvider } from "@/context/RBACContext";
+import SubscriptionAccessGate from "@/components/billing/SubscriptionAccessGate";
 
 export default function NGOLayout({ children }: { children: React.ReactNode }) {
   const { user, status } = useAuth();
@@ -35,9 +36,8 @@ export default function NGOLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <RBACProvider>
-      {children}
+      <SubscriptionAccessGate>{children}</SubscriptionAccessGate>
     </RBACProvider>
   );
 }
-
 
