@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext.production";
 import { usePlans } from "@/hooks/usePlans";
 import { formatRwf } from "@/types/billing";
 import type { Subscription, SubscriptionType } from "@/types/billing";
-import { getActiveSubscription } from "@/utils/api";
+import { getActiveSubscription, getPlatformAccess } from "@/utils/api";
 import PaymentCheckoutModal from "@/components/ngo/settings/billing/PaymentCheckoutModal";
 
 type AccessState = "loading" | "active" | "unpaid" | "error";
@@ -35,6 +35,11 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
   useEffect(() => {
     let current = true;
     const organisationId = user?.organisationId;
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        setRetryCount((count) => count + 1);
+      }
+    };
 
     if (!organisationId) {
       Promise.resolve().then(() => {
@@ -45,9 +50,22 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
       };
     }
 
-    getActiveSubscription(organisationId)
-      .then(({ data }) => {
+    window.addEventListener("focus", refreshWhenVisible);
+    const refreshInterval = window.setInterval(refreshWhenVisible, 60_000);
+
+    getPlatformAccess()
+      .then(({ data: access }) => {
         if (!current) return;
+        if (access.freeAccessEnabled) {
+          setSubscription(null);
+          setAccessState("active");
+          return null;
+        }
+        return getActiveSubscription(organisationId);
+      })
+      .then((response) => {
+        if (!current || !response) return;
+        const { data } = response;
         const currentSubscription: Subscription = {
           ...data,
           subscriptionType: data.subscriptionType ?? null,
@@ -67,6 +85,8 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
 
     return () => {
       current = false;
+      window.removeEventListener("focus", refreshWhenVisible);
+      window.clearInterval(refreshInterval);
     };
   }, [retryCount, user?.organisationId]);
 

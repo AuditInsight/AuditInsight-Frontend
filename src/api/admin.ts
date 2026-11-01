@@ -121,6 +121,13 @@ export interface AdminUpdatePlanPriceRequest {
   durationDays: number;
 }
 
+export interface AdminFreeAccessResponse {
+  enabled: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  updatedAt: string | null;
+}
+
 export interface AdminAuditLogResponse {
   id: string;
   adminUsername: string;
@@ -177,6 +184,15 @@ export const updateAdminPlanPrice = (
   subscriptionType: AdminSubscriptionType,
   data: AdminUpdatePlanPriceRequest
 ) => apiClient.put<AdminPlanPriceResponse>(`/admin/plans/${subscriptionType}`, data);
+
+export const getAdminFreeAccess = () =>
+  apiClient.get<AdminFreeAccessResponse>("/admin/free-access");
+
+export const startAdminFreeAccess = (durationDays: number) =>
+  apiClient.post<AdminFreeAccessResponse>("/admin/free-access/start", { durationDays });
+
+export const endAdminFreeAccess = () =>
+  apiClient.post<AdminFreeAccessResponse>("/admin/free-access/end");
 
 /* =========================
    ADMIN API — AUDIT LOG
