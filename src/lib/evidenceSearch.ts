@@ -19,7 +19,6 @@ export function evidenceMatchesSearch(
     evidence.uploadedAt,
     evidence.transactionId,
     evidence.amount,
-    evidence.fileUpload,
   ];
 
   return searchable.some((value) =>
