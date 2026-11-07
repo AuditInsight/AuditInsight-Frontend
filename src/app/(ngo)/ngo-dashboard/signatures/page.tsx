@@ -20,6 +20,8 @@ function SignatureContent() {
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [signing, setSigning]       = useState<Evidence | null>(null);
+  // True when the document was just uploaded with "Sign now": open it straight in the signing view.
+  const [placeOnOpen, setPlaceOnOpen] = useState(false);
   const [search, setSearch]         = useState("");
   const [folderFilter, setFolderFilter] = useState("All");
   const [linkFilter, setLinkFilter] = useState<LinkFilter>("all");
@@ -112,7 +114,7 @@ function SignatureContent() {
                   </td>
                   <td style={s.tdMuted}>{e.uploadedAt ? new Date(e.uploadedAt).toLocaleDateString() : "—"}</td>
                   <td style={{ ...s.td, textAlign: "right" as const }}>
-                    <button style={s.signLink} onClick={() => setSigning(e)}>
+                    <button style={s.signLink} onClick={() => { setPlaceOnOpen(false); setSigning(e); }}>
                       <FileSignature size={13} /> Sign / View
                     </button>
                   </td>
@@ -136,8 +138,15 @@ function SignatureContent() {
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}
         onSave={(saved) => { saveEvidence(saved); setUploadOpen(false); setPage(1); }}
+        onPlaceSignature={(saved) => { setPlaceOnOpen(true); setSigning(saved); }}
       />
-      <SignDocumentModal isOpen={!!signing} onClose={() => setSigning(null)} evidence={signing} />
+      <SignDocumentModal
+        key={signing?.id ?? "none"}
+        isOpen={!!signing}
+        onClose={() => { setSigning(null); setPlaceOnOpen(false); }}
+        evidence={signing}
+        startPlacing={placeOnOpen}
+      />
     </div>
   );
 }

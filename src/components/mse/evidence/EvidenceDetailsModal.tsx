@@ -109,6 +109,7 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
               evidenceId={evidence.id}
               onPendingRequestChange={setSignFirst}
               onSignatureCountChange={reportSignatureCount}
+              evidenceDocument={{ documentName: evidence.documentName, fileType: evidence.fileType }}
             />
           </div>
 

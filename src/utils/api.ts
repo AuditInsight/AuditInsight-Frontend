@@ -245,10 +245,61 @@ export interface EvidenceSignaturesResponse {
 export const getEvidenceSignatures = (evidenceId: string) =>
   apiClient.get<EvidenceSignaturesResponse>(`/evidence/${evidenceId}/signatures`);
 
+/**
+ * Where a signature goes on the document: a box on one page (0-based), as fractions (0..1) of the page as
+ * displayed, measured from its top-left corner — so it is the same at any zoom level or screen size.
+ */
+export interface SignaturePlacement {
+  pageIndex: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export const signEvidence = (
   evidenceId: string,
-  data: { fullName?: string; title?: string; typedName?: string; signatureImage?: string }
-) => apiClient.post<SignatureResponse>(`/evidence/${evidenceId}/signatures`, data);
+  data: {
+    fullName?: string;
+    title?: string;
+    typedName?: string;
+    signatureImage?: string;
+    /** Omit to add the signature to the "Signatures" block instead of a chosen position. */
+    placements?: SignaturePlacement[];
+    /** SHA-256 of the signing-base document the signature was placed on. */
+    baseSha256?: string;
+  }
+) => apiClient.post<SignatureResponse>(`/evidence/${evidenceId}/signatures`, data, { timeout: 30_000 });
+
+/** The exact PDF to place a signature on (current signed version, or the original), with its identity. */
+export const getSigningBase = async (
+  evidenceId: string
+): Promise<{ data: ArrayBuffer; version: number; sha256: string | null }> => {
+  try {
+    const res = await apiClient.get<ArrayBuffer>(`/evidence/${evidenceId}/signing-base`, {
+      responseType: "arraybuffer",
+      timeout: 60_000,
+    });
+    return {
+      data: res.data,
+      version: Number(res.headers["x-document-version"] ?? 0) || 0,
+      sha256: (res.headers["x-document-sha256"] as string | undefined) || null,
+    };
+  } catch (err) {
+    // With responseType "arraybuffer" the error body is bytes too — decode it to surface the server's message.
+    const data = (err as { response?: { data?: unknown } })?.response?.data;
+    let message = "Could not open the document for signing.";
+    if (data instanceof ArrayBuffer) {
+      try {
+        const body = JSON.parse(new TextDecoder().decode(data)) as { error?: string; message?: string };
+        message = body.error ?? body.message ?? message;
+      } catch {
+        // body was not JSON — keep the generic message
+      }
+    }
+    throw new Error(message);
+  }
+};
 
 export const requestEvidenceSignatures = (
   evidenceId: string,

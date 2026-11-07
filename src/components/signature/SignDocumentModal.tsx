@@ -12,22 +12,31 @@ import {
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./SignaturePad";
 import { useEvidenceDocumentAccess, isStampable, signErrorMessage, CERTIFICATE_NOTE } from "./documentAccess";
 import { SignedDocumentPreviewModal } from "./SignedDocumentPreviewModal";
+import { SignaturePlacementModal } from "./SignaturePlacementModal";
+import { useAuth } from "@/context/AuthContext.production";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   evidence: Evidence | null;
+  /**
+   * Open the document straight away to place the signature (e.g. right after "Upload & Sign"). Read when the
+   * modal mounts, so give it a `key` per document.
+   */
+  startPlacing?: boolean;
 }
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
+export function SignDocumentModal({ isOpen, onClose, evidence, startPlacing = false }: Props) {
+  const { user } = useAuth();
   const [data, setData] = useState<EvidenceSignaturesResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [signing, setSigning] = useState(false);
   const [pad, setPad] = useState<SignaturePadValue>(EMPTY_SIGNATURE);
+  const [placing, setPlacing] = useState(startPlacing);
   const docs = useEvidenceDocumentAccess();
 
   const load = useCallback(() => {
@@ -76,6 +85,13 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
     } finally {
       setSigning(false);
     }
+  };
+
+  // After placing a signature, show the stored signed version straight away.
+  const afterPlaced = () => {
+    setPlacing(false);
+    load();
+    docs.previewDocument({ ...evidence, signatureCount: signatureCount + 1 });
   };
 
   const downloading = docs.busyId === evidence.id;
@@ -140,7 +156,19 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
             )}
           </div>
 
-          {data && !data.signedByMe && (
+          {data && !data.signedByMe && !certificate && (
+            <div style={s.placeCard}>
+              <p style={s.sectionLabel}>Add your signature</p>
+              <p style={s.placeText}>
+                Open the document, draw or type your signature, and put it exactly where it belongs on any page.
+                You can move and resize it and preview the result before you confirm.
+              </p>
+              <button type="button" style={s.signBtn} onClick={() => setPlacing(true)}>
+                <FileSignature size={14} /> Open document to sign
+              </button>
+            </div>
+          )}
+          {data && !data.signedByMe && certificate && (
             <div>
               <p style={s.sectionLabel}>Add your signature</p>
               <SignaturePad value={pad} onChange={setPad} disabled={signing} />
@@ -157,13 +185,21 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
           <button style={s.downloadBtn} onClick={() => docs.downloadDocument(liveDoc)} disabled={downloading || signatureCount === 0}>
             <Download size={14} /> {downloading ? "Preparing…" : `Download ${signedName}`}
           </button>
-          {data && !data.signedByMe && (
+          {data && !data.signedByMe && certificate && (
             <button style={{ ...s.signBtn, opacity: signing ? 0.7 : 1 }} onClick={handleSign} disabled={signing}>
               <FileSignature size={14} /> {signing ? "Signing…" : "Sign Document"}
             </button>
           )}
         </div>
       </div>
+      {placing && !certificate && (
+        <SignaturePlacementModal
+          evidence={evidence}
+          defaultFullName={user?.fullName ?? ""}
+          onClose={() => setPlacing(false)}
+          onSigned={afterPlaced}
+        />
+      )}
       <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} subtitle={docs.preview?.subtitle} onClose={docs.closePreview} />
     </div>
   );
@@ -171,6 +207,8 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
 
 const s: Record<string, React.CSSProperties> = {
   linkRow: { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" },
+  placeCard: { padding: "12px 14px", borderRadius: 12, border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 },
+  placeText: { margin: 0, fontSize: 12.5, color: "#475569", lineHeight: 1.5 },
   versionLine: { margin: "-8px 0 0", fontSize: 11.5, color: "#64748b", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" },
   previewBtn: { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8, border: "1px solid #c7d2fe", background: "#eef2ff", color: "#1e3a8a", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit" },
   infoBanner: { display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, fontSize: 12.5, color: "#1e3a8a", lineHeight: 1.45 },
