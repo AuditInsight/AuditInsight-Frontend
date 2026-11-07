@@ -7,7 +7,7 @@ export interface Evidence {
   documentName: string;
   folder: string;
   subfolder: string;
-  fileUpload: string;         // URL (Cloudinary or mock)
+  fileUpload: string;         // API path that serves the original (never a public storage link); "" when no file
   fileType: string;           // pdf | xlsx | png | jpg
   uploadedBy?: string | number;
   uploadedAt?: string;
