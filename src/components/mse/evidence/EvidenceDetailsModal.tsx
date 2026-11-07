@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import { Evidence } from "@/types/evidence.types";
 import { theme } from "@/styles/theme";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
-import { useEffect, useState } from "react";
-import { Download, Eye, X, FileText, ExternalLink } from "lucide-react";
-import { downloadSignedEvidence, getSignedEvidenceFile } from "@/utils/api";
+import { useCallback, useState } from "react";
+import { Download, Eye, X, FileText, ExternalLink, Info } from "lucide-react";
 import { EvidenceSignaturesSection } from "./EvidenceSignaturesSection";
+import { useEvidenceDocumentAccess, isStampable, CERTIFICATE_NOTE } from "@/components/signature/documentAccess";
+import { SignedDocumentPreviewModal } from "@/components/signature/SignedDocumentPreviewModal";
 
 interface Props {
   isOpen: boolean;
@@ -26,43 +27,25 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
   const router = useRouter();
-  const [signedBusy, setSignedBusy] = useState(false);
-  const [signedError, setSignedError] = useState<string | null>(null);
   const [signFirst, setSignFirst] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
+  // Live count from the signatures section below, so signing here switches Preview/Download to the signed version.
+  // Keyed by evidence id so a count reported for one document never leaks onto the next one opened.
+  const [liveSignatures, setLiveSignatures] = useState<{ id: string; count: number } | null>(null);
+  const docs = useEvidenceDocumentAccess();
+  const evidenceId = evidence?.id;
+  const reportSignatureCount = useCallback(
+    (count: number) => { if (evidenceId) setLiveSignatures({ id: evidenceId, count }); },
+    [evidenceId]
+  );
 
   if (!isOpen || !evidence) return null;
 
-  const previewSigned = async () => {
-    setSignedBusy(true);
-    setSignedError(null);
-    try {
-      const { blob } = await getSignedEvidenceFile(evidence.id, evidence.documentName);
-      setPreviewUrl(URL.createObjectURL(blob));
-    } catch (err) {
-      setSignedError(err instanceof Error ? err.message : "Could not load the signed document.");
-    } finally {
-      setSignedBusy(false);
-    }
-  };
-
-  const downloadSigned = async () => {
-    setSignedBusy(true);
-    setSignedError(null);
-    try {
-      await downloadSignedEvidence(evidence.id, evidence.documentName);
-    } catch (err) {
-      setSignedError(err instanceof Error ? err.message : "Could not download the signed document.");
-    } finally {
-      setSignedBusy(false);
-    }
-  };
+  const liveSignatureCount = liveSignatures?.id === evidence.id ? liveSignatures.count : null;
+  const signatureCount = liveSignatureCount ?? evidence.signatureCount ?? 0;
+  const liveDoc = { ...evidence, signatureCount };
+  const signed = signatureCount > 0;
+  const certificate = !isStampable(evidence.fileType);
+  const signedBusy = docs.busyId === evidence.id;
 
   const uploadDate = evidence.uploadedAt ? evidence.uploadedAt.split("T")[0] : "—";
 
@@ -122,61 +105,73 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
 
           {/* Optional e-signatures — moved to the top when someone asked the user to sign */}
           <div style={{ order: signFirst ? -1 : 0 }}>
-            <EvidenceSignaturesSection evidenceId={evidence.id} onPendingRequestChange={setSignFirst} />
+            <EvidenceSignaturesSection
+              evidenceId={evidence.id}
+              onPendingRequestChange={setSignFirst}
+              onSignatureCountChange={reportSignatureCount}
+            />
           </div>
+
+          {signed && certificate && (
+            <div style={infoBanner}>
+              <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>
+                {CERTIFICATE_NOTE}{" "}
+                <a href={evidence.fileUpload} target="_blank" rel="noopener noreferrer" style={{ color: "#1e3a8a" }}>
+                  View original file
+                </a>
+              </span>
+            </div>
+          )}
         </div>
 
         <div style={divider} />
 
-        {signedError && (
-          <p style={{ margin: "0 24px 8px", fontSize: 12, color: "#b91c1c" }}>{signedError}</p>
+        {docs.error && (
+          <p style={{ margin: "0 24px 8px", fontSize: 12, color: "#b91c1c" }}>{docs.error}</p>
         )}
 
-        {/* Footer */}
+        {/* Footer — serves the signed version once anyone has signed, otherwise the original file */}
         <div style={footer}>
           <button
             type="button"
-            onClick={previewSigned}
+            onClick={() => docs.previewDocument(liveDoc)}
             disabled={signedBusy}
+            title={signed ? (certificate ? "Preview the signature certificate" : "Preview the signed document") : "Open the original document"}
             style={{ ...outlineBtn, opacity: signedBusy ? 0.6 : 1 }}
           >
-            <Eye size={13} /> {signedBusy ? "Preparing…" : "Preview signed"}
+            <Eye size={13} /> {signedBusy ? "Preparing…" : signed ? (certificate ? "Preview certificate" : "Preview signed") : "Preview"}
           </button>
           <button
             type="button"
-            onClick={downloadSigned}
+            onClick={() => docs.downloadDocument(liveDoc)}
             disabled={signedBusy}
             style={{ ...downloadBtn, opacity: signedBusy ? 0.6 : 1 }}
           >
-            <Download size={13} /> Download signed
+            <Download size={13} /> {signed ? (certificate ? "Download certificate" : "Download signed") : "Download"}
           </button>
           <button type="button" onClick={onClose} style={closeButton}>
             Close
           </button>
         </div>
       </div>
-      {previewUrl && (
-        <div
-          style={previewOverlay}
-          onClick={(event) => {
-            event.stopPropagation();
-            setPreviewUrl(null);
-          }}
-        >
-          <div style={previewModal} onClick={(event) => event.stopPropagation()}>
-            <div style={previewHeader}>
-              <strong>Signed document preview</strong>
-              <button type="button" onClick={() => setPreviewUrl(null)} style={closeBtn} aria-label="Close preview">
-                <X size={16} />
-              </button>
-            </div>
-            <iframe title="Signed evidence document" src={previewUrl} style={previewFrame} />
-          </div>
-        </div>
-      )}
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
     </div>
   );
 }
+
+const infoBanner: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 8,
+  padding: "10px 14px",
+  background: "#eff6ff",
+  border: "1px solid #bfdbfe",
+  borderRadius: 10,
+  fontSize: 12.5,
+  color: "#1e3a8a",
+  lineHeight: 1.45,
+};
 
 const modal: React.CSSProperties = {
   width: 540,
@@ -241,43 +236,6 @@ const closeBtn: React.CSSProperties = {
 const divider: React.CSSProperties = {
   height: 1,
   background: theme.colors.border,
-};
-
-const previewOverlay: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 1000,
-  background: "rgba(15,23,42,0.65)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 20,
-};
-
-const previewModal: React.CSSProperties = {
-  width: "min(1100px, 96vw)",
-  height: "min(850px, 92vh)",
-  background: "#fff",
-  borderRadius: 12,
-  overflow: "hidden",
-  display: "flex",
-  flexDirection: "column",
-};
-
-const previewHeader: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "10px 14px",
-  borderBottom: `1px solid ${theme.colors.border}`,
-  color: theme.colors.textPrimary,
-  fontSize: 13,
-};
-
-const previewFrame: React.CSSProperties = {
-  flex: 1,
-  width: "100%",
-  border: 0,
 };
 
 const body: React.CSSProperties = {

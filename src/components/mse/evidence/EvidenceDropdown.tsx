@@ -5,6 +5,8 @@ import { ChevronDown } from "lucide-react";
 
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
+import { useEvidenceDocumentAccess, isSigned, isStampable } from "@/components/signature/documentAccess";
+import { SignedDocumentPreviewModal } from "@/components/signature/SignedDocumentPreviewModal";
 
 type FilterDropdownProps = {
   label: string;
@@ -32,6 +34,8 @@ export const EvidenceDropdown = (
   props: Props
 ) => {
   const [open, setOpen] = useState(false);
+  // Signed documents open/download as the signed PDF; unsigned ones as the original file.
+  const docs = useEvidenceDocumentAccess();
 
   /* =========================
      MODE 1: FILTER DROPDOWN
@@ -90,7 +94,8 @@ export const EvidenceDropdown = (
       {open && (
         <div style={dropdown}>
           {evidences.map((doc) => {
-            const url = doc.fileUpload || "#";
+            const busy = docs.busyId === doc.id;
+            const what = !isSigned(doc) ? "" : isStampable(doc.fileType) ? " signed document" : " signature certificate";
 
             return (
               <div
@@ -100,43 +105,47 @@ export const EvidenceDropdown = (
                 {/* 👁 OPEN / PREVIEW */}
                 <button
                   style={actionBtn}
+                  disabled={busy || !doc.fileUpload}
+                  title={`Open${what}`}
                   onClick={(e) => {
                     e.stopPropagation();
-
-                    window.open(
-                      url,
-                      "_blank",
-                      "noopener,noreferrer"
-                    );
+                    docs.previewDocument(doc);
                   }}
                 >
                   👁 Open
                 </button>
 
                 {/* ⬇ DOWNLOAD */}
-                <a
-                  href={url}
-                  download={doc.documentName}
+                <button
                   style={actionBtn}
-                  onClick={(e) =>
-                    e.stopPropagation()
-                  }
+                  disabled={busy || !doc.fileUpload}
+                  title={`Download${what}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    docs.downloadDocument(doc);
+                  }}
                 >
-                  ⬇ Download
-                </a>
+                  {busy ? "Preparing…" : "⬇ Download"}
+                </button>
 
                 {/* 📄 LABEL */}
                 <span style={{ flex: 1 }}>
                   {doc.documentName}
+                  {isSigned(doc) && <span style={signedTag}> · Signed</span>}
                 </span>
               </div>
             );
           })}
+          {docs.error && <div style={errorRow}>{docs.error}</div>}
         </div>
       )}
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
     </div>
   );
 };
+
+const signedTag: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: "#15803d" };
+const errorRow: React.CSSProperties = { padding: "8px 10px", fontSize: 12, color: "#b91c1c" };
 
 /* =========================
    STYLES

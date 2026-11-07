@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Upload, FileText, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { isAxiosError } from "axios";
 import { useAuth } from "@/context/AuthContext.production";
 import { uploadEvidence, signEvidence } from "@/utils/api";
@@ -11,6 +11,7 @@ import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "@/components/signature/SignaturePad";
 import { FileSignature } from "lucide-react";
+import { signErrorMessage, isCertificateOnlyFile, CERTIFICATE_NOTE } from "@/components/signature/documentAccess";
 
 interface Props {
   open: boolean;
@@ -33,6 +34,8 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
   const [docType,    setDocType]    = useState("");
   const [signNow,       setSignNow]       = useState(defaultSignNow);
   const [signaturePad,  setSignaturePad]  = useState<SignaturePadValue>(EMPTY_SIGNATURE);
+  // Files that uploaded fine but whose signature failed — retrying signs only these, never re-uploads.
+  const [unsigned,      setUnsigned]      = useState<Evidence[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const docTypes = category ? NGO_EVIDENCE_CATEGORIES[category] : [];
@@ -60,6 +63,58 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
     setFiles([]); setNotes(""); setError(""); setSuccess(false); setDragOver(false);
     setCategory(""); setDocType("");
     setSignNow(defaultSignNow); setSignaturePad(EMPTY_SIGNATURE);
+    setUnsigned([]);
+  };
+
+  const signPayload = () => ({
+    typedName: signaturePad.typedName.trim() || undefined,
+    signatureImage: signaturePad.signatureImage ?? undefined,
+  });
+
+  /** Signs each document; returns the ones that failed plus the first failure reason. */
+  const signAll = async (docs: Evidence[]) => {
+    const failed: Evidence[] = [];
+    let reason = "";
+    for (const doc of docs) {
+      try {
+        await signEvidence(doc.id, signPayload());
+      } catch (signErr) {
+        console.error("Auto-sign after upload failed", signErr);
+        failed.push(doc);
+        reason ||= signErrorMessage(signErr);
+      }
+    }
+    return { failed, reason };
+  };
+
+  const reportUnsigned = (failed: Evidence[], reason: string) => {
+    setUnsigned(failed);
+    const names = failed.map((d) => d.documentName).join(", ");
+    setError(
+      `${failed.length === 1 ? "The file was" : `${failed.length} files were`} uploaded, but your signature wasn't saved on: ` +
+      `${names}. ${reason} Retry signing, or close and sign later from the evidence details.`
+    );
+  };
+
+  const finishSuccess = () => {
+    setSuccess(true);
+    setTimeout(() => { reset(); onClose(); }, 1500);
+  };
+
+  const handleRetrySign = async () => {
+    if (!signNow || (!signaturePad.typedName.trim() && !signaturePad.signatureImage)) {
+      setSignNow(true);
+      setError("Draw or type your signature to retry signing.");
+      return;
+    }
+    setError(""); setSubmitting(true);
+    try {
+      const { failed, reason } = await signAll(unsigned);
+      if (failed.length > 0) reportUnsigned(failed, reason);
+      else finishSuccess();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -80,6 +135,7 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
     try {
       // Upload each file sequentially; call onSubmit with the last saved Evidence
       let lastSaved: Evidence | null = null;
+      const uploadedDocs: Evidence[] = [];
       const orgId = normalizeOrganisationId(user?.organisationId);
       if (!orgId) {
         throw new Error("Unable to upload evidence: organisation is not selected.");
@@ -105,22 +161,20 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
           notes:         data.notes,
           uploadedBy:    String(data.uploadedBy),
           uploadedAt:    data.uploadedAt,
+          signatureCount: data.signatureCount ?? 0,
         };
-
-        if (signNow && (signaturePad.typedName.trim() || signaturePad.signatureImage)) {
-          try {
-            await signEvidence(data.id, {
-              typedName: signaturePad.typedName.trim() || undefined,
-              signatureImage: signaturePad.signatureImage ?? undefined,
-            });
-          } catch (signErr) {
-            console.error("Auto-sign after upload failed", signErr);
-          }
-        }
+        uploadedDocs.push(lastSaved);
       }
       if (lastSaved) onSubmit(lastSaved);
-      setSuccess(true);
-      setTimeout(() => { reset(); onClose(); }, 1500);
+
+      if (signNow) {
+        const { failed, reason } = await signAll(uploadedDocs);
+        if (failed.length > 0) {
+          reportUnsigned(failed, reason);
+          return;
+        }
+      }
+      finishSuccess();
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         setError(err.response?.data?.message ?? "Upload failed. Please try again.");
@@ -281,6 +335,9 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
                 </label>
                 {signNow && (
                   <div style={s.signBox}>
+                    {files.some((f) => isCertificateOnlyFile(f.name)) && (
+                      <p style={s.info}><Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</p>
+                    )}
                     <SignaturePad value={signaturePad} onChange={setSignaturePad} disabled={submitting} />
                   </div>
                 )}
@@ -288,15 +345,28 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
             </div>
 
             <div style={s.footer}>
-              <button style={s.cancelBtn} onClick={handleClose} disabled={submitting}>Cancel</button>
-              <button
-                style={{ ...s.submitBtn, opacity: submitting ? 0.7 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
-                onClick={handleSubmit}
-                disabled={submitting}
-              >
-                <Upload size={14} />
-                {submitting ? "Uploading…" : `Upload${files.length > 0 ? ` (${files.length})` : ""}`}
+              <button style={s.cancelBtn} onClick={handleClose} disabled={submitting}>
+                {unsigned.length > 0 ? "Close without signing" : "Cancel"}
               </button>
+              {unsigned.length > 0 ? (
+                <button
+                  style={{ ...s.submitBtn, opacity: submitting ? 0.7 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
+                  onClick={handleRetrySign}
+                  disabled={submitting}
+                >
+                  <FileSignature size={14} />
+                  {submitting ? "Signing…" : "Retry signing"}
+                </button>
+              ) : (
+                <button
+                  style={{ ...s.submitBtn, opacity: submitting ? 0.7 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                >
+                  <Upload size={14} />
+                  {submitting ? "Uploading…" : `Upload${files.length > 0 ? ` (${files.length})` : ""}`}
+                </button>
+              )}
             </div>
           </>
         )}
@@ -306,7 +376,8 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
 }
 
 const s: Record<string, React.CSSProperties> = {
-  overlay:      { position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9000, padding: 20 },
+  info:         { display: "flex", alignItems: "flex-start", gap: 6, margin: "0 0 10px", fontSize: 12, color: "#1e3a8a", lineHeight: 1.45 },
+  overlay:     { position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9000, padding: 20 },
   modal:        { background: "#fff", borderRadius: 16, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.2)" },
   header:       { padding: "18px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "#fff", zIndex: 1 },
   headerIcon:   { width: 38, height: 38, borderRadius: 10, background: "rgba(30,58,138,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },

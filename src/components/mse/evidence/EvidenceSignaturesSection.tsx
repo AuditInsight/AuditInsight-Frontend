@@ -21,6 +21,8 @@ interface Props {
   onChanged?: () => void;
   /** Reports whether someone has asked the logged-in user to sign (and they haven't yet), so the parent can show this first. */
   onPendingRequestChange?: (pending: boolean) => void;
+  /** Reports how many people have signed, so the parent can serve the signed version as soon as there is one. */
+  onSignatureCountChange?: (count: number) => void;
 }
 
 // The backend sends LocalDateTime without a zone (server time is UTC) — treat it as UTC.
@@ -36,7 +38,7 @@ function errorMessage(err: unknown, fallback: string): string {
   return e?.response?.data?.error ?? e?.response?.data?.message ?? fallback;
 }
 
-export function EvidenceSignaturesSection({ evidenceId, onChanged, onPendingRequestChange }: Props) {
+export function EvidenceSignaturesSection({ evidenceId, onChanged, onPendingRequestChange, onSignatureCountChange }: Props) {
   const { user } = useAuth();
   const [data, setData] = useState<EvidenceSignaturesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +61,11 @@ export function EvidenceSignaturesSection({ evidenceId, onChanged, onPendingRequ
   useEffect(() => {
     onPendingRequestChange?.(hasPendingRequest);
   }, [hasPendingRequest, onPendingRequestChange]);
+
+  const signatureCount = data?.signatures.length;
+  useEffect(() => {
+    if (signatureCount !== undefined) onSignatureCountChange?.(signatureCount);
+  }, [signatureCount, onSignatureCountChange]);
 
   useEffect(() => {
     setLoading(true);

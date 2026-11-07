@@ -2,7 +2,9 @@
 
 import { TransactionWithMeta } from "@/hooks/useTransactions";
 import { Evidence } from "@/types/evidence.types";
-import { X, Download, Eye, Paperclip, FileText } from "lucide-react";
+import { X, Download, Eye, Paperclip, FileText, FileSignature } from "lucide-react";
+import { useEvidenceDocumentAccess, isSigned, isStampable } from "@/components/signature/documentAccess";
+import { SignedDocumentPreviewModal } from "@/components/signature/SignedDocumentPreviewModal";
 
 interface Props {
   transaction: TransactionWithMeta | null;
@@ -11,21 +13,16 @@ interface Props {
 }
 
 export default function ViewTransactionModal({ transaction, evidence, onClose }: Props) {
+  // Signed documents preview/download as the signed PDF; unsigned ones open the original file.
+  const docs = useEvidenceDocumentAccess();
+
   if (!transaction) return null;
 
   const linked = evidence.filter((e) => e.transactionId === transaction.id);
 
-  const handleDownload = (e: Evidence) => {
-    const a = document.createElement("a");
-    a.href = e.fileUpload;
-    a.download = e.documentName;
-    a.target = "_blank";
-    a.click();
-  };
+  const handleDownload = (e: Evidence) => docs.downloadDocument(e);
 
-  const handlePreview = (e: Evidence) => {
-    window.open(e.fileUpload, "_blank");
-  };
+  const handlePreview = (e: Evidence) => docs.previewDocument(e);
 
   return (
     // Overlay — z-index 9000 ensures it always appears above navbar (z-index 100)
@@ -102,29 +99,58 @@ export default function ViewTransactionModal({ transaction, evidence, onClose }:
                       <FileText size={14} color="#2563eb" />
                     </div>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{ev.documentName}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", display: "flex", alignItems: "center", gap: 6 }}>
+                        {ev.documentName}
+                        {isSigned(ev) && (
+                          <span style={signedBadge} title={`Signed by ${ev.signatureCount} ${ev.signatureCount === 1 ? "person" : "people"}`}>
+                            <FileSignature size={10} /> Signed
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
                         {ev.folder} › {ev.subfolder} • {ev.fileType.toUpperCase()} • {ev.uploadedAt?.split("T")[0]}
                       </div>
+                      {isSigned(ev) && !isStampable(ev.fileType) && (
+                        <a href={ev.fileUpload} target="_blank" rel="noopener noreferrer" style={originalLink}>
+                          View original file
+                        </a>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button style={previewBtn} onClick={() => handlePreview(ev)} title="Preview">
-                      <Eye size={13} /> Preview
-                    </button>
-                    <button style={downloadBtn} onClick={() => handleDownload(ev)} title="Download">
-                      <Download size={13} /> Download
-                    </button>
+                    {(() => {
+                      const certificate = isSigned(ev) && !isStampable(ev.fileType);
+                      const target = !isSigned(ev) ? "" : certificate ? " signature certificate" : " signed document";
+                      const busy = docs.busyId === ev.id;
+                      return (
+                        <>
+                          <button style={{ ...previewBtn, opacity: busy ? 0.6 : 1 }} disabled={busy}
+                            onClick={() => handlePreview(ev)} title={`Preview${target}`}>
+                            <Eye size={13} /> {certificate ? "Certificate" : "Preview"}
+                          </button>
+                          <button style={{ ...downloadBtn, opacity: busy ? 0.6 : 1 }} disabled={busy}
+                            onClick={() => handleDownload(ev)} title={`Download${target}`}>
+                            <Download size={13} /> {busy ? "Preparing…" : certificate ? "Certificate" : "Download"}
+                          </button>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
             </div>
           )}
+          {docs.error && <p style={errorText}>{docs.error}</p>}
         </div>
       </div>
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
     </div>
   );
 }
+
+const signedBadge: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: "#15803d", background: "#dcfce7", borderRadius: 999, padding: "1px 7px" };
+const originalLink: React.CSSProperties = { display: "inline-block", marginTop: 3, fontSize: 11, color: "#2563eb" };
+const errorText: React.CSSProperties = { margin: "10px 0 0", fontSize: 12, color: "#b91c1c" };
 
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 

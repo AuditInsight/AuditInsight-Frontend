@@ -47,6 +47,7 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
           notes:         e.notes,
           uploadedBy:    String(e.uploadedBy),
           uploadedAt:    e.uploadedAt,
+          signatureCount: e.signatureCount ?? 0,
         }));
         setDocuments(mapped);
         })

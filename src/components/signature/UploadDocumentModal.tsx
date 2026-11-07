@@ -4,11 +4,12 @@ import { useRef, useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext.production";
 import { Evidence } from "@/types/evidence.types";
 import { uploadEvidence, signEvidence } from "@/utils/api";
-import { X, Paperclip, AlertCircle, CheckCircle2, Upload, FileSignature } from "lucide-react";
+import { X, Paperclip, AlertCircle, CheckCircle2, Upload, FileSignature, Info } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 import { friendlyEvidenceUploadError } from "@/utils/evidenceUploadErrors";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./SignaturePad";
+import { signErrorMessage, isCertificateOnlyFile, CERTIFICATE_NOTE } from "./documentAccess";
 
 // Any document uploaded here goes into a generic bucket — it isn't filed into the
 // transaction-linked folder taxonomy, since it isn't linked to a transaction at all.
@@ -42,15 +43,32 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
   const [signNow, setSignNow]         = useState(true);
   const [signaturePad, setSignaturePad] = useState<SignaturePadValue>(EMPTY_SIGNATURE);
   const [signError, setSignError]     = useState("");
+  // Set once the file is stored, so retrying a failed signature never uploads the document a second time.
+  const [uploaded, setUploaded]       = useState<Evidence | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    setName(""); setNotes(""); setFile(null);
-    setFileError(""); setSubmitError("");
-    setSignNow(true); setSignaturePad(EMPTY_SIGNATURE); setSignError("");
+    // Deferred like EvidenceUploadModal's reset, so state isn't set synchronously inside the effect.
+    queueMicrotask(() => {
+      setName(""); setNotes(""); setFile(null);
+      setFileError(""); setSubmitError("");
+      setSignNow(true); setSignaturePad(EMPTY_SIGNATURE); setSignError("");
+    });
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const finish = (doc: Evidence) => {
+    setUploaded(null);
+    onSave(doc);
+    onClose();
+  };
+
+  // Closing after the upload succeeded still adds the (unsigned) document to the list.
+  const handleClose = () => {
+    if (uploaded) finish(uploaded);
+    else onClose();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -71,7 +89,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
 
   const handleSave = async () => {
     const trimmedName = name.trim();
-    if (!trimmedName || !file) {
+    if (!uploaded && (!trimmedName || !file)) {
       setSubmitError("Please enter a document name and attach a file before uploading.");
       return;
     }
@@ -81,7 +99,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
     }
 
     const orgId = normalizeOrganisationId(user?.organisationId);
-    if (!orgId) {
+    if (!uploaded && !orgId) {
       setSubmitError("Unable to upload a document without an organisation.");
       return;
     }
@@ -90,59 +108,72 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
     setSubmitError("");
     setSignError("");
 
-    try {
-      const { data } = await uploadEvidence(file, {
-        organisationId: orgId,
-        documentName: trimmedName,
-        folder: STANDALONE_FOLDER,
-        subfolder: STANDALONE_SUBFOLDER,
-        notes: notes || undefined,
-      });
+    let saved = uploaded;
+    if (!saved) {
+      if (!file || !orgId) { setSaving(false); return; } // already validated above; narrows the types
+      try {
+        const { data } = await uploadEvidence(file, {
+          organisationId: orgId,
+          documentName: trimmedName,
+          folder: STANDALONE_FOLDER,
+          subfolder: STANDALONE_SUBFOLDER,
+          notes: notes || undefined,
+        });
 
-      const saved: Evidence = {
-        id: data.id,
-        organisationId: data.organisationId,
-        transactionId: data.transactionId ?? undefined,
-        documentName: data.documentName,
-        folder: data.folder,
-        subfolder: data.subfolder,
-        fileUpload: data.fileUpload,
-        fileType: data.fileType,
-        notes: data.notes,
-        uploadedBy: String(data.uploadedBy),
-        uploadedAt: data.uploadedAt,
-      };
-
-      if (signNow && (signaturePad.typedName.trim() || signaturePad.signatureImage)) {
-        try {
-          await signEvidence(saved.id, {
-            typedName: signaturePad.typedName.trim() || undefined,
-            signatureImage: signaturePad.signatureImage ?? undefined,
-          });
-        } catch (signErr) {
-          console.error("Auto-sign after upload failed", signErr);
-        }
+        saved = {
+          id: data.id,
+          organisationId: data.organisationId,
+          transactionId: data.transactionId ?? undefined,
+          documentName: data.documentName,
+          folder: data.folder,
+          subfolder: data.subfolder,
+          fileUpload: data.fileUpload,
+          fileType: data.fileType,
+          notes: data.notes,
+          uploadedBy: String(data.uploadedBy),
+          uploadedAt: data.uploadedAt,
+          signatureCount: data.signatureCount ?? 0,
+        };
+        setUploaded(saved);
+      } catch (err: unknown) {
+        setSubmitError(friendlyEvidenceUploadError(err));
+        console.error("Standalone document upload failed", err);
+        setSaving(false);
+        return;
       }
-
-      onSave(saved);
-      onClose();
-    } catch (err: unknown) {
-      setSubmitError(friendlyEvidenceUploadError(err));
-      console.error("Standalone document upload failed", err);
-    } finally {
-      setSaving(false);
     }
+
+    if (signNow) {
+      try {
+        await signEvidence(saved.id, {
+          typedName: signaturePad.typedName.trim() || undefined,
+          signatureImage: signaturePad.signatureImage ?? undefined,
+        });
+        saved = { ...saved, signatureCount: (saved.signatureCount ?? 0) + 1 };
+      } catch (signErr) {
+        console.error("Auto-sign after upload failed", signErr);
+        setSignError(
+          `Your document was uploaded, but your signature wasn't saved: ${signErrorMessage(signErr)} ` +
+          "Retry signing, or close and sign it later from the Signatures page."
+        );
+        setSaving(false);
+        return;
+      }
+    }
+
+    setSaving(false);
+    finish(saved);
   };
 
   return (
-    <div style={modalOverlayStyle} onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div style={modalOverlayStyle} onClick={(e) => e.target === e.currentTarget && !saving && handleClose()}>
       <div style={s.modal}>
         <div style={s.header}>
           <div>
             <p style={s.title}>Upload Document</p>
             <p style={s.sub}>Not linked to any transaction — just a document to sign.</p>
           </div>
-          <button style={s.closeBtn} onClick={onClose}><X size={16} /></button>
+          <button style={s.closeBtn} onClick={handleClose} disabled={saving}><X size={16} /></button>
         </div>
 
         <div style={s.body}>
@@ -152,6 +183,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
               placeholder="e.g. Board Resolution, NDA, Policy Document"
               value={name}
               onChange={(e) => { setName(e.target.value); setSubmitError(""); }}
+              disabled={Boolean(uploaded)}
               style={inputSt(false)}
             />
           </div>
@@ -162,6 +194,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
               placeholder="Any additional context about this document…"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              disabled={Boolean(uploaded)}
               style={{ ...inputSt(false), resize: "vertical" as const, minHeight: 72 }}
               rows={2}
             />
@@ -170,7 +203,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
           <div>
             <label style={s.label}>Upload File <span style={s.req}>*</span></label>
             <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.xlsx,.docx" onChange={handleFileChange} style={{ display: "none" }} />
-            <button style={{ ...s.fileBtn, borderColor: fileError ? "#ef4444" : "#cbd5e1" }} onClick={() => fileRef.current?.click()}>
+            <button style={{ ...s.fileBtn, borderColor: fileError ? "#ef4444" : "#cbd5e1" }} onClick={() => fileRef.current?.click()} disabled={Boolean(uploaded)}>
               <Upload size={14} />
               {file ? file.name : "Choose file (PDF, PNG, JPG, XLSX, DOCX — max 10 MB)"}
             </button>
@@ -192,11 +225,19 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
             </label>
             {signNow && (
               <div style={s.signBox}>
+                {file && isCertificateOnlyFile(file.name) && (
+                  <p style={s.info}><Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</p>
+                )}
                 <SignaturePad value={signaturePad} onChange={(v) => { setSignaturePad(v); setSignError(""); }} disabled={saving} />
-                {signError && <p style={s.err}><AlertCircle size={11} />{signError}</p>}
               </div>
             )}
           </div>
+
+          {signError && (
+            <div style={s.errSummary}>
+              <AlertCircle size={14} style={{ flexShrink: 0 }} /> {signError}
+            </div>
+          )}
 
           {submitError && (
             <div style={s.errSummary}>
@@ -206,10 +247,12 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
         </div>
 
         <div style={s.footer}>
-          <button style={s.cancelBtn} onClick={onClose}>Cancel</button>
+          <button style={s.cancelBtn} onClick={handleClose} disabled={saving}>
+            {uploaded ? "Close without signing" : "Cancel"}
+          </button>
           <button style={{ ...s.saveBtn, opacity: saving ? 0.7 : 1 }} onClick={handleSave} disabled={saving}>
-            <Paperclip size={13} />
-            {saving ? "Saving…" : "Upload Document"}
+            {uploaded ? <FileSignature size={13} /> : <Paperclip size={13} />}
+            {saving ? "Saving…" : uploaded ? (signNow ? "Retry signing" : "Done") : "Upload Document"}
           </button>
         </div>
       </div>
@@ -235,6 +278,7 @@ const s: Record<string, React.CSSProperties> = {
   req: { color: "#ef4444" },
   optional: { fontSize: 11, color: "#94a3b8", fontWeight: 400 },
   err: { display: "flex", alignItems: "center", gap: 4, margin: "4px 0 0", fontSize: 11.5, color: "#ef4444", fontWeight: 500 },
+  info: { display: "flex", alignItems: "flex-start", gap: 6, margin: "0 0 10px", fontSize: 12, color: "#1e3a8a", lineHeight: 1.45 },
   errSummary: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, fontSize: 13, color: "#b91c1c" },
   fileBtn: { display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px dashed #cbd5e1", background: "#f8fafc", cursor: "pointer", fontSize: 13, color: "#475569", fontFamily: "inherit", textAlign: "left" },
   fileChip: { display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: 12, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "5px 10px" },
