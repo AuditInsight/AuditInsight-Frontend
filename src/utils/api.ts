@@ -151,6 +151,8 @@ export interface EvidenceResponse {
   notes: string;
   uploadedBy: number;
   uploadedAt: string;
+  /** How many people have signed this document; 0 means Preview/Download use the original file. */
+  signatureCount?: number;
 }
 
 /* =========================

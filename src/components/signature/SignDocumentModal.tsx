@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { isAxiosError } from "axios";
-import { X, FileSignature, Download, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
+import { X, FileSignature, Download, AlertCircle, CheckCircle2, ExternalLink, Eye, Info } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { Evidence } from "@/types/evidence.types";
 import {
   getEvidenceSignatures,
   signEvidence,
-  downloadSignedEvidence,
   type EvidenceSignaturesResponse,
 } from "@/utils/api";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./SignaturePad";
+import { useEvidenceDocumentAccess, isStampable, signErrorMessage, CERTIFICATE_NOTE } from "./documentAccess";
+import { SignedDocumentPreviewModal } from "./SignedDocumentPreviewModal";
 
 interface Props {
   isOpen: boolean;
@@ -27,8 +27,8 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [signing, setSigning] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [pad, setPad] = useState<SignaturePadValue>(EMPTY_SIGNATURE);
+  const docs = useEvidenceDocumentAccess();
 
   const load = useCallback(() => {
     if (!evidence) return;
@@ -50,6 +50,12 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
   if (!isOpen || !evidence) return null;
 
   const hasSignaturePayload = Boolean(pad.typedName.trim() || pad.signatureImage);
+  // Use the freshly loaded signature list rather than the (possibly stale) count on the evidence row,
+  // so the signed version is offered straight after signing here.
+  const signatureCount = data?.signatures.length ?? evidence.signatureCount ?? 0;
+  const liveDoc = { ...evidence, signatureCount };
+  const certificate = !isStampable(evidence.fileType);
+  const signedName = certificate ? "signature certificate" : "signed PDF";
 
   const handleSign = async () => {
     if (!hasSignaturePayload) {
@@ -66,27 +72,13 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
       setPad(EMPTY_SIGNATURE);
       load();
     } catch (err: unknown) {
-      if (isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Failed to sign this document.");
-      } else {
-        setError("Failed to sign this document.");
-      }
+      setError(`Your signature wasn't saved: ${signErrorMessage(err)}`);
     } finally {
       setSigning(false);
     }
   };
 
-  const handleDownload = async () => {
-    setDownloading(true);
-    setError("");
-    try {
-      await downloadSignedEvidence(evidence.id, evidence.documentName || "document");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to download the signed document.");
-    } finally {
-      setDownloading(false);
-    }
-  };
+  const downloading = docs.busyId === evidence.id;
 
   return (
     <div style={modalOverlayStyle} onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -101,13 +93,25 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
         </div>
 
         <div style={s.body}>
-          {evidence.fileUpload && (
-            <a href={evidence.fileUpload} target="_blank" rel="noopener noreferrer" style={s.viewLink}>
-              <ExternalLink size={12} /> View original document
-            </a>
+          <div style={s.linkRow}>
+            {signatureCount > 0 && (
+              <button type="button" style={s.previewBtn} onClick={() => docs.previewDocument(liveDoc)} disabled={downloading}>
+                <Eye size={13} /> {downloading ? "Preparing…" : `Preview ${signedName}`}
+              </button>
+            )}
+            {evidence.fileUpload && (
+              <a href={evidence.fileUpload} target="_blank" rel="noopener noreferrer" style={s.viewLink}>
+                <ExternalLink size={12} /> {signatureCount > 0 ? "View original (unsigned) file" : "View document"}
+              </a>
+            )}
+          </div>
+
+          {certificate && (
+            <div style={s.infoBanner}><Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</div>
           )}
 
           {error && <div style={s.errBanner}><AlertCircle size={13} />{error}</div>}
+          {docs.error && <div style={s.errBanner}><AlertCircle size={13} />{docs.error}</div>}
 
           <div>
             <p style={s.sectionLabel}>Signatures {data ? `(${data.signatures.length})` : ""}</p>
@@ -149,8 +153,8 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
         </div>
 
         <div style={s.footer}>
-          <button style={s.downloadBtn} onClick={handleDownload} disabled={downloading || !data?.signatures.length}>
-            <Download size={14} /> {downloading ? "Preparing…" : "Download signed PDF"}
+          <button style={s.downloadBtn} onClick={() => docs.downloadDocument(liveDoc)} disabled={downloading || signatureCount === 0}>
+            <Download size={14} /> {downloading ? "Preparing…" : `Download ${signedName}`}
           </button>
           {data && !data.signedByMe && (
             <button style={{ ...s.signBtn, opacity: signing ? 0.7 : 1 }} onClick={handleSign} disabled={signing}>
@@ -159,11 +163,15 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
           )}
         </div>
       </div>
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
     </div>
   );
 }
 
 const s: Record<string, React.CSSProperties> = {
+  linkRow: { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" },
+  previewBtn: { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8, border: "1px solid #c7d2fe", background: "#eef2ff", color: "#1e3a8a", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit" },
+  infoBanner: { display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, fontSize: 12.5, color: "#1e3a8a", lineHeight: 1.45 },
   modal: { width: "100%", maxWidth: 560, background: "#fff", borderRadius: 20, boxShadow: "0 32px 80px rgba(0,0,0,0.2)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" },
   header: { padding: "18px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", gap: 12, alignItems: "flex-start", flexShrink: 0 },
   headerIcon: { width: 38, height: 38, borderRadius: 10, background: "rgba(30,58,138,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },

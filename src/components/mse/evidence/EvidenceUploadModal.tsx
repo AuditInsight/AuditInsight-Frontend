@@ -5,12 +5,13 @@ import { useAuth } from "@/context/AuthContext.production";
 import { Evidence } from "@/types/evidence.types";
 import { Transaction } from "@/types/transaction.types";
 import { uploadEvidence, updateEvidence, signEvidence } from "@/utils/api";
-import { X, Paperclip, AlertCircle, CheckCircle2, Upload, FileSignature } from "lucide-react";
+import { X, Paperclip, AlertCircle, CheckCircle2, Upload, FileSignature, Info } from "lucide-react";
 import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { friendlyEvidenceUploadError } from "@/utils/evidenceUploadErrors";
 import { useOrganisation } from "@/hooks/useOrganisation";
 import { getEvidenceFolders, getSubfolders } from "@/utils/evidenceFolderUtils";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "@/components/signature/SignaturePad";
+import { signErrorMessage, isCertificateOnlyFile, CERTIFICATE_NOTE } from "@/components/signature/documentAccess";
 
 interface Props {
   isOpen: boolean;
@@ -65,6 +66,8 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
   const [signNow, setSignNow]           = useState(defaultSignNow);
   const [signaturePad, setSignaturePad] = useState<SignaturePadValue>(EMPTY_SIGNATURE);
   const [signError, setSignError]       = useState("");
+  // Set once the file is stored, so retrying a failed signature never uploads the evidence a second time.
+  const [uploaded, setUploaded]         = useState<Evidence | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -88,10 +91,22 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
     queueMicrotask(() => {
       setErrors({}); setTouched({}); setFileError("");
       setSignNow(defaultSignNow); setSignaturePad(EMPTY_SIGNATURE); setSignError("");
+      setUploaded(null);
     });
   }, [isOpen, mode, evidence, defaultSignNow]);
 
   if (!isOpen) return null;
+
+  const finish = (doc: Evidence) => {
+    onSave(doc);
+    onClose();
+  };
+
+  // Closing after the upload succeeded still adds the (unsigned) evidence to the list.
+  const handleClose = () => {
+    if (uploaded) finish(uploaded);
+    else onClose();
+  };
 
   const touch = (field: string) => setTouched((p) => ({ ...p, [field]: true }));
 
@@ -177,6 +192,9 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
           amount: evidence.amount,
           counterparty: evidence.counterparty,
         };
+      } else if (uploaded) {
+        // Retrying a signature that failed after a successful upload — the file is already stored.
+        saved = uploaded;
       } else {
         const orgId = user?.organisationId;
         if (!orgId) {
@@ -207,22 +225,29 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
           uploadedAt: data.uploadedAt,
           amount: Number(amount) || undefined,
           counterparty: counterparty || undefined,
+          signatureCount: data.signatureCount ?? 0,
         };
+        setUploaded(saved);
+      }
 
-        if (signNow && (signaturePad.typedName.trim() || signaturePad.signatureImage)) {
-          try {
-            await signEvidence(saved.id, {
-              typedName: signaturePad.typedName.trim() || undefined,
-              signatureImage: signaturePad.signatureImage ?? undefined,
-            });
-          } catch (signErr) {
-            console.error("Auto-sign after upload failed", signErr);
-          }
+      if (!isEdit && signNow) {
+        try {
+          await signEvidence(saved.id, {
+            typedName: signaturePad.typedName.trim() || undefined,
+            signatureImage: signaturePad.signatureImage ?? undefined,
+          });
+          saved = { ...saved, signatureCount: (saved.signatureCount ?? 0) + 1 };
+        } catch (signErr) {
+          console.error("Auto-sign after upload failed", signErr);
+          setSignError(
+            `Your evidence was uploaded, but your signature wasn't saved: ${signErrorMessage(signErr)} ` +
+            "Retry signing, or close and sign it later from the evidence details."
+          );
+          return;
         }
       }
 
-      onSave(saved);
-      onClose();
+      finish(saved);
     } catch (err: unknown) {
       setSubmitError(friendlyEvidenceUploadError(err));
       console.error("Evidence upload failed", err);
@@ -242,7 +267,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
   });
 
   return (
-    <div style={modalOverlayStyle} onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div style={modalOverlayStyle} onClick={(e) => e.target === e.currentTarget && !saving && handleClose()}>
       <div style={s.modal}>
         {/* Header */}
         <div style={s.header}>
@@ -250,7 +275,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
             <p style={s.title}>{isEdit ? "Update Evidence" : "Upload Evidence"}</p>
             <p style={s.sub}>Fields marked * are required</p>
           </div>
-          <button style={s.closeBtn} onClick={onClose}><X size={16} /></button>
+          <button style={s.closeBtn} onClick={handleClose} disabled={saving}><X size={16} /></button>
         </div>
 
         <div style={s.body}>
@@ -353,10 +378,18 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
               </label>
               {signNow && (
                 <div style={s.signBox}>
+                  {file && isCertificateOnlyFile(file.name) && (
+                    <p style={s.info}><Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</p>
+                  )}
                   <SignaturePad value={signaturePad} onChange={(v) => { setSignaturePad(v); setSignError(""); }} disabled={saving} />
-                  {signError && <p style={s.err}><AlertCircle size={11} />{signError}</p>}
                 </div>
               )}
+            </div>
+          )}
+
+          {signError && (
+            <div style={s.errSummary}>
+              <AlertCircle size={14} style={{ flexShrink: 0 }} /> {signError}
             </div>
           )}
 
@@ -374,10 +407,12 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
         </div>
 
         <div style={s.footer}>
-          <button style={s.cancelBtn} onClick={onClose}>Cancel</button>
+          <button style={s.cancelBtn} onClick={handleClose} disabled={saving}>
+            {uploaded ? "Close without signing" : "Cancel"}
+          </button>
           <button style={{ ...s.saveBtn, opacity: saving ? 0.7 : 1 }} onClick={handleSave} disabled={saving}>
-            <Paperclip size={13} />
-            {saving ? "Saving…" : isEdit ? "Update Evidence" : "Upload Evidence"}
+            {uploaded ? <FileSignature size={13} /> : <Paperclip size={13} />}
+            {saving ? "Saving…" : isEdit ? "Update Evidence" : uploaded ? (signNow ? "Retry signing" : "Done") : "Upload Evidence"}
           </button>
         </div>
       </div>
@@ -398,6 +433,7 @@ const s: Record<string, React.CSSProperties> = {
   req: { color: "#ef4444" },
   optional: { fontSize: 11, color: "#94a3b8", fontWeight: 400 },
   err: { display: "flex", alignItems: "center", gap: 4, margin: "4px 0 0", fontSize: 11.5, color: "#ef4444", fontWeight: 500 },
+  info: { display: "flex", alignItems: "flex-start", gap: 6, margin: "0 0 10px", fontSize: 12, color: "#1e3a8a", lineHeight: 1.45 },
   errSummary: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, fontSize: 13, color: "#b91c1c" },
   autoFill: { display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 9 },
   autoLabel: { fontSize: 11, fontWeight: 600, color: "#15803d" },

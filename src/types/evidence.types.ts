@@ -12,6 +12,8 @@ export interface Evidence {
   uploadedBy?: string | number;
   uploadedAt?: string;
   notes?: string;
+  // How many people have signed it; when > 0, Preview/Download serve the signed PDF instead of the original
+  signatureCount?: number;
 
   // Inherited from the linked transaction (denormalised for display)
   amount?: number;
