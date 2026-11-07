@@ -7,6 +7,7 @@ import { usePermissions } from "@/security/access-control";
 import { theme } from "@/styles/theme";
 import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import ChangeTierModal from "@/components/admin/ChangeTierModal";
+import OrganisationTrialCard from "@/components/admin/OrganisationTrialCard";
 import {
   getAdminOrganisationDetail,
   AdminOrganisationDetailResponse,
@@ -132,6 +133,8 @@ export default function OrganisationDetailPage() {
               </table>
             )}
           </div>
+
+          <OrganisationTrialCard organisationId={detail.id} onChanged={fetchDetail} />
 
           <div style={styles.card}>
             <h2 style={styles.cardTitle}>Subscription History</h2>

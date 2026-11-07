@@ -47,10 +47,15 @@ export default function OnboardingPage() {
   };
 
   const handlePlanSelect = async (plan: SubscriptionType) => {
+
+    if (!orgData) {
+      // Never create a workspace with made-up details: go back and collect them.
+      setStep("org-setup");
+      return;
+    }
+    const org = orgData;
     setCompleting(true);
     setError("");
-
-    const org = orgData ?? { orgName: "My Organisation", industry: "PRIVATE" as const, country: "US", size: "1-10", fiscalYearStart: "01-01", fiscalYearEnd: "12-31", currencies: ["USD"] };
 
     try {
       const payload: CreateOrganisationRequest = {
@@ -61,6 +66,7 @@ export default function OnboardingPage() {
         fiscalYearStart: org.fiscalYearStart,
         fiscalYearEnd:   org.fiscalYearEnd,
         currencies:      org.currencies,
+        subscriptionType: plan,
       };
 
       // Create the organisation — backend links it to the authenticated user
@@ -77,8 +83,6 @@ export default function OnboardingPage() {
         organisationName: data.name,
         orgType: data.industry ?? data.orgType ?? "PRIVATE",
       });
-
-      sessionStorage.setItem("selected_plan",  plan);
 
       if ((data.industry ?? data.orgType) === "NGO") {
         router.replace("/ngo-dashboard");

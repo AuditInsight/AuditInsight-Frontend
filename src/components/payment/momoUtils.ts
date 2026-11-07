@@ -73,31 +73,3 @@ export const PROVIDER_EMOJI: Record<MoMoProvider, string> = {
   unknown: "📱",
 };
 
-// ── Test phone numbers ─────────────────────────────────────────────
-export const TEST_PHONES = [
-  { phone: "0781234567", provider: "MTN",    result: "success",  label: "MTN MoMo — Success" },
-  { phone: "0731234567", provider: "AIRTEL", result: "success",  label: "Airtel Money — Success" },
-  { phone: "0711234567", provider: "MPESA",  result: "success",  label: "M-Pesa — Success" },
-  { phone: "0789999999", provider: "MTN",    result: "failed",   label: "MTN MoMo — Insufficient funds" },
-];
-
-// ── Simulate MoMo payment ──────────────────────────────────────────
-export async function simulateMoMoPayment(
-  phone: string
-): Promise<{ success: boolean; receiptId?: string; error?: string }> {
-  // Simulate USSD push delay (real MoMo takes 5–30s)
-  await new Promise((r) => setTimeout(r, 2200));
-
-  const raw = phone.replace(/\D/g, "");
-  const failed = TEST_PHONES.find(
-    (t) => t.phone.replace(/\D/g, "") === raw && t.result === "failed"
-  );
-  if (failed) {
-    return { success: false, error: "Transaction failed: Insufficient funds on this account." };
-  }
-
-  const receiptId = `MOMO-${Date.now().toString(36).toUpperCase()}`;
-  return { success: true, receiptId };
-}
-
-

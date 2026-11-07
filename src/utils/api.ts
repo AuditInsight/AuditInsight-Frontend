@@ -511,6 +511,8 @@ export const createOrganisation = (data: {
   fiscalYearStart: string;
   fiscalYearEnd: string;
   currencies: string[];
+  /** The plan chosen during onboarding, kept so checkout can be completed later. */
+  subscriptionType?: SubscriptionType;
 }) => apiClient.post<OrganisationResponse>("/organisations", data);
 
 export const updateOrganisation = (
@@ -665,6 +667,51 @@ export const getActiveSubscription = (organisationId: string) =>
 
 export const getPlatformAccess = () =>
   apiClient.get<PlatformAccessResponse>("/platform/access");
+
+/* =========================
+   WORKSPACE ACCESS
+========================= */
+
+/** Why an organisation can (or cannot) use its workspace right now. Decided by the backend. */
+export type AccessBasis = "PAID" | "TRIAL" | "EMERGENCY_OVERRIDE" | "PAYMENT_REQUIRED";
+
+export interface PaidPeriod {
+  subscriptionType: SubscriptionType | null;
+  startDate: string;
+  endDate: string;
+  source: "PAYMENT" | "ADMIN_COMPLIMENTARY" | "LEGACY";
+}
+
+export interface TrialInfo {
+  source: "INDIVIDUAL" | "CAMPAIGN";
+  durationDays: number;
+  startsAt: string;
+  endsAt: string;
+  current: boolean;
+}
+
+export interface AccessResponse {
+  hasAccess: boolean;
+  basis: AccessBasis;
+  accessUntil: string | null;
+  currentPaid: PaidPeriod | null;
+  /** Paid time bought but not started yet (e.g. bought during a trial). */
+  nextPaid: PaidPeriod | null;
+  trial: TrialInfo | null;
+  emergencyUntil: string | null;
+  requestedPlan: SubscriptionType | null;
+}
+
+export const getOrganisationAccess = (organisationId: string) =>
+  apiClient.get<AccessResponse>(`/subscriptions/${organisationId}/access`);
+
+export interface TrialOffer {
+  active: boolean;
+  durationDays: number | null;
+}
+
+/** Public: whether new sign-ups currently get a free trial (only while a campaign runs). */
+export const getTrialOffer = () => apiClient.get<TrialOffer>("/public/trial-offer");
 
 /* =========================
    PLAN CATALOG TYPES

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { SubscriptionType, getPlan, formatRwf, Subscription } from "@/types/billing";
 import { theme } from "@/styles/theme";
@@ -9,14 +9,14 @@ import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
 import { usePaymentProcessor } from "@/hooks/usePaymentProcessor";
 import { usePlans } from "@/hooks/usePlans";
 
-type PaymentState = "selecting" | "processing" | "success" | "error";
+type PaymentState = "selecting" | "processing" | "success" | "awaiting" | "error";
 
 interface Props {
   open: boolean;
   plan: SubscriptionType;
   organisationId: string;
   onClose: () => void;
-  onSuccess: (subscription: Subscription) => void;
+  onSuccess: (subscription: Subscription | null) => void;
 }
 
 export default function PaymentCheckoutModal({
@@ -30,15 +30,9 @@ export default function PaymentCheckoutModal({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("MOMO");
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const {
-    loading,
-    error,
-    checkoutUrl,
-    processMomoPayment,
-    processCardPayment,
-    getActiveSubscription,
-    resetState,
-  } = usePaymentProcessor({
+  const [successNote, setSuccessNote] = useState<string | null>(null);
+
+  const { loading, error, processMomoPayment, resetState } = usePaymentProcessor({
     organisationId,
     subscriptionType: plan,
   });
@@ -51,29 +45,31 @@ export default function PaymentCheckoutModal({
 
   const handlePaymentStart = async (method: PaymentMethod, phoneNumber?: string) => {
     setLocalError(null);
-    setState("processing");
+    setSuccessNote(null);
 
+    if (method !== "MOMO" || !phoneNumber) {
+      setState("error");
+      setLocalError("Only Mobile Money payments are available.");
+      return;
+    }
+
+    setState("processing");
     try {
-      if (method === "MOMO" && phoneNumber) {
-        const subscription = await processMomoPayment(phoneNumber);
-        if (subscription) {
-          setState("success");
-          setTimeout(() => {
-            onSuccess(subscription);
-          }, 1500);
-        } else {
-          setState("error");
-          setLocalError(error || "Payment failed. Please try again.");
+      const result = await processMomoPayment(phoneNumber);
+      if (result.outcome === "paid") {
+        const starts = result.subscription?.startDate ? Date.parse(result.subscription.startDate) : NaN;
+        if (Number.isFinite(starts) && starts > Date.now()) {
+          setSuccessNote(
+            `Your ${planInfo.name} starts on ${new Date(starts).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}, when your current access ends.`
+          );
         }
-      } else if (method === "CARD") {
-        const url = await processCardPayment();
-        if (url) {
-          // Redirect to Flutterwave checkout
-          window.location.href = url;
-        } else {
-          setState("error");
-          setLocalError(error || "Failed to initialize card payment. Please try again.");
-        }
+        setState("success");
+        setTimeout(() => onSuccess(result.subscription), 1500);
+      } else if (result.outcome === "pending") {
+        setState("awaiting");
+      } else {
+        setState("error");
+        setLocalError(result.error);
       }
     } catch (err) {
       setState("error");
@@ -348,7 +344,7 @@ export default function PaymentCheckoutModal({
         )}
 
         {/* ── SUCCESS ── */}
-        {state === "success" && (
+        {(state === "success" || state === "awaiting") && (
           <div
             style={{
               display: "flex",
@@ -381,7 +377,7 @@ export default function PaymentCheckoutModal({
                 textAlign: "center",
               }}
             >
-              Payment Successful!
+              {state === "awaiting" ? "Waiting for your approval" : "Payment Successful!"}
             </div>
             <div
               style={{
@@ -391,7 +387,9 @@ export default function PaymentCheckoutModal({
                 maxWidth: 300,
               }}
             >
-              Your {planInfo.name} has been activated. Welcome!
+              {state === "awaiting"
+                ? "Approve the prompt on your phone. Your plan activates automatically once Mobile Money confirms it, so you can close this window."
+                : successNote ?? `Your ${planInfo.name} is now active.`}
             </div>
           </div>
         )}
