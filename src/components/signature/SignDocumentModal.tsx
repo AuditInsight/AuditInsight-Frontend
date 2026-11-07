@@ -13,6 +13,7 @@ import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./Signatu
 import { useEvidenceDocumentAccess, isStampable, signErrorMessage, CERTIFICATE_NOTE } from "./documentAccess";
 import { SignedDocumentPreviewModal } from "./SignedDocumentPreviewModal";
 import { SignaturePlacementModal } from "./SignaturePlacementModal";
+import { DocumentIntegrityPanel } from "./DocumentIntegrityPanel";
 import { useAuth } from "@/context/AuthContext.production";
 
 interface Props {
@@ -116,9 +117,9 @@ export function SignDocumentModal({ isOpen, onClose, evidence, startPlacing = fa
               </button>
             )}
             {evidence.fileUpload && (
-              <a href={evidence.fileUpload} target="_blank" rel="noopener noreferrer" style={s.viewLink}>
+              <button type="button" onClick={() => docs.previewOriginal(evidence)} style={s.viewLink} disabled={downloading}>
                 <ExternalLink size={12} /> {signatureCount > 0 ? "View original (unsigned) file" : "View document"}
-              </a>
+              </button>
             )}
           </div>
           {docs.versionLabelFor(evidence.id) && <p style={s.versionLine}>{docs.versionLabelFor(evidence.id)}</p>}
@@ -179,6 +180,8 @@ export function SignDocumentModal({ isOpen, onClose, evidence, startPlacing = fa
               <CheckCircle2 size={14} color="#16a34a" /> You have already signed this document.
             </div>
           )}
+
+          <DocumentIntegrityPanel evidenceId={evidence.id} />
         </div>
 
         <div style={s.footer}>
@@ -219,7 +222,7 @@ const s: Record<string, React.CSSProperties> = {
   sub: { margin: "3px 0 0", fontSize: 12, color: "#94a3b8" },
   closeBtn: { background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 4, display: "flex", flexShrink: 0 },
   body: { padding: "18px 24px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 16 },
-  viewLink: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#1e3a8a", fontWeight: 600, textDecoration: "none", width: "fit-content" },
+  viewLink: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#1e3a8a", fontWeight: 600, textDecoration: "none", width: "fit-content", border: "none", background: "none", padding: 0, cursor: "pointer", fontFamily: "inherit" },
   sectionLabel: { fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" },
   muted: { fontSize: 13, color: "#94a3b8", margin: 0 },
   sigRow: { display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, border: "1px solid #f1f5f9", background: "#f8fafc" },

@@ -364,6 +364,93 @@ export const downloadSignedEvidence = async (evidenceId: string, fallbackName: s
   return { version, sha256 };
 };
 
+/* =========================
+   DOCUMENT INTEGRITY — original files, version history, verification, audit trail
+========================= */
+
+/** Reads the server's message out of a failed blob request (the error body is a Blob too). */
+async function blobErrorMessage(err: unknown, fallback: string): Promise<string> {
+  const data = (err as { response?: { data?: unknown } })?.response?.data;
+  if (data instanceof Blob) {
+    try {
+      const body = JSON.parse(await data.text()) as { error?: string; message?: string };
+      return body.error ?? body.message ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
+/**
+ * The original upload, served by the API (access-checked, integrity-checked and audited) rather than through a
+ * public storage link.
+ */
+export const getOriginalEvidenceFile = async (
+  evidenceId: string,
+  fallbackName: string
+): Promise<{ blob: Blob; fileName: string; sha256: string | null }> => {
+  try {
+    const res = await apiClient.get<Blob>(`/evidence/${evidenceId}/original`, {
+      responseType: "blob",
+      timeout: 60_000,
+    });
+    const disposition = String(res.headers["content-disposition"] ?? "");
+    const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+    return {
+      blob: res.data,
+      fileName: match ? decodeURIComponent(match[1]) : fallbackName,
+      sha256: (res.headers["x-document-sha256"] as string | undefined) || null,
+    };
+  } catch (err) {
+    throw new Error(await blobErrorMessage(err, "Could not load the original document."));
+  }
+};
+
+export interface DocumentVersionsResponse {
+  original: { documentName: string; fileType: string; sha256: string | null; uploadedAt: string };
+  versions: { versionNo: number; sha256: string; sizeBytes: number; signatureCount: number; createdAt: string }[];
+}
+
+export const getEvidenceVersions = (evidenceId: string) =>
+  apiClient.get<DocumentVersionsResponse>(`/evidence/${evidenceId}/versions`);
+
+export interface VerificationResponse {
+  result: "ORIGINAL" | "SIGNED_VERSION" | "NO_MATCH";
+  sha256: string;
+  versionNo: number | null;
+  latestVersionNo: number | null;
+  latest: boolean;
+  signers: { name: string; title?: string | null; signedAt: string }[];
+  message: string;
+}
+
+/** Checks a copy against the stored original and signed versions. The file is only hashed, never stored. */
+export const verifyEvidenceCopy = (evidenceId: string, file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return apiClient.post<VerificationResponse>(`/evidence/${evidenceId}/verify`, form, { timeout: 60_000 });
+};
+
+export type AuditEventType =
+  | "DOCUMENT_UPLOADED" | "SIGNATURE_REQUESTED" | "SIGNATURE_DECLINED" | "SIGNED"
+  | "VERSION_STORED" | "SIGNED_COPY_ACCESSED" | "ORIGINAL_ACCESSED" | "VERIFICATION";
+
+export interface AuditEventResponse {
+  id: string;
+  eventType: AuditEventType;
+  actorName?: string | null;
+  versionNo?: number | null;
+  sha256?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  details?: string | null;
+  createdAt: string;
+}
+
+export const getEvidenceAuditTrail = (evidenceId: string) =>
+  apiClient.get<AuditEventResponse[]>(`/evidence/${evidenceId}/audit-trail`);
+
 export const getPendingSignatureRequests = () =>
   apiClient.get<SignatureRequestResponse[]>("/signature-requests/pending");
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { isAxiosError } from "axios";
-import { getSignedEvidenceFile, downloadSignedEvidence, type SignedVersionInfo } from "@/utils/api";
+import { getSignedEvidenceFile, downloadSignedEvidence, getOriginalEvidenceFile, type SignedVersionInfo } from "@/utils/api";
 
 /**
  * One place that decides which file a Preview / Download button should serve for an evidence document:
@@ -49,18 +49,21 @@ export function describeSignedVersion(info: SignedVersionInfo | null | undefined
   return `Signed version v${info.version}${fingerprint}`;
 }
 
-function downloadOriginal(doc: DocumentRef) {
+function saveBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = doc.fileUpload;
-  a.download = doc.documentName;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
   a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 /**
- * Preview/download state for a list of documents. Signed documents open in an in-app PDF preview
- * (render it with <SignedDocumentPreviewModal />); unsigned ones open the original file as before.
+ * Preview/download state for a list of documents. Everything is fetched through the API (access-checked,
+ * integrity-checked and audited) — never from a public storage link. Signed documents serve the stored signed
+ * PDF; unsigned ones the original. Previews open in-app: render them with <SignedDocumentPreviewModal />.
  */
 export function useEvidenceDocumentAccess() {
   const [preview, setPreview] = useState<{ url: string; title: string; subtitle: string | null } | null>(null);
@@ -76,10 +79,46 @@ export function useEvidenceDocumentAccess() {
     };
   }, [preview]);
 
+  /** Download the original upload. */
+  const downloadOriginal = useCallback(async (doc: DocumentRef) => {
+    setError(null);
+    setBusyId(doc.id);
+    try {
+      const { blob, fileName } = await getOriginalEvidenceFile(doc.id, doc.documentName);
+      saveBlob(blob, fileName);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not download the original document.");
+    } finally {
+      setBusyId(null);
+    }
+  }, []);
+
+  /** Show the original upload in-app (PDFs and images); Word/Excel can't be shown in a browser, so they download. */
+  const previewOriginal = useCallback(async (doc: DocumentRef) => {
+    if (!isStampable(doc.fileType)) {
+      await downloadOriginal(doc);
+      return;
+    }
+    setError(null);
+    setBusyId(doc.id);
+    try {
+      const { blob, sha256 } = await getOriginalEvidenceFile(doc.id, doc.documentName);
+      setPreview({
+        url: URL.createObjectURL(blob),
+        title: `Original — ${doc.documentName}`,
+        subtitle: `Original upload (v0)${sha256 ? ` · fingerprint ${sha256.slice(0, 12)}` : ""}`,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load the original document.");
+    } finally {
+      setBusyId(null);
+    }
+  }, [downloadOriginal]);
+
   const previewDocument = useCallback(async (doc: DocumentRef) => {
     setError(null);
     if (!isSigned(doc)) {
-      window.open(doc.fileUpload, "_blank", "noopener,noreferrer");
+      await previewOriginal(doc);
       return;
     }
     setBusyId(doc.id);
@@ -97,12 +136,12 @@ export function useEvidenceDocumentAccess() {
     } finally {
       setBusyId(null);
     }
-  }, []);
+  }, [previewOriginal]);
 
   const downloadDocument = useCallback(async (doc: DocumentRef) => {
     setError(null);
     if (!isSigned(doc)) {
-      downloadOriginal(doc);
+      await downloadOriginal(doc);
       return;
     }
     setBusyId(doc.id);
@@ -114,7 +153,7 @@ export function useEvidenceDocumentAccess() {
     } finally {
       setBusyId(null);
     }
-  }, []);
+  }, [downloadOriginal]);
 
   const closePreview = useCallback(() => setPreview(null), []);
 
@@ -124,7 +163,10 @@ export function useEvidenceDocumentAccess() {
     [lastVersion]
   );
 
-  return { preview, busyId, error, previewDocument, downloadDocument, closePreview, versionLabelFor };
+  return {
+    preview, busyId, error, previewDocument, downloadDocument, previewOriginal, downloadOriginal, closePreview,
+    versionLabelFor,
+  };
 }
 
 /** Human-readable reason a signature could not be saved, using the server's message when it sent one. */
