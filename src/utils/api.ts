@@ -153,6 +153,8 @@ export interface EvidenceResponse {
   uploadedAt: string;
   /** How many people have signed this document; 0 means Preview/Download use the original file. */
   signatureCount?: number;
+  /** True when signing places the signature on the pages (PDF, image, or Word/Excel via PDF conversion). */
+  placeable?: boolean;
 }
 
 /* =========================
@@ -450,6 +452,10 @@ export interface AuditEventResponse {
 
 export const getEvidenceAuditTrail = (evidenceId: string) =>
   apiClient.get<AuditEventResponse[]>(`/evidence/${evidenceId}/audit-trail`);
+
+/** Which file types are signed by placing the signature on the page (Word/Excel only when conversion is set up). */
+export const getSigningCapabilities = () =>
+  apiClient.get<{ placeableFileTypes: string[]; officeConversion: boolean }>("/signing/capabilities");
 
 export const getPendingSignatureRequests = () =>
   apiClient.get<SignatureRequestResponse[]>("/signature-requests/pending");

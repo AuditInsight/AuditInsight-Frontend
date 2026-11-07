@@ -9,7 +9,7 @@ import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 import { friendlyEvidenceUploadError } from "@/utils/evidenceUploadErrors";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./SignaturePad";
-import { signErrorMessage, isCertificateOnlyFile, CERTIFICATE_NOTE } from "./documentAccess";
+import { signErrorMessage, isCertificateOnlyFile, isPlaceableFile, usePlaceableFileTypes, CERTIFICATE_NOTE } from "./documentAccess";
 
 // Any document uploaded here goes into a generic bucket — it isn't filed into the
 // transaction-linked folder taxonomy, since it isn't linked to a transaction at all.
@@ -50,6 +50,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave, onPlaceSignature 
   const [signError, setSignError]     = useState("");
   // Set once the file is stored, so retrying a failed signature never uploads the document a second time.
   const [uploaded, setUploaded]       = useState<Evidence | null>(null);
+  const placeableTypes = usePlaceableFileTypes();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -63,8 +64,9 @@ export function UploadDocumentModal({ isOpen, onClose, onSave, onPlaceSignature 
 
   if (!isOpen) return null;
 
-  // PDFs and images get signed by placing the signature on the document itself, right after upload.
-  const placeAfterUpload = Boolean(onPlaceSignature) && signNow && Boolean(file) && !isCertificateOnlyFile(file?.name);
+  // Documents signed on the page (PDFs, images, and Word/Excel when the server converts them) get the signature
+  // placed on the document itself, right after upload.
+  const placeAfterUpload = Boolean(onPlaceSignature) && signNow && isPlaceableFile(file?.name, placeableTypes);
 
   const finish = (doc: Evidence) => {
     setUploaded(null);
@@ -141,6 +143,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave, onPlaceSignature 
           uploadedBy: String(data.uploadedBy),
           uploadedAt: data.uploadedAt,
           signatureCount: data.signatureCount ?? 0,
+          placeable: data.placeable,
         };
         setUploaded(saved);
       } catch (err: unknown) {
@@ -240,7 +243,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave, onPlaceSignature 
             </label>
             {signNow && (
               <div style={s.signBox}>
-                {file && isCertificateOnlyFile(file.name) && (
+                {file && isCertificateOnlyFile(file.name, placeableTypes) && (
                   <p style={s.info}><Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</p>
                 )}
                 {placeAfterUpload ? (
