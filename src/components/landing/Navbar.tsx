@@ -1,5 +1,6 @@
 "use client";
 
+import { useSignupCtaLabel } from "@/hooks/useSignupCtaLabel";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Shield, Menu, X } from "lucide-react";
@@ -12,6 +13,7 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
+  const ctaLabel = useSignupCtaLabel();
   const [scrolled, setScrolled]   = useState(false);
   const [hover, setHover]         = useState<string | null>(null);
   const [menuOpen, setMenuOpen]   = useState(false);
@@ -89,7 +91,7 @@ export default function Navbar() {
             <button style={s.ghostBtn}>Sign In</button>
           </Link>
           <Link href="/sign-up" style={{ textDecoration: "none" }}>
-            <button style={s.primaryBtn}>Start Free Trial →</button>
+            <button style={s.primaryBtn}>{ctaLabel} →</button>
           </Link>
         </div>
 
@@ -113,7 +115,7 @@ export default function Navbar() {
           <button style={{ ...s.ghostBtn, width: "100%" }}>Sign In</button>
         </Link>
         <Link href="/sign-up" style={{ textDecoration: "none" }} onClick={() => setMenuOpen(false)}>
-          <button style={{ ...s.primaryBtn, width: "100%", marginTop: 8 }}>Start Free Trial →</button>
+          <button style={{ ...s.primaryBtn, width: "100%", marginTop: 8 }}>{ctaLabel} →</button>
         </Link>
       </div>
     </>

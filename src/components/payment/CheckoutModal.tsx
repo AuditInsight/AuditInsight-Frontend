@@ -5,8 +5,7 @@ import { createPortal } from "react-dom";
 import { SubscriptionType, getPlan, formatRwf } from "@/types/billing";
 import StripeCardInput, { CardData } from "./StripeCardInput";
 import MoMoInput from "./MoMoInput";
-import { TEST_CARDS } from "./cardUtils";
-import { MoMoData, simulateMoMoPayment } from "./momoUtils";
+import { MoMoData } from "./momoUtils";
 import { CheckCircle2, XCircle, Lock, ChevronRight, CreditCard, Smartphone } from "lucide-react";
 import { startMomoCheckout, startCardCheckout, getMomoPaymentStatus, PaymentStatusResponse } from "@/utils/api";
 import { usePlans } from "@/hooks/usePlans";
@@ -104,24 +103,6 @@ interface Props {
   onSuccess: (receiptId: string) => void;
 }
 
-// ── Simulate Stripe payment processing ────────────────────────────
-async function simulatePayment(cardNumber: string): Promise<{ success: boolean; receiptId?: string; error?: string }> {
-  // Simulate network delay
-  await new Promise((r) => setTimeout(r, 1400));
-
-  // Check against test card outcomes
-  const declined = TEST_CARDS.find(
-    (c) => c.number.replace(/\s/g, "") === cardNumber && c.result === "declined"
-  );
-  if (declined) {
-    return { success: false, error: "Your card was declined. Please try a different card." };
-  }
-
-  // All other valid cards succeed
-  const receiptId = `rcpt_${Date.now().toString(36).toUpperCase()}`;
-  return { success: true, receiptId };
-}
-
 type PaymentMethod = "card" | "momo";
 
 // Only MTN Mobile Money is supported for now; flip to re-enable card payments.
@@ -195,9 +176,8 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
     if (payMethod === "momo") {
       if (!momoData?.isValid) return;
       try {
-        // During onboarding (no organisationId), use simulated payment
         if (!organisationId) {
-          result = await simulateMoMoPayment(momoData.phone);
+          result = { success: false, error: "Your organisation is not set up yet, so payment cannot start." };
         } else {
           // Call real backend MOMO endpoint
           const response = await startMomoCheckout(organisationId, {
@@ -232,9 +212,8 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
     } else {
       if (!cardData?.isValid) return;
       try {
-        // During onboarding (no organisationId), use simulated payment
         if (!organisationId) {
-          result = await simulatePayment(cardData.number);
+          result = { success: false, error: "Your organisation is not set up yet, so payment cannot start." };
         } else {
           // Call real backend Card endpoint
           const response = await startCardCheckout(organisationId, {

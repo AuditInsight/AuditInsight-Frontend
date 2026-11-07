@@ -1,34 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { isAxiosError } from "axios";
 import { CreditCard, Loader2, LogOut, RefreshCw, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext.production";
 import { usePlans } from "@/hooks/usePlans";
 import { formatRwf } from "@/types/billing";
-import type { Subscription, SubscriptionType } from "@/types/billing";
-import { getActiveSubscription, getPlatformAccess } from "@/utils/api";
-import PaymentCheckoutModal from "@/components/ngo/settings/billing/PaymentCheckoutModal";
+import type { SubscriptionType } from "@/types/billing";
+import { getOrganisationAccess, type AccessResponse } from "@/utils/api";
+import CheckoutModal from "@/components/payment/CheckoutModal";
 
 type AccessState = "loading" | "active" | "unpaid" | "error";
 
-function hasPaidAccess(subscription: Subscription): boolean {
-  const endDate = Date.parse(subscription.endDate);
-  return subscription.status === "ACTIVE" && Number.isFinite(endDate) && endDate > Date.now();
+const DATE = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+function formatDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? DATE.format(new Date(parsed)) : null;
 }
 
-function isMissingSubscription(error: unknown): boolean {
-  if (!isAxiosError<{ error?: string; message?: string }>(error)) return false;
-  const message = error.response?.data?.error ?? error.response?.data?.message ?? "";
-  return error.response?.status === 400 && /no (active )?subscription/i.test(message);
-}
-
+/**
+ * Shows the workspace only when the backend says the organisation has access: a current paid period, a trial a
+ * Super Admin authorised, or the platform emergency override. Otherwise asks for payment. The browser never
+ * decides access itself; it only displays the backend's decision.
+ */
 export default function SubscriptionAccessGate({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const { plans, loading: plansLoading, error: plansError, refetch } = usePlans();
   const [accessState, setAccessState] = useState<AccessState>("loading");
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [access, setAccess] = useState<AccessResponse | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionType | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -53,34 +54,14 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
     window.addEventListener("focus", refreshWhenVisible);
     const refreshInterval = window.setInterval(refreshWhenVisible, 60_000);
 
-    getPlatformAccess()
-      .then(({ data: access }) => {
+    getOrganisationAccess(organisationId)
+      .then(({ data }) => {
         if (!current) return;
-        if (access.freeAccessEnabled) {
-          setSubscription(null);
-          setAccessState("active");
-          return null;
-        }
-        return getActiveSubscription(organisationId);
+        setAccess(data);
+        setAccessState(data.hasAccess ? "active" : "unpaid");
       })
-      .then((response) => {
-        if (!current || !response) return;
-        const { data } = response;
-        const currentSubscription: Subscription = {
-          ...data,
-          subscriptionType: data.subscriptionType ?? null,
-        };
-        setSubscription(currentSubscription);
-        setAccessState(hasPaidAccess(currentSubscription) ? "active" : "unpaid");
-      })
-      .catch((error: unknown) => {
-        if (!current) return;
-        if (isMissingSubscription(error)) {
-          setSubscription(null);
-          setAccessState("unpaid");
-        } else {
-          setAccessState("error");
-        }
+      .catch(() => {
+        if (current) setAccessState("error");
       });
 
     return () => {
@@ -90,28 +71,30 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
     };
   }, [retryCount, user?.organisationId]);
 
-  const retrySubscriptionCheck = useCallback(() => {
+  const retryAccessCheck = useCallback(() => {
     setAccessState("loading");
     setRetryCount((count) => count + 1);
   }, []);
 
-  const handlePaymentSuccess = (paidSubscription: Subscription) => {
+  const handlePaymentSuccess = () => {
     setSelectedPlan(null);
-    setSubscription(paidSubscription);
-    if (hasPaidAccess(paidSubscription)) {
-      setAccessState("active");
-      return;
-    }
-    retrySubscriptionCheck();
+    retryAccessCheck();
   };
 
-  if (accessState === "active") return children;
+  if (accessState === "active") {
+    return (
+      <>
+        <AccessBanner access={access} />
+        {children}
+      </>
+    );
+  }
 
   if (accessState === "loading") {
     return (
       <div style={styles.centered}>
         <Loader2 size={32} style={styles.spinner} />
-        <p style={styles.muted}>Checking your organisation’s subscription…</p>
+        <p style={styles.muted}>Checking your organisation’s access…</p>
       </div>
     );
   }
@@ -129,13 +112,16 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
           {!user?.organisationId && (
             <p style={styles.error}>This account is not linked to an organisation.</p>
           )}
-          <button type="button" onClick={retrySubscriptionCheck} style={styles.primaryButton}>
+          <button type="button" onClick={retryAccessCheck} style={styles.primaryButton}>
             <RefreshCw size={16} /> Try again
           </button>
         </section>
       </div>
     );
   }
+
+  const trialEnded = access?.trial && !access.trial.current ? formatDate(access.trial.endsAt) : null;
+  const requestedPlan = access?.requestedPlan ?? null;
 
   return (
     <div style={styles.centered}>
@@ -145,16 +131,14 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
           <CreditCard size={24} />
         </div>
         <p style={styles.eyebrow}>SUBSCRIPTION REQUIRED</p>
-        <h1 style={styles.title}>Pay to use the AuditInsight platform</h1>
+        <h1 style={styles.title}>
+          {trialEnded ? "Your free trial has ended" : "Pay to use the AuditInsight platform"}
+        </h1>
         <p style={styles.description}>
-          Your organisation needs an active paid subscription to use its workspace. Choose a plan
-          below to unlock transactions, evidence, reports, and the rest of the platform.
+          {trialEnded
+            ? `Your trial ended on ${trialEnded}. Choose a plan below to keep using your workspace. Your data is safe.`
+            : "Your organisation needs an active paid subscription to use its workspace. Choose a plan below to unlock transactions, evidence, reports, and the rest of the platform."}
         </p>
-        {subscription && (
-          <p style={styles.currentStatus}>
-            Current subscription status: <strong>{subscription.status}</strong>
-          </p>
-        )}
 
         {plansLoading ? (
           <div style={styles.planStatus}>
@@ -171,16 +155,16 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
         ) : (
           <div style={styles.plans}>
             {plans.map((plan) => (
-              <article key={plan.id} style={styles.planCard}>
+              <article
+                key={plan.id}
+                style={plan.id === requestedPlan ? { ...styles.planCard, ...styles.planCardChosen } : styles.planCard}
+              >
+                {plan.id === requestedPlan && <p style={styles.chosenTag}>Chosen at sign-up</p>}
                 <h2 style={styles.planName}>{plan.name}</h2>
                 <p style={styles.price}>{formatRwf(plan.price)}</p>
                 <p style={styles.billed}>{plan.billed}</p>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan(plan.id)}
-                  style={styles.primaryButton}
-                >
-                  Choose plan
+                <button type="button" onClick={() => setSelectedPlan(plan.id)} style={styles.primaryButton}>
+                  Pay with Mobile Money
                 </button>
               </article>
             ))}
@@ -204,7 +188,7 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
       </section>
 
       {selectedPlan && user?.organisationId && (
-        <PaymentCheckoutModal
+        <CheckoutModal
           open
           plan={selectedPlan}
           organisationId={user.organisationId}
@@ -212,6 +196,28 @@ export default function SubscriptionAccessGate({ children }: { children: React.R
           onSuccess={handlePaymentSuccess}
         />
       )}
+    </div>
+  );
+}
+
+/** A slim note above the workspace while it runs on a trial or the emergency override. */
+function AccessBanner({ access }: { access: AccessResponse | null }) {
+  if (!access) return null;
+  const until = formatDate(access.accessUntil);
+  const paidStarts = formatDate(access.nextPaid?.startDate);
+  let text: string;
+  if (access.basis === "TRIAL") {
+    text = paidStarts
+      ? `Free trial until ${until}. Your paid plan starts on ${paidStarts}.`
+      : `Free trial until ${until}. Choose a plan in Billing to keep access afterwards.`;
+  } else if (access.basis === "EMERGENCY_OVERRIDE") {
+    text = `Temporary platform-wide access until ${until}.`;
+  } else {
+    return null;
+  }
+  return (
+    <div role="status" style={styles.banner}>
+      {text}
     </div>
   );
 }
@@ -293,6 +299,8 @@ const styles: Record<string, React.CSSProperties> = {
   logoutButton: { display: "inline-flex", alignItems: "center", gap: 7, marginTop: 20, padding: 8, border: 0, background: "transparent", color: "#64748b", fontSize: 13, cursor: "pointer" },
   muted: { marginTop: 14, color: "#64748b", fontSize: 14 },
   error: { margin: "0 0 16px", color: "#b91c1c", fontSize: 13 },
-  currentStatus: { margin: "-14px 0 24px", color: "#64748b", fontSize: 13 },
   spinner: { color: "#1e3a8a", animation: "subscription-spin 1s linear infinite" },
+  planCardChosen: { borderColor: "#1e3a8a", boxShadow: "0 0 0 1px #1e3a8a" },
+  chosenTag: { margin: "0 0 8px", color: "#1e3a8a", fontSize: 11, fontWeight: 700 },
+  banner: { padding: "8px 16px", background: "#eff6ff", borderBottom: "1px solid #bfdbfe", color: "#1e3a8a", fontSize: 13, textAlign: "center" },
 };

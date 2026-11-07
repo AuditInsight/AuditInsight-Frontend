@@ -105,6 +105,8 @@ export interface AdminOrganisationDetailResponse {
 export interface AdminChangeSubscriptionRequest {
   subscriptionType: AdminSubscriptionType;
   endDate?: string;
+  /** Why the paid time is being changed; stored on the period and in the audit log. */
+  reason?: string;
 }
 
 export interface AdminPlanPriceResponse {
@@ -126,6 +128,7 @@ export interface AdminFreeAccessResponse {
   startsAt: string | null;
   endsAt: string | null;
   updatedAt: string | null;
+  reason: string | null;
 }
 
 export interface AdminAuditLogResponse {
@@ -136,6 +139,7 @@ export interface AdminAuditLogResponse {
   targetId: string;
   beforeState: string | null;
   afterState: string | null;
+  reason?: string | null;
   createdAt: string;
 }
 
@@ -188,11 +192,104 @@ export const updateAdminPlanPrice = (
 export const getAdminFreeAccess = () =>
   apiClient.get<AdminFreeAccessResponse>("/admin/free-access");
 
-export const startAdminFreeAccess = (durationDays: number) =>
-  apiClient.post<AdminFreeAccessResponse>("/admin/free-access/start", { durationDays });
+export const startAdminFreeAccess = (durationDays: number, reason: string) =>
+  apiClient.post<AdminFreeAccessResponse>("/admin/free-access/start", { durationDays, reason });
 
-export const endAdminFreeAccess = () =>
-  apiClient.post<AdminFreeAccessResponse>("/admin/free-access/end");
+export const endAdminFreeAccess = (reason?: string) =>
+  apiClient.post<AdminFreeAccessResponse>("/admin/free-access/end", reason ? { reason } : {});
+
+export interface EmergencyOverrideDependent {
+  organisationId: string;
+  name: string;
+  nextPaidStart: string | null;
+}
+
+/** Organisations that would lose access if the emergency override ended now. */
+export const getEmergencyOverrideDependents = () =>
+  apiClient.get<EmergencyOverrideDependent[]>("/admin/free-access/dependents");
+
+/* =========================
+   ADMIN API — TRIALS
+========================= */
+export type TrialSource = "INDIVIDUAL" | "CAMPAIGN";
+export type TrialGrantStatus = "ACTIVE" | "ENDED" | "REVOKED";
+export type TrialEventType = "GRANTED" | "EXTENDED" | "SHORTENED" | "REVOKED" | "ENDED" | "PAID_PERIODS_MOVED";
+
+export interface TrialGrant {
+  id: string;
+  organisationId: string;
+  source: TrialSource;
+  campaignId: string | null;
+  status: TrialGrantStatus;
+  durationDays: number;
+  startsAt: string;
+  endsAt: string;
+  reason: string | null;
+  createdAt: string;
+  revokedAt: string | null;
+  revokeReason: string | null;
+}
+
+export interface TrialGrantEvent {
+  id: string;
+  grantId: string;
+  eventType: TrialEventType;
+  oldEndsAt: string | null;
+  newEndsAt: string | null;
+  reason: string | null;
+  details: string | null;
+  createdAt: string;
+}
+
+export interface TrialHistory {
+  grants: TrialGrant[];
+  events: TrialGrantEvent[];
+}
+
+export const getOrganisationTrials = (organisationId: string) =>
+  apiClient.get<TrialHistory>(`/admin/organisations/${organisationId}/trials`);
+
+export const grantOrganisationTrial = (organisationId: string, days: number, reason: string) =>
+  apiClient.post<TrialGrant>(`/admin/organisations/${organisationId}/trials`, { days, reason });
+
+/** Extend or shorten: newEndsAt is a local date-time without zone, e.g. "2026-12-01T17:00:00". */
+export const changeOrganisationTrialEnd = (organisationId: string, newEndsAt: string, reason: string) =>
+  apiClient.patch<TrialGrant>(`/admin/organisations/${organisationId}/trials/current`, { newEndsAt, reason });
+
+export const revokeOrganisationTrial = (organisationId: string, reason: string) =>
+  apiClient.post<TrialGrant>(`/admin/organisations/${organisationId}/trials/current/revoke`, { reason });
+
+export interface TrialCampaign {
+  id: string;
+  name: string;
+  durationDays: number;
+  startsAt: string;
+  endsAt: string | null;
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface TrialCampaignView {
+  campaign: TrialCampaign;
+  grantsIssued: number;
+  grantingNow: boolean;
+}
+
+export const getTrialCampaigns = () => apiClient.get<TrialCampaignView[]>("/admin/trial-campaigns");
+
+export const createTrialCampaign = (data: {
+  name: string;
+  durationDays: number;
+  startsAt?: string;
+  endsAt?: string;
+  reason?: string;
+}) => apiClient.post<TrialCampaignView>("/admin/trial-campaigns", data);
+
+export const enableTrialCampaign = (campaignId: string, reason: string) =>
+  apiClient.post<TrialCampaignView>(`/admin/trial-campaigns/${campaignId}/enable`, { reason });
+
+export const disableTrialCampaign = (campaignId: string, reason: string) =>
+  apiClient.post<TrialCampaignView>(`/admin/trial-campaigns/${campaignId}/disable`, { reason });
 
 /* =========================
    ADMIN API — AUDIT LOG

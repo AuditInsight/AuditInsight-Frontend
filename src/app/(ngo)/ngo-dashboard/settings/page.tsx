@@ -144,13 +144,13 @@ function SettingsContent() {
     setPaymentOpen(true);
   };
 
-  const handlePaymentSuccess = (updatedSubscription: Subscription) => {
-    setSubscription(updatedSubscription);
+  const handlePaymentSuccess = (updatedSubscription: Subscription | null) => {
+    if (updatedSubscription) setSubscription(updatedSubscription);
     setPaymentOpen(false);
     setConfirmPlanChange(null);
     toast.success(
       "Subscription updated",
-      `Your ${getPlan(updatedSubscription.subscriptionType)?.name ?? "plan"} is now active.`
+      `Your ${getPlan(updatedSubscription?.subscriptionType ?? confirmPlanChange ?? "MONTHLY")?.name ?? "plan"} payment was confirmed.`
     );
     loadSubscription();
   };

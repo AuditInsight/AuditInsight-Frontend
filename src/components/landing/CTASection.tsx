@@ -1,11 +1,13 @@
 "use client";
 
+import { useSignupCtaLabel } from "@/hooks/useSignupCtaLabel";
 
 import Link from "next/link";
 import { ArrowRight, Shield } from "lucide-react";
 
 
 export default function CTASection() {
+  const ctaLabel = useSignupCtaLabel();
  return (
    <section style={s.section}>
      <style>{`
@@ -43,7 +45,7 @@ export default function CTASection() {
            <div className="cta-actions">
              <Link href="/sign-up" style={{ textDecoration: "none" }}>
                <button style={s.primaryBtn}>
-                 Start Free Trial{" "}
+                 {ctaLabel}{" "}
                  <ArrowRight size={15} style={{ marginLeft: 6 }} />
                </button>
              </Link>

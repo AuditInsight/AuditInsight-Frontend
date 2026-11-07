@@ -11,6 +11,8 @@ export interface CreateOrganisationRequest {
   fiscalYearEnd: string;        // MM-dd format e.g. "12-31"
   currencies: string[];         // e.g. ["USD", "RWF"]
   size: string;                 // required by backend e.g. "1-10", "11-50"
+  /** Plan picked during onboarding; kept so checkout can be completed later. */
+  subscriptionType?: "MONTHLY" | "SIX_MONTHS" | "ANNUAL";
 }
 
 export interface OrganisationApiResponse {

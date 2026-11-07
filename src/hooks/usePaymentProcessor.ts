@@ -5,14 +5,13 @@ import { SubscriptionType, Subscription } from "@/types/billing";
 export interface PaymentCheckoutResponse {
   paymentId: string;
   checkoutUrl?: string;
-  status: "PENDING" | "PROCESSING";
-  message: string;
+  status: string;
 }
 
 export interface PaymentStatusResponse {
   paymentId: string;
-  status: "PENDING" | "PROCESSING" | "SUCCESSFUL" | "FAILED";
-  message?: string;
+  status: "PENDING" | "SUCCESSFUL" | "FAILED" | "UNDERPAID" | "EXPIRED" | "CANCELLED";
+  failureReason?: string;
 }
 
 export interface SubscriptionResponse {
@@ -24,160 +23,110 @@ export interface SubscriptionResponse {
   endDate: string;
 }
 
+/** Outcome of a Mobile Money payment, returned directly so callers never read stale hook state. */
+export type MomoPaymentResult =
+  | { outcome: "paid"; subscription: Subscription | null }
+  /** Still awaiting approval when we stopped watching; the server will finish it when it is confirmed. */
+  | { outcome: "pending"; paymentId: string }
+  | { outcome: "failed"; error: string };
+
 interface UsePaymentProcessorOptions {
   organisationId: string;
   subscriptionType: SubscriptionType;
 }
 
-export function usePaymentProcessor({
-  organisationId,
-  subscriptionType,
-}: UsePaymentProcessorOptions) {
+const POLL_INTERVAL_MS = 2000;
+/** About two minutes of active checking before we stop blocking the user. */
+const MAX_POLL_ATTEMPTS = 60;
+
+/** Backend messages (e.g. "A Mobile Money payment … is already waiting") live in response.data.message. */
+function serverMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "response" in err) {
+    const data = (err as { response?: { data?: { message?: string; error?: string } } }).response?.data;
+    if (data?.message) return data.message;
+    if (data?.error) return data.error;
+  }
+  return fallback;
+}
+
+function failureMessage(data: PaymentStatusResponse): string {
+  switch (data.status) {
+    case "UNDERPAID":
+      return data.failureReason ?? "The full subscription amount was not received.";
+    case "EXPIRED":
+      return "The payment was not approved in time. Please try again.";
+    case "CANCELLED":
+      return "The payment was cancelled.";
+    default:
+      return data.failureReason ?? "The payment was declined. Please try again.";
+  }
+}
+
+export function usePaymentProcessor({ organisationId, subscriptionType }: UsePaymentProcessorOptions) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
-  // Start MOMO Checkout
   const startMomoCheckout = useCallback(
-    async (phoneNumber: string): Promise<string | null> => {
-      setLoading(true);
-      setError(null);
+    async (phoneNumber: string): Promise<{ id: string } | { error: string }> => {
       try {
         const response = await apiClient.post<PaymentCheckoutResponse>(
           `/subscriptions/${organisationId}/checkout/momo`,
-          {
-            subscriptionType,
-            phoneNumber,
-          }
+          { subscriptionType, phoneNumber }
         );
-
-        const { paymentId: id } = response.data;
-        setPaymentId(id);
-        return id;
+        setPaymentId(response.data.paymentId);
+        return { id: response.data.paymentId };
       } catch (err) {
-        const errorMsg =
-          err instanceof Error
-            ? err.message
-            : "Failed to initiate MOMO payment. Please try again.";
-        setError(errorMsg);
-        return null;
-      } finally {
-        setLoading(false);
+        return { error: serverMessage(err, "Could not start the Mobile Money payment. Please try again.") };
       }
     },
     [organisationId, subscriptionType]
   );
 
-  // Start Card Checkout
-  const startCardCheckout = useCallback(async (): Promise<string | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.post<PaymentCheckoutResponse>(
-        `/subscriptions/${organisationId}/checkout/card`,
-        {
-          subscriptionType,
-          returnUrl: `${typeof window !== "undefined" ? window.location.origin : ""}/ngo-dashboard/settings?tab=Billing%20and%20Plans`,
-        }
-      );
-
-      const { paymentId: id, checkoutUrl: url } = response.data;
-      setPaymentId(id);
-      if (url) setCheckoutUrl(url);
-      return id;
-    } catch (err) {
-      const errorMsg =
-        err instanceof Error
-          ? err.message
-          : "Failed to initiate card payment. Please try again.";
-      setError(errorMsg);
-      return null;
-    } finally {
-      setLoading(false);
+  /** Resolves with the final status, or null if it is still pending after the active window. */
+  const pollPaymentStatus = useCallback(async (id: string): Promise<PaymentStatusResponse | null> => {
+    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+      try {
+        const { data } = await apiClient.get<PaymentStatusResponse>(`/subscriptions/payments/${id}/status`);
+        if (data.status !== "PENDING") return data;
+      } catch {
+        // A network blip is not a failed payment: keep checking.
+      }
     }
-  }, [organisationId, subscriptionType]);
+    return null;
+  }, []);
 
-  // Poll Payment Status
-  const pollPaymentStatus = useCallback(
-    async (id: string, maxAttempts: number = 60): Promise<boolean> => {
-      let attempts = 0;
-      const pollInterval = 2000; // 2 seconds
-
-      return new Promise((resolve) => {
-        const interval = setInterval(async () => {
-          attempts++;
-
-          try {
-            const response = await apiClient.get<PaymentStatusResponse>(
-              `/subscriptions/payments/${id}/status`
-            );
-
-            const { status } = response.data;
-
-            if (status === "SUCCESSFUL") {
-              clearInterval(interval);
-              resolve(true);
-            } else if (status === "FAILED") {
-              clearInterval(interval);
-              setError("Payment failed. Please try again.");
-              resolve(false);
-            } else if (attempts >= maxAttempts) {
-              clearInterval(interval);
-              setError("Payment verification timed out. Please check your payment status.");
-              resolve(false);
-            }
-          } catch (err) {
-            if (attempts >= maxAttempts) {
-              clearInterval(interval);
-              const errorMsg =
-                err instanceof Error ? err.message : "Failed to verify payment status";
-              setError(errorMsg);
-              resolve(false);
-            }
-          }
-        }, pollInterval);
-      });
-    },
-    []
-  );
-
-  // Get Active Subscription
+  /** The paid period now running (or queued after a trial). Null if it can't be loaded — payment still succeeded. */
   const getActiveSubscription = useCallback(async (): Promise<Subscription | null> => {
     try {
-      // Create a promise that rejects after 5 seconds
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Subscription request timed out")), 5000)
-      );
-
-      const response = await Promise.race([
-        apiClient.get<SubscriptionResponse>(
-          `/subscriptions/${organisationId}/active`
-        ),
-        timeoutPromise,
-      ]);
-
+      const response = await apiClient.get<SubscriptionResponse>(`/subscriptions/${organisationId}/active`);
       return response.data;
-    } catch (err) {
-      console.warn("Failed to fetch active subscription - using default", err);
-      // Return null and let the settings page use a default subscription
+    } catch {
       return null;
     }
   }, [organisationId]);
 
-  // Process MOMO Payment (full flow)
   const processMomoPayment = useCallback(
-    async (phoneNumber: string): Promise<Subscription | null> => {
-      const id = await startMomoCheckout(phoneNumber);
-      if (!id) return null;
-
+    async (phoneNumber: string): Promise<MomoPaymentResult> => {
       setLoading(true);
+      setError(null);
       try {
-        const success = await pollPaymentStatus(id);
-        if (!success) return null;
-
-        const subscription = await getActiveSubscription();
-        return subscription;
+        const started = await startMomoCheckout(phoneNumber);
+        if ("error" in started) {
+          setError(started.error);
+          return { outcome: "failed", error: started.error };
+        }
+        const final = await pollPaymentStatus(started.id);
+        if (!final) {
+          return { outcome: "pending", paymentId: started.id };
+        }
+        if (final.status === "SUCCESSFUL") {
+          return { outcome: "paid", subscription: await getActiveSubscription() };
+        }
+        const message = failureMessage(final);
+        setError(message);
+        return { outcome: "failed", error: message };
       } finally {
         setLoading(false);
       }
@@ -185,29 +134,17 @@ export function usePaymentProcessor({
     [startMomoCheckout, pollPaymentStatus, getActiveSubscription]
   );
 
-  // Process Card Payment (returns checkout URL)
-  const processCardPayment = useCallback(async (): Promise<string | null> => {
-    const id = await startCardCheckout();
-    return id ? checkoutUrl : null;
-  }, [startCardCheckout, checkoutUrl]);
-
   const resetState = useCallback(() => {
     setLoading(false);
     setError(null);
     setPaymentId(null);
-    setCheckoutUrl(null);
   }, []);
 
   return {
     loading,
     error,
     paymentId,
-    checkoutUrl,
-    startMomoCheckout,
-    startCardCheckout,
-    pollPaymentStatus,
     processMomoPayment,
-    processCardPayment,
     getActiveSubscription,
     resetState,
   };

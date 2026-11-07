@@ -1,9 +1,11 @@
 "use client";
 
+import { useSignupCtaLabel } from "@/hooks/useSignupCtaLabel";
 import Link from "next/link";
 import { Shield, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, Lock } from "lucide-react";
 
 export default function HeroSection() {
+  const ctaLabel = useSignupCtaLabel();
   return (
     <section style={s.section}>
       <style>{`
@@ -80,7 +82,7 @@ export default function HeroSection() {
           <div className="hero-actions">
             <Link href="/sign-up" style={{ textDecoration: "none" }}>
               <button style={s.primaryBtn}>
-                Start Free Trial <ArrowRight size={15} style={{ marginLeft: 6 }} />
+                {ctaLabel} <ArrowRight size={15} style={{ marginLeft: 6 }} />
               </button>
             </Link>
             <Link href="/log-in" style={{ textDecoration: "none" }}>

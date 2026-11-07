@@ -23,6 +23,7 @@ export default function ChangeTierModal({ open, organisationId, organisationName
   const { plans } = usePlans();
   const [selected, setSelected] = useState<AdminSubscriptionType>(currentType ?? "MONTHLY");
   const [endDate, setEndDate] = useState("");
+  const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +35,9 @@ export default function ChangeTierModal({ open, organisationId, organisationName
     try {
       const { data } = await changeOrganisationSubscription(organisationId, {
         subscriptionType: selected,
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        // The backend works in server-local time without a zone: send the end of the chosen day.
+        endDate: endDate ? `${endDate}T23:59:00` : undefined,
+        reason: reason.trim() || undefined,
       });
       onChanged(data);
       onClose();
@@ -99,6 +102,18 @@ export default function ChangeTierModal({ open, organisationId, organisationName
             />
           </label>
           <p style={hint}>Leave blank to compute the end date from the selected plan&apos;s duration.</p>
+
+          <label style={fieldLabel}>
+            Reason (recorded in the audit log)
+            <input
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Partner organisation, complimentary access"
+              disabled={submitting}
+              style={dateInput}
+            />
+          </label>
+          <p style={hint}>If the organisation has no paid period running, this creates a complimentary period starting now.</p>
 
           {error && (
             <div style={errorBox}>
