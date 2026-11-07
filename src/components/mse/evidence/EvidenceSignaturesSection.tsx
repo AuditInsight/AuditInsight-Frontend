@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PenLine, Send, UserPlus, X, Check, Eraser, Clock } from "lucide-react";
 import { theme } from "@/styles/theme";
 import { useAuth } from "@/context/AuthContext.production";
+import { SignaturePlacementModal } from "@/components/signature/SignaturePlacementModal";
+import { isStampable } from "@/components/signature/documentAccess";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 import {
   declineSignatureRequest,
@@ -17,6 +19,8 @@ import {
 
 interface Props {
   evidenceId: string;
+  /** When given for a PDF or image, signing opens the document so the signer can place the signature. */
+  evidenceDocument?: { documentName: string; fileType?: string | null };
   /** Called after a signature is added so the parent can refresh badges/counts. */
   onChanged?: () => void;
   /** Reports whether someone has asked the logged-in user to sign (and they haven't yet), so the parent can show this first. */
@@ -38,7 +42,8 @@ function errorMessage(err: unknown, fallback: string): string {
   return e?.response?.data?.error ?? e?.response?.data?.message ?? fallback;
 }
 
-export function EvidenceSignaturesSection({ evidenceId, onChanged, onPendingRequestChange, onSignatureCountChange }: Props) {
+export function EvidenceSignaturesSection({ evidenceId, evidenceDocument, onChanged, onPendingRequestChange, onSignatureCountChange }: Props) {
+  const placeOnDocument = Boolean(evidenceDocument) && isStampable(evidenceDocument?.fileType);
   const { user } = useAuth();
   const [data, setData] = useState<EvidenceSignaturesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -167,7 +172,16 @@ export function EvidenceSignaturesSection({ evidenceId, onChanged, onPendingRequ
         </div>
       )}
 
-      {data && panel === "sign" && (
+      {data && panel === "sign" && placeOnDocument && evidenceDocument && (
+        <SignaturePlacementModal
+          evidence={{ id: evidenceId, documentName: evidenceDocument.documentName }}
+          defaultFullName={user?.fullName ?? ""}
+          onClose={() => setPanel("none")}
+          onSigned={afterChange}
+        />
+      )}
+
+      {data && panel === "sign" && !placeOnDocument && (
         <SignPanel
           evidenceId={evidenceId}
           defaultName={user?.fullName ?? ""}

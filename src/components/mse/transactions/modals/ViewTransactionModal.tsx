@@ -111,9 +111,9 @@ export default function ViewTransactionModal({ transaction, evidence, onClose }:
                         {ev.folder} › {ev.subfolder} • {ev.fileType.toUpperCase()} • {ev.uploadedAt?.split("T")[0]}
                       </div>
                       {isSigned(ev) && !isStampable(ev.fileType) && (
-                        <a href={ev.fileUpload} target="_blank" rel="noopener noreferrer" style={originalLink}>
+                        <button type="button" onClick={() => docs.previewOriginal(ev)} style={originalLink}>
                           View original file
-                        </a>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -143,13 +143,13 @@ export default function ViewTransactionModal({ transaction, evidence, onClose }:
           {docs.error && <p style={errorText}>{docs.error}</p>}
         </div>
       </div>
-      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} subtitle={docs.preview?.subtitle} onClose={docs.closePreview} />
     </div>
   );
 }
 
 const signedBadge: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: "#15803d", background: "#dcfce7", borderRadius: 999, padding: "1px 7px" };
-const originalLink: React.CSSProperties = { display: "inline-block", marginTop: 3, fontSize: 11, color: "#2563eb" };
+const originalLink: React.CSSProperties = { display: "inline-block", marginTop: 3, padding: 0, border: "none", background: "none", cursor: "pointer", fontSize: 11, color: "#2563eb", textDecoration: "underline", fontFamily: "inherit" };
 const errorText: React.CSSProperties = { margin: "10px 0 0", fontSize: 12, color: "#b91c1c" };
 
 import { modalOverlayStyle } from "@/lib/modalOverlay";

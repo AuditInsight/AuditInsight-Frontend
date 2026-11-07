@@ -28,9 +28,14 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSave: (evidence: Evidence) => void;
+  /**
+   * When given, PDFs and images uploaded with "Sign this document now" are handed over here after upload so the
+   * signer can place the signature on the document, instead of signing from this form.
+   */
+  onPlaceSignature?: (evidence: Evidence) => void;
 }
 
-export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
+export function UploadDocumentModal({ isOpen, onClose, onSave, onPlaceSignature }: Props) {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -57,6 +62,9 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // PDFs and images get signed by placing the signature on the document itself, right after upload.
+  const placeAfterUpload = Boolean(onPlaceSignature) && signNow && Boolean(file) && !isCertificateOnlyFile(file?.name);
 
   const finish = (doc: Evidence) => {
     setUploaded(null);
@@ -93,7 +101,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
       setSubmitError("Please enter a document name and attach a file before uploading.");
       return;
     }
-    if (signNow && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
+    if (signNow && !placeAfterUpload && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
       setSignError("Draw or type your signature, or turn off “Sign this document now”.");
       return;
     }
@@ -141,6 +149,13 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
         setSaving(false);
         return;
       }
+    }
+
+    if (placeAfterUpload && onPlaceSignature) {
+      setSaving(false);
+      finish(saved);
+      onPlaceSignature(saved);
+      return;
     }
 
     if (signNow) {
@@ -228,7 +243,15 @@ export function UploadDocumentModal({ isOpen, onClose, onSave }: Props) {
                 {file && isCertificateOnlyFile(file.name) && (
                   <p style={s.info}><Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</p>
                 )}
-                <SignaturePad value={signaturePad} onChange={(v) => { setSignaturePad(v); setSignError(""); }} disabled={saving} />
+                {placeAfterUpload ? (
+                  <p style={{ ...s.info, margin: 0 }}>
+                    <Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />
+                    After the upload, the document opens so you can draw or type your signature and place it exactly
+                    where it belongs.
+                  </p>
+                ) : (
+                  <SignaturePad value={signaturePad} onChange={(v) => { setSignaturePad(v); setSignError(""); }} disabled={saving} />
+                )}
               </div>
             )}
           </div>

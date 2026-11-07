@@ -139,7 +139,7 @@ export const EvidenceDropdown = (
           {docs.error && <div style={errorRow}>{docs.error}</div>}
         </div>
       )}
-      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} subtitle={docs.preview?.subtitle} onClose={docs.closePreview} />
     </div>
   );
 };
