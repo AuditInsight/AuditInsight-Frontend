@@ -296,3 +296,28 @@ export const disableTrialCampaign = (campaignId: string, reason: string) =>
 ========================= */
 export const getAdminAuditLog = (params: { page?: number } = {}) =>
   apiClient.get<PageResult<AdminAuditLogResponse>>("/admin/audit-log", { params });
+
+/* =========================
+   ADMIN API — ONE ORGANISATION'S ACCESS
+========================= */
+export interface AdminFreePeriod {
+  id: string;
+  subscriptionType: AdminSubscriptionType | null;
+  startDate: string;
+  endDate: string;
+  source: "PAYMENT" | "ADMIN_COMPLIMENTARY" | "LEGACY";
+  current: boolean;
+}
+
+export interface AdminOrganisationAccess {
+  access: import("@/utils/api").AccessResponse;
+  trialRunning: boolean;
+  freePeriods: AdminFreePeriod[];
+}
+
+export const getAdminOrganisationAccess = (organisationId: string) =>
+  apiClient.get<AdminOrganisationAccess>(`/admin/organisations/${organisationId}/access`);
+
+/** Revokes the trial and ends periods no payment bought, now. Real paid time is kept and starts straight away. */
+export const endOrganisationFreeAccess = (organisationId: string, reason: string) =>
+  apiClient.post<AdminOrganisationAccess>(`/admin/organisations/${organisationId}/free-access/end`, { reason });

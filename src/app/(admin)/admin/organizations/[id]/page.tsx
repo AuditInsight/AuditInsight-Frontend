@@ -8,6 +8,7 @@ import { theme } from "@/styles/theme";
 import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import ChangeTierModal from "@/components/admin/ChangeTierModal";
 import OrganisationTrialCard from "@/components/admin/OrganisationTrialCard";
+import OrganisationAccessCard from "@/components/admin/OrganisationAccessCard";
 import {
   getAdminOrganisationDetail,
   AdminOrganisationDetailResponse,
@@ -38,6 +39,8 @@ export default function OrganisationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tierModalOpen, setTierModalOpen] = useState(false);
+  // Bumped whenever access changes, so the access and trial cards reload each other.
+  const [accessRefresh, setAccessRefresh] = useState(0);
 
   const fetchDetail = useCallback(async () => {
     setLoading(true);
@@ -134,7 +137,17 @@ export default function OrganisationDetailPage() {
             )}
           </div>
 
-          <OrganisationTrialCard organisationId={detail.id} onChanged={fetchDetail} />
+          <OrganisationAccessCard
+            organisationId={detail.id}
+            refreshKey={accessRefresh}
+            onChanged={() => { setAccessRefresh((n) => n + 1); void fetchDetail(); }}
+          />
+
+          <OrganisationTrialCard
+            key={`trial-${accessRefresh}`}
+            organisationId={detail.id}
+            onChanged={() => { setAccessRefresh((n) => n + 1); void fetchDetail(); }}
+          />
 
           <div style={styles.card}>
             <h2 style={styles.cardTitle}>Subscription History</h2>
