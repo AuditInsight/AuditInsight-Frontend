@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
-import { useEvidenceDocumentAccess, isSigned, isStampable } from "@/components/signature/documentAccess";
+import { useEvidenceDocumentAccess, isSigned, canPlaceSignature } from "@/components/signature/documentAccess";
 import { SignedDocumentPreviewModal } from "@/components/signature/SignedDocumentPreviewModal";
 
 type FilterDropdownProps = {
@@ -95,7 +95,7 @@ export const EvidenceDropdown = (
         <div style={dropdown}>
           {evidences.map((doc) => {
             const busy = docs.busyId === doc.id;
-            const what = !isSigned(doc) ? "" : isStampable(doc.fileType) ? " signed document" : " signature certificate";
+            const what = !isSigned(doc) ? "" : canPlaceSignature(doc) ? " signed document" : " signature certificate";
 
             return (
               <div

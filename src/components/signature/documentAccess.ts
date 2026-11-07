@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { isAxiosError } from "axios";
-import { getSignedEvidenceFile, downloadSignedEvidence, getOriginalEvidenceFile, type SignedVersionInfo } from "@/utils/api";
+import {
+  getSignedEvidenceFile, downloadSignedEvidence, getOriginalEvidenceFile, getSigningCapabilities, type SignedVersionInfo,
+} from "@/utils/api";
 
 /**
  * One place that decides which file a Preview / Download button should serve for an evidence document:
@@ -15,28 +17,71 @@ type DocumentRef = {
   fileUpload: string;
   fileType?: string | null;
   signatureCount?: number;
+  placeable?: boolean;
 };
 
-// File types the server can put signatures onto. Anything else (DOCX, XLS, XLSX) gets a separate
-// signature certificate PDF instead of the document itself — see SignedDocumentService on the backend.
+// File types a browser can show directly (used for previewing originals). PDFs and images are also always signed
+// on the page; Word/Excel are signed on the page only when the server can convert them to PDF.
 const STAMPABLE_TYPES = new Set(["pdf", "png", "jpg", "jpeg"]);
 
 export const isStampable = (fileType?: string | null) => STAMPABLE_TYPES.has((fileType ?? "").toLowerCase());
 
 export const isSigned = (doc: { signatureCount?: number }) => (doc.signatureCount ?? 0) > 0;
 
-/** "signed document" for PDFs/images, "signature certificate" for Word/Excel files. */
-export const signedOutputName = (fileType?: string | null) =>
-  isStampable(fileType) ? "signed document" : "signature certificate";
+/**
+ * Whether this document is signed by placing the signature on its pages (true) or with a separate signature
+ * certificate (false). The server decides (Word/Excel depend on document conversion being set up).
+ */
+export const canPlaceSignature = (doc: { placeable?: boolean; fileType?: string | null }) =>
+  doc.placeable ?? isStampable(doc.fileType);
+
+/** "signed document" when signed on the page, "signature certificate" otherwise. */
+export const signedOutputName = (doc: { placeable?: boolean; fileType?: string | null }) =>
+  canPlaceSignature(doc) ? "signed document" : "signature certificate";
 
 export const CERTIFICATE_NOTE =
-  "Word and Excel files can't have a signature placed on them, so signing produces a separate PDF " +
-  "signature certificate listing who signed and when. Keep it together with the original file.";
+  "This file can't have a signature placed on it, so signing produces a separate PDF signature certificate " +
+  "listing who signed and when. Keep it together with the original file.";
+
+const extensionOf = (fileName?: string | null) =>
+  fileName?.includes(".") ? (fileName.split(".").pop() ?? "").toLowerCase() : "";
+
+/**
+ * Which file types the server signs on the page, fetched once per page load. Until it has loaded (or if it
+ * fails) only PDFs and images count, which is always true.
+ */
+let capabilitiesPromise: Promise<Set<string>> | null = null;
+
+function loadPlaceableTypes(): Promise<Set<string>> {
+  if (!capabilitiesPromise) {
+    capabilitiesPromise = getSigningCapabilities()
+      .then(({ data }) => new Set(data.placeableFileTypes.map((t) => t.toLowerCase())))
+      .catch(() => {
+        capabilitiesPromise = null; // try again next time
+        return new Set(STAMPABLE_TYPES);
+      });
+  }
+  return capabilitiesPromise;
+}
+
+export function usePlaceableFileTypes(): Set<string> {
+  const [types, setTypes] = useState<Set<string>>(() => new Set(STAMPABLE_TYPES));
+  useEffect(() => {
+    let active = true;
+    void loadPlaceableTypes().then((t) => { if (active) setTypes(t); });
+    return () => { active = false; };
+  }, []);
+  return types;
+}
+
+/** Whether a file about to be uploaded will be signed on the page, given {@link usePlaceableFileTypes}. */
+export const isPlaceableFile = (fileName: string | null | undefined, placeableTypes: Set<string>) =>
+  placeableTypes.has(extensionOf(fileName));
 
 /** True for file names the server will only be able to sign with a separate certificate. */
-export const isCertificateOnlyFile = (fileName?: string | null) => {
-  const ext = fileName?.includes(".") ? fileName.split(".").pop() : "";
-  return Boolean(ext) && !isStampable(ext);
+export const isCertificateOnlyFile = (fileName: string | null | undefined, placeableTypes?: Set<string>) => {
+  const ext = extensionOf(fileName);
+  return Boolean(ext) && !(placeableTypes ?? STAMPABLE_TYPES).has(ext);
 };
 
 /**
@@ -124,7 +169,7 @@ export function useEvidenceDocumentAccess() {
     setBusyId(doc.id);
     try {
       const { blob, version, sha256 } = await getSignedEvidenceFile(doc.id, doc.documentName);
-      const label = isStampable(doc.fileType) ? "Signed document" : "Signature certificate";
+      const label = canPlaceSignature(doc) ? "Signed document" : "Signature certificate";
       setLastVersion({ docId: doc.id, info: { version, sha256 } });
       setPreview({
         url: URL.createObjectURL(blob),

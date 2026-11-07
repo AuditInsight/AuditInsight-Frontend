@@ -10,7 +10,7 @@ import {
   type EvidenceSignaturesResponse,
 } from "@/utils/api";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./SignaturePad";
-import { useEvidenceDocumentAccess, isStampable, signErrorMessage, CERTIFICATE_NOTE } from "./documentAccess";
+import { useEvidenceDocumentAccess, canPlaceSignature, signErrorMessage, CERTIFICATE_NOTE } from "./documentAccess";
 import { SignedDocumentPreviewModal } from "./SignedDocumentPreviewModal";
 import { SignaturePlacementModal } from "./SignaturePlacementModal";
 import { DocumentIntegrityPanel } from "./DocumentIntegrityPanel";
@@ -64,7 +64,7 @@ export function SignDocumentModal({ isOpen, onClose, evidence, startPlacing = fa
   // so the signed version is offered straight after signing here.
   const signatureCount = data?.signatures.length ?? evidence.signatureCount ?? 0;
   const liveDoc = { ...evidence, signatureCount };
-  const certificate = !isStampable(evidence.fileType);
+  const certificate = !canPlaceSignature(evidence);
   const signedName = certificate ? "signature certificate" : "signed PDF";
 
   const handleSign = async () => {

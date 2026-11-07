@@ -14,6 +14,8 @@ export interface Evidence {
   notes?: string;
   // How many people have signed it; when > 0, Preview/Download serve the signed PDF instead of the original
   signatureCount?: number;
+  // Signed on the page (PDF, image, or Word/Excel converted to PDF) rather than with a signature certificate
+  placeable?: boolean;
 
   // Inherited from the linked transaction (denormalised for display)
   amount?: number;

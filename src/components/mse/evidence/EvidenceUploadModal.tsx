@@ -11,7 +11,10 @@ import { friendlyEvidenceUploadError } from "@/utils/evidenceUploadErrors";
 import { useOrganisation } from "@/hooks/useOrganisation";
 import { getEvidenceFolders, getSubfolders } from "@/utils/evidenceFolderUtils";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "@/components/signature/SignaturePad";
-import { signErrorMessage, isCertificateOnlyFile, CERTIFICATE_NOTE } from "@/components/signature/documentAccess";
+import {
+  signErrorMessage, isCertificateOnlyFile, isPlaceableFile, usePlaceableFileTypes, CERTIFICATE_NOTE,
+} from "@/components/signature/documentAccess";
+import { SignaturePlacementModal } from "@/components/signature/SignaturePlacementModal";
 
 interface Props {
   isOpen: boolean;
@@ -68,6 +71,9 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
   const [signError, setSignError]       = useState("");
   // Set once the file is stored, so retrying a failed signature never uploads the evidence a second time.
   const [uploaded, setUploaded]         = useState<Evidence | null>(null);
+  // The uploaded document currently open for placing the signature on it.
+  const [placing, setPlacing]           = useState<Evidence | null>(null);
+  const placeableTypes = usePlaceableFileTypes();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -91,11 +97,15 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
     queueMicrotask(() => {
       setErrors({}); setTouched({}); setFileError("");
       setSignNow(defaultSignNow); setSignaturePad(EMPTY_SIGNATURE); setSignError("");
-      setUploaded(null);
+      setUploaded(null); setPlacing(null);
     });
   }, [isOpen, mode, evidence, defaultSignNow]);
 
   if (!isOpen) return null;
+
+  // Documents signed on the page (PDFs, images, and Word/Excel when the server converts them) are signed by
+  // opening the document after upload, not with the pad here.
+  const placeAfterUpload = !isEdit && signNow && isPlaceableFile(file?.name, placeableTypes);
 
   const finish = (doc: Evidence) => {
     onSave(doc);
@@ -167,7 +177,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
       return;
     }
 
-    if (!isEdit && signNow && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
+    if (!isEdit && signNow && !placeAfterUpload && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
       setSignError("Draw or type your signature, or turn off “Sign this document now”.");
       return;
     }
@@ -226,8 +236,15 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
           amount: Number(amount) || undefined,
           counterparty: counterparty || undefined,
           signatureCount: data.signatureCount ?? 0,
+          placeable: data.placeable,
         };
         setUploaded(saved);
+      }
+
+      if (placeAfterUpload) {
+        // Open the document so the signer places the signature on it; finish() runs once they confirm.
+        setPlacing(saved);
+        return;
       }
 
       if (!isEdit && signNow) {
@@ -378,10 +395,18 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
               </label>
               {signNow && (
                 <div style={s.signBox}>
-                  {file && isCertificateOnlyFile(file.name) && (
+                  {file && isCertificateOnlyFile(file.name, placeableTypes) && (
                     <p style={s.info}><Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</p>
                   )}
-                  <SignaturePad value={signaturePad} onChange={(v) => { setSignaturePad(v); setSignError(""); }} disabled={saving} />
+                  {placeAfterUpload ? (
+                    <p style={{ ...s.info, margin: 0 }}>
+                      <Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />
+                      After the upload, the document opens so you can draw or type your signature and place it
+                      exactly where it belongs.
+                    </p>
+                  ) : (
+                    <SignaturePad value={signaturePad} onChange={(v) => { setSignaturePad(v); setSignError(""); }} disabled={saving} />
+                  )}
                 </div>
               )}
             </div>
@@ -416,6 +441,22 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
           </button>
         </div>
       </div>
+      {placing && (
+        <SignaturePlacementModal
+          evidence={{ id: placing.id, documentName: placing.documentName }}
+          defaultFullName={user?.fullName ?? ""}
+          onClose={() => {
+            setPlacing(null);
+            setSignError("Your evidence was uploaded but not signed yet. Sign it now, or close and sign it later "
+              + "from the evidence details.");
+          }}
+          onSigned={() => {
+            const signed = { ...placing, signatureCount: (placing.signatureCount ?? 0) + 1 };
+            setPlacing(null);
+            finish(signed);
+          }}
+        />
+      )}
     </div>
   );
 };

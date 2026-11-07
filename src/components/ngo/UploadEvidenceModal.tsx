@@ -11,7 +11,10 @@ import { NGO_EVIDENCE_CATEGORIES } from "@/types/ngo";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "@/components/signature/SignaturePad";
 import { FileSignature } from "lucide-react";
-import { signErrorMessage, isCertificateOnlyFile, CERTIFICATE_NOTE } from "@/components/signature/documentAccess";
+import {
+  signErrorMessage, isCertificateOnlyFile, isPlaceableFile, usePlaceableFileTypes, CERTIFICATE_NOTE,
+} from "@/components/signature/documentAccess";
+import { SignaturePlacementModal } from "@/components/signature/SignaturePlacementModal";
 
 interface Props {
   open: boolean;
@@ -36,6 +39,11 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
   const [signaturePad,  setSignaturePad]  = useState<SignaturePadValue>(EMPTY_SIGNATURE);
   // Files that uploaded fine but whose signature failed — retrying signs only these, never re-uploads.
   const [unsigned,      setUnsigned]      = useState<Evidence[]>([]);
+  // Uploaded documents still to open for placing the signature, one after another.
+  const [placeQueue,    setPlaceQueue]    = useState<Evidence[]>([]);
+  const placeableTypes = usePlaceableFileTypes();
+  // The pad is only needed for files that can't be signed on the page (they get a signature certificate).
+  const needsPad = files.some((f) => !isPlaceableFile(f.name, placeableTypes));
   const inputRef = useRef<HTMLInputElement>(null);
 
   const docTypes = category ? NGO_EVIDENCE_CATEGORIES[category] : [];
@@ -63,7 +71,7 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
     setFiles([]); setNotes(""); setError(""); setSuccess(false); setDragOver(false);
     setCategory(""); setDocType("");
     setSignNow(defaultSignNow); setSignaturePad(EMPTY_SIGNATURE);
-    setUnsigned([]);
+    setUnsigned([]); setPlaceQueue([]);
   };
 
   const signPayload = () => ({
@@ -127,7 +135,7 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
     if (!category)          { setError("Please select an evidence category."); return; }
     if (!docType)           { setError("Please select a document type."); return; }
     if (files.length === 0) { setError("Please attach at least one file."); return; }
-    if (signNow && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
+    if (signNow && needsPad && !signaturePad.typedName.trim() && !signaturePad.signatureImage) {
       setError("Draw or type your signature, or turn off “Sign this document now”.");
       return;
     }
@@ -162,15 +170,25 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
           uploadedBy:    String(data.uploadedBy),
           uploadedAt:    data.uploadedAt,
           signatureCount: data.signatureCount ?? 0,
+          placeable:     data.placeable,
         };
         uploadedDocs.push(lastSaved);
       }
       if (lastSaved) onSubmit(lastSaved);
 
       if (signNow) {
-        const { failed, reason } = await signAll(uploadedDocs);
+        // Documents signed on the page open one by one for placing; the rest are signed with the pad here.
+        const toPlace = uploadedDocs.filter((d) => d.placeable);
+        const padDocs = uploadedDocs.filter((d) => !d.placeable);
+        const { failed, reason } = padDocs.length > 0
+          ? await signAll(padDocs)
+          : { failed: [] as Evidence[], reason: "" };
         if (failed.length > 0) {
           reportUnsigned(failed, reason);
+          return;
+        }
+        if (toPlace.length > 0) {
+          setPlaceQueue(toPlace); // finishSuccess() runs once the last one is signed
           return;
         }
       }
@@ -335,10 +353,17 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
                 </label>
                 {signNow && (
                   <div style={s.signBox}>
-                    {files.some((f) => isCertificateOnlyFile(f.name)) && (
+                    {files.some((f) => isCertificateOnlyFile(f.name, placeableTypes)) && (
                       <p style={s.info}><Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</p>
                     )}
-                    <SignaturePad value={signaturePad} onChange={setSignaturePad} disabled={submitting} />
+                    {files.some((f) => isPlaceableFile(f.name, placeableTypes)) && (
+                      <p style={s.info}>
+                        <Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />
+                        After the upload, each PDF, image or convertible document opens so you can place your signature
+                        exactly where it belongs.
+                      </p>
+                    )}
+                    {needsPad && <SignaturePad value={signaturePad} onChange={setSignaturePad} disabled={submitting} />}
                   </div>
                 )}
               </div>
@@ -371,6 +396,23 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
           </>
         )}
       </div>
+      {placeQueue.length > 0 && (
+        <SignaturePlacementModal
+          key={placeQueue[0].id}
+          evidence={{ id: placeQueue[0].id, documentName: placeQueue[0].documentName }}
+          defaultFullName={user?.fullName ?? ""}
+          onClose={() => {
+            const names = placeQueue.map((d) => d.documentName).join(", ");
+            setPlaceQueue([]);
+            setError(`Uploaded but not signed yet: ${names}. You can sign later from the evidence details.`);
+          }}
+          onSigned={() => {
+            const remaining = placeQueue.slice(1);
+            setPlaceQueue(remaining);
+            if (remaining.length === 0) finishSuccess();
+          }}
+        />
+      )}
     </div>
   );
 }

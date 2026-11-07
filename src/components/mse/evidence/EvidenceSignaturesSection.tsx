@@ -5,7 +5,7 @@ import { PenLine, Send, UserPlus, X, Check, Eraser, Clock } from "lucide-react";
 import { theme } from "@/styles/theme";
 import { useAuth } from "@/context/AuthContext.production";
 import { SignaturePlacementModal } from "@/components/signature/SignaturePlacementModal";
-import { isStampable } from "@/components/signature/documentAccess";
+import { canPlaceSignature } from "@/components/signature/documentAccess";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 import {
   declineSignatureRequest,
@@ -20,7 +20,7 @@ import {
 interface Props {
   evidenceId: string;
   /** When given for a PDF or image, signing opens the document so the signer can place the signature. */
-  evidenceDocument?: { documentName: string; fileType?: string | null };
+  evidenceDocument?: { documentName: string; fileType?: string | null; placeable?: boolean };
   /** Called after a signature is added so the parent can refresh badges/counts. */
   onChanged?: () => void;
   /** Reports whether someone has asked the logged-in user to sign (and they haven't yet), so the parent can show this first. */
@@ -43,7 +43,7 @@ function errorMessage(err: unknown, fallback: string): string {
 }
 
 export function EvidenceSignaturesSection({ evidenceId, evidenceDocument, onChanged, onPendingRequestChange, onSignatureCountChange }: Props) {
-  const placeOnDocument = Boolean(evidenceDocument) && isStampable(evidenceDocument?.fileType);
+  const placeOnDocument = Boolean(evidenceDocument) && canPlaceSignature(evidenceDocument ?? {});
   const { user } = useAuth();
   const [data, setData] = useState<EvidenceSignaturesResponse | null>(null);
   const [loading, setLoading] = useState(true);

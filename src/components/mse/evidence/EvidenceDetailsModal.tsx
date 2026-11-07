@@ -7,7 +7,7 @@ import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { useCallback, useState } from "react";
 import { Download, Eye, X, FileText, ExternalLink, Info } from "lucide-react";
 import { EvidenceSignaturesSection } from "./EvidenceSignaturesSection";
-import { useEvidenceDocumentAccess, isStampable, CERTIFICATE_NOTE } from "@/components/signature/documentAccess";
+import { useEvidenceDocumentAccess, canPlaceSignature, CERTIFICATE_NOTE } from "@/components/signature/documentAccess";
 import { SignedDocumentPreviewModal } from "@/components/signature/SignedDocumentPreviewModal";
 import { DocumentIntegrityPanel } from "@/components/signature/DocumentIntegrityPanel";
 
@@ -45,7 +45,7 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
   const signatureCount = liveSignatureCount ?? evidence.signatureCount ?? 0;
   const liveDoc = { ...evidence, signatureCount };
   const signed = signatureCount > 0;
-  const certificate = !isStampable(evidence.fileType);
+  const certificate = !canPlaceSignature(evidence);
   const signedBusy = docs.busyId === evidence.id;
 
   const uploadDate = evidence.uploadedAt ? evidence.uploadedAt.split("T")[0] : "—";
@@ -110,7 +110,7 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
               evidenceId={evidence.id}
               onPendingRequestChange={setSignFirst}
               onSignatureCountChange={reportSignatureCount}
-              evidenceDocument={{ documentName: evidence.documentName, fileType: evidence.fileType }}
+              evidenceDocument={{ documentName: evidence.documentName, fileType: evidence.fileType, placeable: evidence.placeable }}
             />
           </div>
 

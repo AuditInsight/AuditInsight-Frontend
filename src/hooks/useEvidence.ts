@@ -48,6 +48,7 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
           uploadedBy:    String(e.uploadedBy),
           uploadedAt:    e.uploadedAt,
           signatureCount: e.signatureCount ?? 0,
+          placeable:      e.placeable,
         }));
         setDocuments(mapped);
         })

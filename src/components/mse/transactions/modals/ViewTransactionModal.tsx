@@ -3,7 +3,7 @@
 import { TransactionWithMeta } from "@/hooks/useTransactions";
 import { Evidence } from "@/types/evidence.types";
 import { X, Download, Eye, Paperclip, FileText, FileSignature } from "lucide-react";
-import { useEvidenceDocumentAccess, isSigned, isStampable } from "@/components/signature/documentAccess";
+import { useEvidenceDocumentAccess, isSigned, canPlaceSignature } from "@/components/signature/documentAccess";
 import { SignedDocumentPreviewModal } from "@/components/signature/SignedDocumentPreviewModal";
 
 interface Props {
@@ -110,7 +110,7 @@ export default function ViewTransactionModal({ transaction, evidence, onClose }:
                       <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
                         {ev.folder} › {ev.subfolder} • {ev.fileType.toUpperCase()} • {ev.uploadedAt?.split("T")[0]}
                       </div>
-                      {isSigned(ev) && !isStampable(ev.fileType) && (
+                      {isSigned(ev) && !canPlaceSignature(ev) && (
                         <button type="button" onClick={() => docs.previewOriginal(ev)} style={originalLink}>
                           View original file
                         </button>
@@ -119,7 +119,7 @@ export default function ViewTransactionModal({ transaction, evidence, onClose }:
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     {(() => {
-                      const certificate = isSigned(ev) && !isStampable(ev.fileType);
+                      const certificate = isSigned(ev) && !canPlaceSignature(ev);
                       const target = !isSigned(ev) ? "" : certificate ? " signature certificate" : " signed document";
                       const busy = docs.busyId === ev.id;
                       return (
