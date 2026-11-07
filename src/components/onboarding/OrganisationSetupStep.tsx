@@ -24,25 +24,13 @@ const INDUSTRIES = [
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "RWF", "KES", "ZAR", "NGN", "GHS", "UGX", "TZS"];
 
+// Must match the backend CountryCode enum: only countries where Mobile Money (pawaPay) checkout works.
+// Any other value makes organisation creation fail.
 const COUNTRIES = [
   { code: "RW", name: "Rwanda" },
   { code: "UG", name: "Uganda" },
   { code: "KE", name: "Kenya" },
   { code: "TZ", name: "Tanzania" },
-  { code: "ZA", name: "South Africa" },
-  { code: "NG", name: "Nigeria" },
-  { code: "GH", name: "Ghana" },
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "CA", name: "Canada" },
-  { code: "AU", name: "Australia" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "NL", name: "Netherlands" },
-  { code: "CH", name: "Switzerland" },
-  { code: "SE", name: "Sweden" },
-  { code: "NO", name: "Norway" },
-  { code: "DK", name: "Denmark" },
 ];
 
 // MM-dd format validation
