@@ -105,6 +105,7 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
               </a>
             )}
           </div>
+          {docs.versionLabelFor(evidence.id) && <p style={s.versionLine}>{docs.versionLabelFor(evidence.id)}</p>}
 
           {certificate && (
             <div style={s.infoBanner}><Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />{CERTIFICATE_NOTE}</div>
@@ -163,13 +164,14 @@ export function SignDocumentModal({ isOpen, onClose, evidence }: Props) {
           )}
         </div>
       </div>
-      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} subtitle={docs.preview?.subtitle} onClose={docs.closePreview} />
     </div>
   );
 }
 
 const s: Record<string, React.CSSProperties> = {
   linkRow: { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" },
+  versionLine: { margin: "-8px 0 0", fontSize: 11.5, color: "#64748b", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" },
   previewBtn: { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8, border: "1px solid #c7d2fe", background: "#eef2ff", color: "#1e3a8a", cursor: "pointer", fontSize: 12.5, fontWeight: 600, fontFamily: "inherit" },
   infoBanner: { display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, fontSize: 12.5, color: "#1e3a8a", lineHeight: 1.45 },
   modal: { width: "100%", maxWidth: 560, background: "#fff", borderRadius: 20, boxShadow: "0 32px 80px rgba(0,0,0,0.2)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" },

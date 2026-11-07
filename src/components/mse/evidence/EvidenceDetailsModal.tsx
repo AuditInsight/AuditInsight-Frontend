@@ -130,6 +130,9 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
         {docs.error && (
           <p style={{ margin: "0 24px 8px", fontSize: 12, color: "#b91c1c" }}>{docs.error}</p>
         )}
+        {docs.versionLabelFor(evidence.id) && (
+          <p style={versionLine}>{docs.versionLabelFor(evidence.id)}</p>
+        )}
 
         {/* Footer — serves the signed version once anyone has signed, otherwise the original file */}
         <div style={footer}>
@@ -155,10 +158,17 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
           </button>
         </div>
       </div>
-      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} subtitle={docs.preview?.subtitle} onClose={docs.closePreview} />
     </div>
   );
 }
+
+const versionLine: React.CSSProperties = {
+  margin: "10px 24px 0",
+  fontSize: 11.5,
+  color: "#64748b",
+  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+};
 
 const infoBanner: React.CSSProperties = {
   display: "flex",

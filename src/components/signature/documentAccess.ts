@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { isAxiosError } from "axios";
-import { getSignedEvidenceFile, downloadSignedEvidence } from "@/utils/api";
+import { getSignedEvidenceFile, downloadSignedEvidence, type SignedVersionInfo } from "@/utils/api";
 
 /**
  * One place that decides which file a Preview / Download button should serve for an evidence document:
@@ -39,6 +39,16 @@ export const isCertificateOnlyFile = (fileName?: string | null) => {
   return Boolean(ext) && !isStampable(ext);
 };
 
+/**
+ * "Signed version v3 · fingerprint 1a2b3c4d5e6f" — identifies the exact stored file. Preview and Download of the
+ * same version always show the same fingerprint (the start of the file's SHA-256).
+ */
+export function describeSignedVersion(info: SignedVersionInfo | null | undefined): string | null {
+  if (!info?.version) return null;
+  const fingerprint = info.sha256 ? ` · fingerprint ${info.sha256.slice(0, 12)}` : "";
+  return `Signed version v${info.version}${fingerprint}`;
+}
+
 function downloadOriginal(doc: DocumentRef) {
   const a = document.createElement("a");
   a.href = doc.fileUpload;
@@ -53,9 +63,11 @@ function downloadOriginal(doc: DocumentRef) {
  * (render it with <SignedDocumentPreviewModal />); unsigned ones open the original file as before.
  */
 export function useEvidenceDocumentAccess() {
-  const [preview, setPreview] = useState<{ url: string; title: string } | null>(null);
+  const [preview, setPreview] = useState<{ url: string; title: string; subtitle: string | null } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The stored signed version last previewed or downloaded, keyed by document so it never shows on another one.
+  const [lastVersion, setLastVersion] = useState<{ docId: string; info: SignedVersionInfo } | null>(null);
 
   // Release the blob URL whenever the preview changes or the component unmounts.
   useEffect(() => {
@@ -72,9 +84,14 @@ export function useEvidenceDocumentAccess() {
     }
     setBusyId(doc.id);
     try {
-      const { blob } = await getSignedEvidenceFile(doc.id, doc.documentName);
+      const { blob, version, sha256 } = await getSignedEvidenceFile(doc.id, doc.documentName);
       const label = isStampable(doc.fileType) ? "Signed document" : "Signature certificate";
-      setPreview({ url: URL.createObjectURL(blob), title: `${label} — ${doc.documentName}` });
+      setLastVersion({ docId: doc.id, info: { version, sha256 } });
+      setPreview({
+        url: URL.createObjectURL(blob),
+        title: `${label} — ${doc.documentName}`,
+        subtitle: describeSignedVersion({ version, sha256 }),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load the signed document.");
     } finally {
@@ -90,7 +107,8 @@ export function useEvidenceDocumentAccess() {
     }
     setBusyId(doc.id);
     try {
-      await downloadSignedEvidence(doc.id, doc.documentName);
+      const info = await downloadSignedEvidence(doc.id, doc.documentName);
+      setLastVersion({ docId: doc.id, info });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not download the signed document.");
     } finally {
@@ -100,7 +118,13 @@ export function useEvidenceDocumentAccess() {
 
   const closePreview = useCallback(() => setPreview(null), []);
 
-  return { preview, busyId, error, previewDocument, downloadDocument, closePreview };
+  /** Text naming the stored version last served for this document, or null if none was loaded yet. */
+  const versionLabelFor = useCallback(
+    (docId: string) => (lastVersion?.docId === docId ? describeSignedVersion(lastVersion.info) : null),
+    [lastVersion]
+  );
+
+  return { preview, busyId, error, previewDocument, downloadDocument, closePreview, versionLabelFor };
 }
 
 /** Human-readable reason a signature could not be saved, using the server's message when it sent one. */

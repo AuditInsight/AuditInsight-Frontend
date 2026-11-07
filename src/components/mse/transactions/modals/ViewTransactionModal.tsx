@@ -143,7 +143,7 @@ export default function ViewTransactionModal({ transaction, evidence, onClose }:
           {docs.error && <p style={errorText}>{docs.error}</p>}
         </div>
       </div>
-      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} onClose={docs.closePreview} />
+      <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} subtitle={docs.preview?.subtitle} onClose={docs.closePreview} />
     </div>
   );
 }
