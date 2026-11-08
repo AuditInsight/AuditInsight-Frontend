@@ -87,7 +87,7 @@ export default function NGODashboardShell({ children }: Props) {
                 onClick={() => router.push(tab.path)}
                 style={{ ...s.tab, ...(isActive ? s.tabActive : {}) }}
               >
-                <span style={{ color: isActive ? "#1e3a8a" : "#94a3b8", display: "flex", alignItems: "center" }}>
+                <span style={{ color: isActive ? "#fff" : "#bfdbfe", display: "flex", alignItems: "center" }}>
                   {tab.icon}
                 </span>
                 {tab.label}
@@ -229,16 +229,16 @@ const CSS = `
 
 const s: Record<string, React.CSSProperties> = {
   root:    { minHeight: "100vh", display: "flex", flexDirection: "column", background: "#f1f5f9", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" },
-  header:  { display: "flex", alignItems: "center", gap: 0, background: "#fff", borderBottom: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(15,23,42,0.06)", position: "sticky", top: 0, zIndex: 100, padding: "0 20px", height: 58 },
-  logoArea:  { display: "flex", alignItems: "center", gap: 10, paddingRight: 20, borderRight: "1px solid #f1f5f9", flexShrink: 0 },
+  header:  { display: "flex", alignItems: "center", gap: 0, background: "#1e3a8a", borderBottom: "1px solid #1e3a8a", boxShadow: "0 1px 6px rgba(15,23,42,0.12)", position: "sticky", top: 0, zIndex: 100, padding: "0 20px", height: 58 },
+  logoArea:  { display: "flex", alignItems: "center", gap: 10, paddingRight: 20, borderRight: "1px solid rgba(255,255,255,0.2)", flexShrink: 0 },
   logoMark:  { width: 32, height: 32, borderRadius: 9, background: "transparent", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "none", flexShrink: 0 },
-  logoTitle: { fontSize: 14, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.3px", display: "block", lineHeight: 1.2 },
-  logoSub:   { fontSize: 9, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block" },
+  logoTitle: { fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: "-0.3px", display: "block", lineHeight: 1.2 },
+  logoSub:   { fontSize: 9, fontWeight: 600, color: "#bfdbfe", letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block" },
   tabBar:    { display: "flex", alignItems: "stretch", flex: 1, height: "100%", paddingLeft: 8, gap: 0, overflowX: "auto" as const },
-  tab:       { position: "relative" as const, display: "flex", alignItems: "center", gap: 7, padding: "0 16px", height: "100%", border: "none", background: "transparent", color: "#64748b", fontSize: 13.5, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" as const, transition: "color 0.15s" },
-  tabActive: { color: "#1e3a8a", fontWeight: 700 },
-  tabUnderline: { position: "absolute" as const, bottom: 0, left: 12, right: 12, height: 2, borderRadius: "2px 2px 0 0", background: "#1e3a8a" },
-  controls:  { display: "flex", alignItems: "center", gap: 8, flexShrink: 0, paddingLeft: 16, borderLeft: "1px solid #f1f5f9" },
+  tab:       { position: "relative" as const, display: "flex", alignItems: "center", gap: 7, padding: "0 16px", height: "100%", border: "none", background: "transparent", color: "#bfdbfe", fontSize: 13.5, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" as const, transition: "color 0.15s" },
+  tabActive: { color: "#fff", fontWeight: 700 },
+  tabUnderline: { position: "absolute" as const, bottom: 0, left: 12, right: 12, height: 2, borderRadius: "2px 2px 0 0", background: "#fff" },
+  controls:  { display: "flex", alignItems: "center", gap: 8, flexShrink: 0, paddingLeft: 16, borderLeft: "1px solid rgba(255,255,255,0.2)" },
   searchBox: { display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 9, background: "#f8fafc", border: "1px solid #e2e8f0", width: 180 },
   searchInput: { border: "none", background: "transparent", outline: "none", fontSize: 12.5, color: "#0f172a", fontFamily: "inherit", width: "100%" },
   iconBtn:   { position: "relative" as const, width: 36, height: 36, borderRadius: 9, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
