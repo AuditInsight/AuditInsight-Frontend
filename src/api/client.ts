@@ -18,6 +18,16 @@ import axios, {
 } from "axios";
 import { tokenStorage } from "@/utils/tokenStorage";
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    /**
+     * Don't redirect to /log-in when this request gets a 401 — the caller handles it.
+     * Used by the start-up session check, which runs on every page (including the public landing page).
+     */
+    skipAuthRedirect?: boolean;
+  }
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 if (!BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not set");
 
@@ -42,7 +52,9 @@ const isPublicAuthEndpoint = (url: string): boolean =>
   url.includes("/auth/resend-otp") ||
   // Public endpoints (e.g. /public/trial-offer, called by the landing page) need no login. Sending a stale
   // token makes the backend answer 401, which would bounce a visitor from the landing page to /log-in.
-  url.includes("/public/");
+  url.includes("/public/") ||
+  // The plan catalog is public too (shown on the landing page). Exact match: /admin/plans needs the token.
+  /^\/plans(\?|$)/.test(url);
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
@@ -68,7 +80,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     const url = error.config?.url ?? "";
-    if (error.response?.status === 401 && !isPublicAuthEndpoint(url)) {
+    if (error.response?.status === 401 && !isPublicAuthEndpoint(url) && !error.config?.skipAuthRedirect) {
       tokenStorage.clear();
       redirectToLogin();
     }

@@ -16,8 +16,8 @@ interface UsePlansReturn {
  * Live plan catalog merged onto the static PRICING_PLANS marketing copy
  * (name/description/features/cta stay static — only price/durationDays are
  * admin-editable). Falls back to PRICING_PLANS untouched while loading, on
- * error, or when the caller isn't authenticated (GET /plans requires a
- * token), so consumers never see an empty array.
+ * error, so consumers never see an empty array. GET /plans is public, so
+ * visitors to the landing page see the live prices too.
  */
 export function usePlans(): UsePlansReturn {
   const [plans, setPlans] = useState<PricingPlan[]>(PRICING_PLANS);

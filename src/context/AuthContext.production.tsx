@@ -9,6 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { jwtDecode } from "jwt-decode";
+import { isAxiosError } from "axios";
 import { apiClient } from "@/api/client";
 import { tokenStorage } from "@/utils/tokenStorage";
 import { normalizeOrganisationId } from "@/utils/organisationId";
@@ -101,7 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Try to fetch fresh organisation data from API
           try {
             console.log("DEBUG: Fetching organisations from API...");
-            const { data: orgs } = await apiClient.get<OrganisationApiResponse[]>("/organisations");
+            // skipAuthRedirect: this runs on every page, including the public landing page. A token the
+            // backend rejects (e.g. signed with an old secret) must not bounce a visitor to /log-in.
+            const { data: orgs } = await apiClient.get<OrganisationApiResponse[]>("/organisations", {
+              skipAuthRedirect: true,
+            });
             console.log("DEBUG: Organisations fetched:", orgs);
             const safeOrgId = normalizeOrganisationId(user.organisationId);
             const safeOrgs = orgs.filter((org) => normalizeOrganisationId(org.id));
@@ -127,6 +132,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             }
           } catch (err) {
+            if (isAxiosError(err) && err.response?.status === 401) {
+              // The backend no longer accepts this token — treat the visitor as logged out, without
+              // redirecting. Protected pages still send them to /log-in through their route guard.
+              tokenStorage.clear();
+              setState({ status: "unauthenticated", user: null });
+              return;
+            }
             console.error("DEBUG: Failed to fetch organisations from API:", err);
             // If org fetch fails, restore from localStorage cache
             const cachedUserData = tokenStorage.getUserData();
