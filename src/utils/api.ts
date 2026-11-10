@@ -726,6 +726,9 @@ export interface PlanResponse {
 /* =========================
    PLAN CATALOG API
 ========================= */
-export const getPlans = () => apiClient.get<PlanResponse[]>("/plans");
+// The landing page's pricing section calls this for every visitor, logged in or not, and GET /plans
+// requires a token. usePlans falls back to the built-in prices on any error, so a 401 here must not
+// redirect the visitor to /log-in.
+export const getPlans = () => apiClient.get<PlanResponse[]>("/plans", { skipAuthRedirect: true });
 
 export default apiClient;

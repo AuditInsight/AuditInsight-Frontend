@@ -18,6 +18,16 @@ import axios, {
 } from "axios";
 import { tokenStorage } from "@/utils/tokenStorage";
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    /**
+     * Don't redirect to /log-in when this request gets a 401 — the caller handles it.
+     * Used by the start-up session check, which runs on every page (including the public landing page).
+     */
+    skipAuthRedirect?: boolean;
+  }
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 if (!BASE_URL) throw new Error("NEXT_PUBLIC_API_URL is not set");
 
@@ -68,7 +78,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     const url = error.config?.url ?? "";
-    if (error.response?.status === 401 && !isPublicAuthEndpoint(url)) {
+    if (error.response?.status === 401 && !isPublicAuthEndpoint(url) && !error.config?.skipAuthRedirect) {
       tokenStorage.clear();
       redirectToLogin();
     }
