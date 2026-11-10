@@ -52,7 +52,9 @@ const isPublicAuthEndpoint = (url: string): boolean =>
   url.includes("/auth/resend-otp") ||
   // Public endpoints (e.g. /public/trial-offer, called by the landing page) need no login. Sending a stale
   // token makes the backend answer 401, which would bounce a visitor from the landing page to /log-in.
-  url.includes("/public/");
+  url.includes("/public/") ||
+  // The plan catalog is public too (shown on the landing page). Exact match: /admin/plans needs the token.
+  /^\/plans(\?|$)/.test(url);
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
