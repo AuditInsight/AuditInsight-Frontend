@@ -12,7 +12,7 @@ interface Props {
   onDelete?: (evidence: Evidence) => void;
 }
 
-const COLUMNS = ["Document", "Category", "Amount", "Counterparty", "Date", "Linked Transaction", "Notes", "Actions"];
+const COLUMNS = ["Document", "Category", "Amount", "Counterparty", "Date", "Linked Transaction", "Actions"];
 
 export const EvidenceTable = ({ data, onView, onEdit, onDelete }: Props) => {
   return (

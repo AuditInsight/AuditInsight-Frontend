@@ -15,7 +15,7 @@ import { withTransactionInfo } from "@/lib/evidenceEnrich";
 export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
   const { user } = useAuth();
   const [rawDocuments, setDocuments] = useState<Evidence[]>([]);
-  const [txInfo, setTxInfo] = useState<{ id: string; amount: number; counterparty?: string }[]>([]);
+  const [txInfo, setTxInfo] = useState<{ id: string; name?: string; amount: number; counterparty?: string }[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState<string | null>(null);
 
@@ -35,7 +35,7 @@ export function useEvidence(onEvidenceChange?: (evidence: Evidence[]) => void) {
       setLoading(true);
       Promise.all([getEvidence(orgId), getTransactions(orgId)])
         .then(([{ data }, { data: txns }]) => {
-        setTxInfo((txns ?? []).map((t) => ({ id: t.id, amount: Number(t.amount), counterparty: t.counterparty })));
+        setTxInfo((txns ?? []).map((t) => ({ id: t.id, name: t.name, amount: Number(t.amount), counterparty: t.counterparty })));
         const mapped: Evidence[] = (data ?? []).map((e) => ({
           id:            e.id,
           transactionId: e.transactionId,

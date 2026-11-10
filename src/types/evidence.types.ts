@@ -20,6 +20,7 @@ export interface Evidence {
   // Inherited from the linked transaction (denormalised for display)
   amount?: number;
   counterparty?: string;
+  transactionName?: string;
 }
 
 

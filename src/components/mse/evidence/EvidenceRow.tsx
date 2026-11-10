@@ -63,20 +63,12 @@ export const EvidenceRow = ({ evidence, onView, onEdit, onDelete, isEven }: Prop
           <button
             type="button"
             style={txLink}
+            title={evidence.transactionName || evidence.transactionId || undefined}
             onClick={(e) => { e.stopPropagation(); router.push(`/transactions?transactionId=${evidence.transactionId}`); }}
           >
-            {evidence.transactionId}
+            {evidence.transactionName || evidence.transactionId}
           </button>
         ) : "—"}
-      </td>
-
-      {/* Notes — shortened here; hover for the full text, or open the document */}
-      <td style={td}>
-        {evidence.notes ? (
-          <span style={notesPreview} title={evidence.notes}>{evidence.notes}</span>
-        ) : (
-          <span style={{ color: theme.colors.textSecondary }}>—</span>
-        )}
       </td>
 
       {/* Actions */}
@@ -137,16 +129,6 @@ const categoryPill: React.CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const notesPreview: React.CSSProperties = {
-  display: "block",
-  maxWidth: 220,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  color: theme.colors.textSecondary,
-  cursor: "help",
-};
-
 const txLink: React.CSSProperties = {
   border: "none",
   background: "none",
@@ -157,4 +139,10 @@ const txLink: React.CSSProperties = {
   fontSize: 13,
   textDecoration: "underline",
   textDecorationStyle: "dotted",
+  display: "block",
+  maxWidth: 200,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  textAlign: "left",
 };

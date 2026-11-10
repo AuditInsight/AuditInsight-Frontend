@@ -109,6 +109,7 @@ export interface CreateTransactionRequest {
   paymentMethod: PaymentMethod;
   donor?: string;
   budgetLine?: string;
+  notes?: string;
 }
 
 /* =========================
