@@ -122,6 +122,7 @@ export function useTransactions() {
       amount:        data.amount,
       type:          data.type,
       paymentMethod: data.paymentMethod,
+      ...(data.notes?.trim() && { notes: data.notes.trim() }),
       // NGO critical rule: include donor + budgetLine only for NGO orgs
       ...(isNgo && { donor: (data as Transaction & { donor?: string }).donor ?? "" }),
       ...(isNgo && { budgetLine: (data as Transaction & { budgetLine?: string }).budgetLine ?? "" }),
@@ -141,6 +142,7 @@ export function useTransactions() {
         evidenceCount: 0,
         createdBy:     created.createdBy,
         createdAt:     String(created.createdAt),
+        notes:         created.notes ?? req.notes,
         // Preserve NGO fields from the request so the table renders them immediately
         donor:         req.donor,
         budgetLine:    req.budgetLine,
