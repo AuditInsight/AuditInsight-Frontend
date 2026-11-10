@@ -26,6 +26,7 @@ import {
   FileSearch, Users, AlertTriangle, Loader2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext.production";
+import BackToHome from "@/components/auth/BackToHome";
 import { ApiErrorResponse, LoginRequest } from "@/types/auth";
 
 // ── Zod schema ─────────────────────────────────────────────────────
@@ -263,6 +264,7 @@ function LoginForm() {
       {/* RIGHT PANEL */}
       <div style={s.right} className="auth-right">
         <div style={s.formBox}>
+          <BackToHome />
           <div style={{ marginBottom: 32 }}>
             <h2 style={s.formTitle}>Welcome back</h2>
             <p style={s.formSubtitle}>Sign in to your audit workspace</p>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Check, Loader2, AlertTriangle } from "lucide-react";
 import { isAxiosError } from "axios";
 import { apiClient } from "@/api/client";
+import BackToHome from "@/components/auth/BackToHome";
 import { RegisterRequest, RegisterApiResponse, ApiErrorResponse } from "@/types/auth";
 
 // ── Password strength ──────────────────────────────────────────────
@@ -118,6 +119,7 @@ export default function SignupPage() {
       {/* RIGHT */}
       <div style={s.right} className="auth-right">
         <div style={s.formBox}>
+          <BackToHome />
           <div style={s.formHeader}>
             <h2 style={s.formTitle}>Create your account</h2>
             <p style={s.formSubtitle}>Join your team on AuditInsight</p>
