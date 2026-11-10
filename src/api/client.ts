@@ -39,7 +39,10 @@ const isPublicAuthEndpoint = (url: string): boolean =>
   url.includes("/auth/login") ||
   url.includes("/auth/sign-up") ||
   url.includes("/auth/verify-otp") ||
-  url.includes("/auth/resend-otp");
+  url.includes("/auth/resend-otp") ||
+  // Public endpoints (e.g. /public/trial-offer, called by the landing page) need no login. Sending a stale
+  // token makes the backend answer 401, which would bounce a visitor from the landing page to /log-in.
+  url.includes("/public/");
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {

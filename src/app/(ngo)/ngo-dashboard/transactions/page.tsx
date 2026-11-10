@@ -134,6 +134,7 @@ function TransactionsContent() {
     error: txnError,
     deleteTransaction,
     saveEvidence,
+    evidences: realEvidence,
   } = useTransactions();
 
   const { addTransaction } = useNGOTransactions();
@@ -496,7 +497,7 @@ function TransactionsContent() {
       {selectedTransaction && (
         <ViewTransactionModal
           transaction={{ ...selectedTransaction, evidenceCount: selectedTransaction.evidenceCount ?? 0, isDuplicate: false }}
-          evidence={evidences}
+          evidence={realEvidence}
           onClose={() => router.replace("/ngo-dashboard/transactions")}
         />
       )}
