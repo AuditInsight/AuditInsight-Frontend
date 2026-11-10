@@ -110,6 +110,11 @@ export default function ViewTransactionModal({ transaction, evidence, onClose }:
                       <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
                         {ev.folder} › {ev.subfolder} • {ev.fileType.toUpperCase()} • {ev.uploadedAt?.split("T")[0]}
                       </div>
+                      {ev.notes && (
+                        <div style={evidenceNote}>
+                          <span style={{ fontWeight: 600 }}>Note: </span>{ev.notes}
+                        </div>
+                      )}
                       {isSigned(ev) && !canPlaceSignature(ev) && (
                         <button type="button" onClick={() => docs.previewOriginal(ev)} style={originalLink}>
                           View original file
@@ -196,6 +201,7 @@ const noEvidence: React.CSSProperties = { textAlign: "center", padding: "32px 0"
 const evidenceList: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 10 };
 const evidenceRow: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #e2e8f0", gap: 12 };
 const evidenceInfo: React.CSSProperties = { display: "flex", alignItems: "flex-start", gap: 12, flex: 1, minWidth: 0 };
+const evidenceNote: React.CSSProperties = { fontSize: 12, color: "#475569", marginTop: 4, whiteSpace: "pre-wrap", wordBreak: "break-word" };
 const evidenceIcon: React.CSSProperties = { width: 36, height: 36, borderRadius: 9, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
 const previewBtn: React.CSSProperties = { display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#374151", cursor: "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" };
 const downloadBtn: React.CSSProperties = { display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, border: "none", background: "#1e3a8a", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" };

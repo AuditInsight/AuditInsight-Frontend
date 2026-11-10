@@ -70,6 +70,15 @@ export const EvidenceRow = ({ evidence, onView, onEdit, onDelete, isEven }: Prop
         ) : "—"}
       </td>
 
+      {/* Notes — shortened here; hover for the full text, or open the document */}
+      <td style={td}>
+        {evidence.notes ? (
+          <span style={notesPreview} title={evidence.notes}>{evidence.notes}</span>
+        ) : (
+          <span style={{ color: theme.colors.textSecondary }}>—</span>
+        )}
+      </td>
+
       {/* Actions */}
       <td style={td}>
         <EvidenceActions evidence={evidence} onView={onView} onEdit={onEdit} onDelete={onDelete} />
@@ -126,6 +135,16 @@ const categoryPill: React.CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+};
+
+const notesPreview: React.CSSProperties = {
+  display: "block",
+  maxWidth: 220,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  color: theme.colors.textSecondary,
+  cursor: "help",
 };
 
 const txLink: React.CSSProperties = {
