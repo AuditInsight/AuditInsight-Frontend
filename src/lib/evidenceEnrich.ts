@@ -2,6 +2,7 @@ import { Evidence } from "@/types/evidence.types";
 
 interface TransactionInfo {
   id: string;
+  name?: string;
   amount?: number | string;
   counterparty?: string | null;
 }
@@ -19,6 +20,7 @@ export function withTransactionInfo(evidence: Evidence[], transactions: Transact
       ...e,
       amount: e.amount ?? (tx.amount != null ? Number(tx.amount) : undefined),
       counterparty: e.counterparty || tx.counterparty || undefined,
+      transactionName: e.transactionName || tx.name || undefined,
     };
   });
 }

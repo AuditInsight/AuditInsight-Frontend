@@ -92,7 +92,7 @@ export function EvidenceDetailsModal({ isOpen, evidence, onClose }: Props) {
                     style={linkBtn}
                     onClick={() => { onClose(); router.push(`/transactions?transactionId=${evidence.transactionId}`); }}
                   >
-                    {evidence.transactionId} <ExternalLink size={11} />
+                    {evidence.transactionName || evidence.transactionId} <ExternalLink size={11} />
                   </button>
                 ) : "—"
               }

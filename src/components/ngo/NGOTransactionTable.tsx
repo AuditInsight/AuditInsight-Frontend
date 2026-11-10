@@ -91,7 +91,7 @@ function ActionCell({
         {onDelete && (
           <PermissionGate component="txn:edit_btn">
             <button
-              onClick={() => { if (window.confirm(`Delete transaction ${txn.id}?`)) onDelete(); }}
+              onClick={() => { if (window.confirm(`Delete transaction "${txn.projectName || txn.id}"?`)) onDelete(); }}
               title="Delete transaction"
               style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: 8, background: "#fff", color: "#94a3b8", border: "1px solid #e2e8f0", cursor: "pointer" }}
             >
@@ -208,8 +208,6 @@ export default function NGOTransactionTable({
         <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13.5 }}>
           <thead style={{ background: "#f8fafc" }}>
             <tr>
-              {/* ID */}
-              <th style={thStyle}>ID</th>
               {/* Date — sortable */}
               <th style={{ ...thStyle, cursor: "pointer", userSelect: "none" }} onClick={() => handleSort("date")}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} /></span>
@@ -239,7 +237,7 @@ export default function NGOTransactionTable({
           <tbody style={{ borderTop: "1px solid #f1f5f9" }}>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ padding: "48px 16px", textAlign: "center" as const, fontSize: 13.5, color: "#94a3b8" }}>
+                <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center" as const, fontSize: 13.5, color: "#94a3b8" }}>
                   No transactions match your filters.
                 </td>
               </tr>
@@ -249,10 +247,6 @@ export default function NGOTransactionTable({
                   key={txn.id}
                   style={{ borderBottom: "1px solid #f8fafc", borderLeft: txn.status === "FLAGGED" ? "3px solid #94a3b8" : "3px solid transparent" }}
                 >
-                  {/* ID */}
-                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
-                    <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>{txn.id}</span>
-                  </td>
                   {/* Date */}
                   <td style={{ padding: "12px 16px", whiteSpace: "nowrap" as const }}>
                     <span style={{ fontSize: 12.5, color: "#475569" }}>

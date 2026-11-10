@@ -63,9 +63,10 @@ export const EvidenceRow = ({ evidence, onView, onEdit, onDelete, isEven }: Prop
           <button
             type="button"
             style={txLink}
+            title={evidence.transactionName || evidence.transactionId || undefined}
             onClick={(e) => { e.stopPropagation(); router.push(`/transactions?transactionId=${evidence.transactionId}`); }}
           >
-            {evidence.transactionId}
+            {evidence.transactionName || evidence.transactionId}
           </button>
         ) : "—"}
       </td>
@@ -138,4 +139,10 @@ const txLink: React.CSSProperties = {
   fontSize: 13,
   textDecoration: "underline",
   textDecorationStyle: "dotted",
+  display: "block",
+  maxWidth: 200,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  textAlign: "left",
 };

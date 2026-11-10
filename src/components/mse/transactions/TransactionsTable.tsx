@@ -32,7 +32,7 @@ export const TransactionsTable = ({
     <table style={table}>
       <thead>
         <tr style={headerRow}>
-          <th style={th}>Transaction ID</th>
+          <th style={th}>Transaction</th>
           <th style={th}>Date</th>
           <th style={th}>Amount</th>
           <th style={th}>Counterparty</th>
@@ -58,7 +58,7 @@ export const TransactionsTable = ({
                 cursor: "pointer",
               }}
             >
-              <td style={{ ...td, fontFamily: "monospace", fontWeight: 600 }}>{t.id}</td>
+              <td style={{ ...td, fontWeight: 600, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={t.name}>{t.name || "—"}</td>
               <td style={td}>{t.date}</td>
               <td style={td}>RWF {t.amount.toLocaleString()}</td>
               <td style={td}>{t.counterparty}</td>
