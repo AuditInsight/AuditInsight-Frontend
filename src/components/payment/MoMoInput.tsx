@@ -6,7 +6,9 @@ import {
   MoMoProvider,
   detectProvider,
   formatPhone,
-  isPhoneValid,
+  isMtnRwandaNumber,
+  momoPhoneError,
+  toLocalRwandaNumber,
   PROVIDER_COLORS,
   PROVIDER_BG,
   PROVIDER_LABELS,
@@ -25,10 +27,10 @@ export default function MoMoInput({ onChange, disabled }: Props) {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const provider  = detectProvider(phone);
-  const phoneValid = isPhoneValid(phone);
+  const phoneValid = isMtnRwandaNumber(phone);
 
   const errors = {
-    phone: touched.phone && !phoneValid ? "Enter a valid 10-digit phone number" : "",
+    phone: momoPhoneError(phone, !!touched.phone),
     name:  touched.name  && !name.trim() ? "Account holder name is required"    : "",
   };
 
@@ -37,12 +39,13 @@ export default function MoMoInput({ onChange, disabled }: Props) {
       phone: p.replace(/\D/g, ""),
       provider: detectProvider(p),
       name: n,
-      isValid: isPhoneValid(p) && !!n.trim(),
+      isValid: isMtnRwandaNumber(p) && !!n.trim(),
     });
   };
 
   const handlePhone = (raw: string) => {
-    const formatted = formatPhone(raw);
+    // Accept pasted +250 / 250 numbers: the +250 is already shown in front of the field.
+    const formatted = formatPhone(toLocalRwandaNumber(raw));
     setPhone(formatted);
     emit(formatted, name);
   };
@@ -81,7 +84,7 @@ export default function MoMoInput({ onChange, disabled }: Props) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
       {/* ── Provider banner — shows when detected ── */}
-      {provider !== "unknown" && (
+      {provider === "MTN" && (
         <div style={{
           display: "flex", alignItems: "center", gap: 12,
           background: PROVIDER_BG[provider],
