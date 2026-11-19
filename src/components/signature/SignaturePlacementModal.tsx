@@ -13,6 +13,7 @@ import { getSigningBase, signEvidence, type SignaturePlacement } from "@/utils/a
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./SignaturePad";
 import { openPdf } from "./pdfjs";
 import { signErrorMessage } from "./documentAccess";
+import { useSigningVerification } from "./useSigningVerification";
 
 interface Props {
   evidence: { id: string; documentName: string };
@@ -59,6 +60,7 @@ export function SignaturePlacementModal({ evidence, defaultFullName, onClose, on
   const [previewing, setPreviewing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { verifyAndSign, verificationDialog } = useSigningVerification();
 
   const viewerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -235,7 +237,8 @@ export function SignaturePlacementModal({ evidence, defaultFullName, onClose, on
     setSubmitting(true);
     setError(null);
     try {
-      await signEvidence(evidence.id, {
+      const signed = await verifyAndSign(evidence, (verificationCode) => signEvidence(evidence.id, {
+        verificationCode,
         fullName: fullName.trim(),
         title: title.trim() || undefined,
         typedName: pad.signatureImage ? undefined : pad.typedName.trim() || undefined,
@@ -244,7 +247,11 @@ export function SignaturePlacementModal({ evidence, defaultFullName, onClose, on
           pageIndex: p, x: round6(x), y: round6(y), width: round6(width), height: round6(height),
         })),
         baseSha256: baseSha ?? undefined,
-      });
+      }));
+      if (signed === null) {
+        setSubmitting(false); // email verification cancelled
+        return;
+      }
       onSigned();
     } catch (err) {
       setError(`Your signature wasn't saved: ${signErrorMessage(err)}`);
@@ -422,6 +429,7 @@ export function SignaturePlacementModal({ evidence, defaultFullName, onClose, on
           </button>
         </div>
       </div>
+      {verificationDialog}
     </div>,
     document.body
   );

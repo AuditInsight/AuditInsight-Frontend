@@ -14,6 +14,7 @@ import { useEvidenceDocumentAccess, canPlaceSignature, signErrorMessage, CERTIFI
 import { SignedDocumentPreviewModal } from "./SignedDocumentPreviewModal";
 import { SignaturePlacementModal } from "./SignaturePlacementModal";
 import { DocumentIntegrityPanel } from "./DocumentIntegrityPanel";
+import { useSigningVerification } from "./useSigningVerification";
 import { useAuth } from "@/context/AuthContext.production";
 
 interface Props {
@@ -39,6 +40,7 @@ export function SignDocumentModal({ isOpen, onClose, evidence, startPlacing = fa
   const [pad, setPad] = useState<SignaturePadValue>(EMPTY_SIGNATURE);
   const [placing, setPlacing] = useState(startPlacing);
   const docs = useEvidenceDocumentAccess();
+  const { verifyAndSign, verificationDialog } = useSigningVerification();
 
   const load = useCallback(() => {
     if (!evidence) return;
@@ -75,10 +77,14 @@ export function SignDocumentModal({ isOpen, onClose, evidence, startPlacing = fa
     setSigning(true);
     setError("");
     try {
-      await signEvidence(evidence.id, {
-        typedName: pad.typedName.trim() || undefined,
-        signatureImage: pad.signatureImage ?? undefined,
-      });
+      const signed = await verifyAndSign(evidence, (verificationCode) =>
+        signEvidence(evidence.id, {
+          typedName: pad.typedName.trim() || undefined,
+          signatureImage: pad.signatureImage ?? undefined,
+          verificationCode,
+        })
+      );
+      if (signed === null) return; // email verification cancelled
       setPad(EMPTY_SIGNATURE);
       load();
     } catch (err: unknown) {
@@ -204,6 +210,7 @@ export function SignDocumentModal({ isOpen, onClose, evidence, startPlacing = fa
         />
       )}
       <SignedDocumentPreviewModal url={docs.preview?.url ?? null} title={docs.preview?.title ?? ""} subtitle={docs.preview?.subtitle} onClose={docs.closePreview} />
+      {verificationDialog}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { friendlyEvidenceUploadError } from "@/utils/evidenceUploadErrors";
 import { useOrganisation } from "@/hooks/useOrganisation";
 import { getEvidenceFolders, getSubfolders } from "@/utils/evidenceFolderUtils";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "@/components/signature/SignaturePad";
+import { useSigningVerification } from "@/components/signature/useSigningVerification";
 import {
   signErrorMessage, isCertificateOnlyFile, isPlaceableFile, usePlaceableFileTypes, CERTIFICATE_NOTE,
 } from "@/components/signature/documentAccess";
@@ -74,6 +75,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
   // The uploaded document currently open for placing the signature on it.
   const [placing, setPlacing]           = useState<Evidence | null>(null);
   const placeableTypes = usePlaceableFileTypes();
+  const { verifyAndSign, verificationDialog } = useSigningVerification();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -249,10 +251,21 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
 
       if (!isEdit && signNow) {
         try {
-          await signEvidence(saved.id, {
-            typedName: signaturePad.typedName.trim() || undefined,
-            signatureImage: signaturePad.signatureImage ?? undefined,
-          });
+          const toSign = saved;
+          const signed = await verifyAndSign(toSign, (verificationCode) =>
+            signEvidence(toSign.id, {
+              typedName: signaturePad.typedName.trim() || undefined,
+              signatureImage: signaturePad.signatureImage ?? undefined,
+              verificationCode,
+            })
+          );
+          if (signed === null) {
+            setSignError(
+              "Your evidence was uploaded, but it isn't signed yet: confirm your email with the code to sign. " +
+              "Retry signing, or close and sign it later from the evidence details."
+            );
+            return;
+          }
           saved = { ...saved, signatureCount: (saved.signatureCount ?? 0) + 1 };
         } catch (signErr) {
           console.error("Auto-sign after upload failed", signErr);
@@ -457,6 +470,7 @@ export const EvidenceUploadModal = ({ isOpen, onClose, onSave, transactions, mod
           }}
         />
       )}
+      {verificationDialog}
     </div>
   );
 };

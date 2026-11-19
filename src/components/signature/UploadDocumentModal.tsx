@@ -9,6 +9,7 @@ import { modalOverlayStyle } from "@/lib/modalOverlay";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 import { friendlyEvidenceUploadError } from "@/utils/evidenceUploadErrors";
 import { SignaturePad, EMPTY_SIGNATURE, type SignaturePadValue } from "./SignaturePad";
+import { useSigningVerification } from "./useSigningVerification";
 import { signErrorMessage, isCertificateOnlyFile, isPlaceableFile, usePlaceableFileTypes, CERTIFICATE_NOTE } from "./documentAccess";
 
 // Any document uploaded here goes into a generic bucket — it isn't filed into the
@@ -48,6 +49,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave, onPlaceSignature 
   const [signNow, setSignNow]         = useState(true);
   const [signaturePad, setSignaturePad] = useState<SignaturePadValue>(EMPTY_SIGNATURE);
   const [signError, setSignError]     = useState("");
+  const { verifyAndSign, verificationDialog } = useSigningVerification();
   // Set once the file is stored, so retrying a failed signature never uploads the document a second time.
   const [uploaded, setUploaded]       = useState<Evidence | null>(null);
   const placeableTypes = usePlaceableFileTypes();
@@ -163,10 +165,22 @@ export function UploadDocumentModal({ isOpen, onClose, onSave, onPlaceSignature 
 
     if (signNow) {
       try {
-        await signEvidence(saved.id, {
-          typedName: signaturePad.typedName.trim() || undefined,
-          signatureImage: signaturePad.signatureImage ?? undefined,
-        });
+        const toSign = saved;
+        const signed = await verifyAndSign(toSign, (verificationCode) =>
+          signEvidence(toSign.id, {
+            typedName: signaturePad.typedName.trim() || undefined,
+            signatureImage: signaturePad.signatureImage ?? undefined,
+            verificationCode,
+          })
+        );
+        if (signed === null) {
+          setSignError(
+            "Your document was uploaded, but it isn't signed yet: confirm your email with the code to sign. " +
+            "Retry signing, or close and sign it later from the Signatures page."
+          );
+          setSaving(false);
+          return;
+        }
         saved = { ...saved, signatureCount: (saved.signatureCount ?? 0) + 1 };
       } catch (signErr) {
         console.error("Auto-sign after upload failed", signErr);
@@ -282,6 +296,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSave, onPlaceSignature 
           </button>
         </div>
       </div>
+      {verificationDialog}
     </div>
   );
 }

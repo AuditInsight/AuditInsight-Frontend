@@ -271,8 +271,22 @@ export const signEvidence = (
     placements?: SignaturePlacement[];
     /** SHA-256 of the signing-base document the signature was placed on. */
     baseSha256?: string;
+    /** The 6-digit code emailed for this document (see requestSigningCode). Required by the server. */
+    verificationCode: string;
   }
 ) => apiClient.post<SignatureResponse>(`/evidence/${evidenceId}/signatures`, data, { timeout: 30_000 });
+
+export interface SigningCodeSent {
+  message: string;
+  /** Masked address the code went to, e.g. j***@example.com. */
+  sentTo: string;
+  expiresInSeconds: number;
+  resendAfterSeconds: number;
+}
+
+/** Emails the logged-in user a one-time code needed to sign this document (email re-verification). */
+export const requestSigningCode = (evidenceId: string) =>
+  apiClient.post<SigningCodeSent>(`/evidence/${evidenceId}/signatures/verification-code`, null, { timeout: 30_000 });
 
 /** The exact PDF to place a signature on (current signed version, or the original), with its identity. */
 export const getSigningBase = async (
