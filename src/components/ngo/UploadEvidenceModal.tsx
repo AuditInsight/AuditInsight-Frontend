@@ -15,6 +15,7 @@ import {
   signErrorMessage, isCertificateOnlyFile, isPlaceableFile, usePlaceableFileTypes, CERTIFICATE_NOTE,
 } from "@/components/signature/documentAccess";
 import { SignaturePlacementModal } from "@/components/signature/SignaturePlacementModal";
+import { useSigningVerification } from "@/components/signature/useSigningVerification";
 
 interface Props {
   open: boolean;
@@ -39,6 +40,7 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
   const [signaturePad,  setSignaturePad]  = useState<SignaturePadValue>(EMPTY_SIGNATURE);
   // Files that uploaded fine but whose signature failed — retrying signs only these, never re-uploads.
   const [unsigned,      setUnsigned]      = useState<Evidence[]>([]);
+  const { verifyAndSign, verificationDialog } = useSigningVerification();
   // Uploaded documents still to open for placing the signature, one after another.
   const [placeQueue,    setPlaceQueue]    = useState<Evidence[]>([]);
   const placeableTypes = usePlaceableFileTypes();
@@ -79,13 +81,24 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
     signatureImage: signaturePad.signatureImage ?? undefined,
   });
 
-  /** Signs each document; returns the ones that failed plus the first failure reason. */
+  /**
+   * Signs each document, confirming the signer's email with a fresh code for each one. Returns the ones that
+   * failed plus the first failure reason. Cancelling the code dialog leaves that document and the rest unsigned.
+   */
   const signAll = async (docs: Evidence[]) => {
     const failed: Evidence[] = [];
     let reason = "";
-    for (const doc of docs) {
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
       try {
-        await signEvidence(doc.id, signPayload());
+        const signed = await verifyAndSign(doc, (verificationCode) =>
+          signEvidence(doc.id, { ...signPayload(), verificationCode })
+        );
+        if (signed === null) {
+          failed.push(...docs.slice(i));
+          reason ||= "Email verification was cancelled.";
+          break;
+        }
       } catch (signErr) {
         console.error("Auto-sign after upload failed", signErr);
         failed.push(doc);
@@ -413,6 +426,7 @@ export default function UploadEvidenceModal({ open, transaction, onClose, onSubm
           }}
         />
       )}
+      {verificationDialog}
     </div>
   );
 }

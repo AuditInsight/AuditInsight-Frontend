@@ -6,6 +6,7 @@ import { theme } from "@/styles/theme";
 import { useAuth } from "@/context/AuthContext.production";
 import { SignaturePlacementModal } from "@/components/signature/SignaturePlacementModal";
 import { canPlaceSignature } from "@/components/signature/documentAccess";
+import { useSigningVerification } from "@/components/signature/useSigningVerification";
 import { normalizeOrganisationId } from "@/utils/organisationId";
 import {
   declineSignatureRequest,
@@ -184,6 +185,7 @@ export function EvidenceSignaturesSection({ evidenceId, evidenceDocument, onChan
       {data && panel === "sign" && !placeOnDocument && (
         <SignPanel
           evidenceId={evidenceId}
+          documentName={evidenceDocument?.documentName ?? "this document"}
           defaultName={user?.fullName ?? ""}
           onCancel={() => setPanel("none")}
           onSigned={afterChange}
@@ -208,11 +210,13 @@ export function EvidenceSignaturesSection({ evidenceId, evidenceDocument, onChan
 
 function SignPanel({
   evidenceId,
+  documentName,
   defaultName,
   onCancel,
   onSigned,
 }: {
   evidenceId: string;
+  documentName: string;
   defaultName: string;
   onCancel: () => void;
   onSigned: () => void;
@@ -226,6 +230,7 @@ function SignPanel({
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
+  const { verifyAndSign, verificationDialog } = useSigningVerification();
 
   const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const c = canvasRef.current!;
@@ -273,12 +278,20 @@ function SignPanel({
     setSubmitting(true);
     setError(null);
     try {
-      await signEvidence(evidenceId, {
-        fullName: fullName.trim(),
-        title: title.trim() || undefined,
-        typedName: mode === "type" && typedName.trim() ? typedName.trim() : undefined,
-        signatureImage: mode === "draw" ? canvasRef.current?.toDataURL("image/png") : undefined,
-      });
+      const signatureImage = mode === "draw" ? canvasRef.current?.toDataURL("image/png") : undefined;
+      const signed = await verifyAndSign({ id: evidenceId, documentName }, (verificationCode) =>
+        signEvidence(evidenceId, {
+          fullName: fullName.trim(),
+          title: title.trim() || undefined,
+          typedName: mode === "type" && typedName.trim() ? typedName.trim() : undefined,
+          signatureImage,
+          verificationCode,
+        })
+      );
+      if (signed === null) {
+        setSubmitting(false); // email verification cancelled
+        return;
+      }
       onSigned();
     } catch (err) {
       setError(errorMessage(err, "Could not sign the document."));
@@ -350,6 +363,7 @@ function SignPanel({
           <PenLine size={13} /> {submitting ? "Signing…" : "Sign"}
         </button>
       </div>
+      {verificationDialog}
     </div>
   );
 }
