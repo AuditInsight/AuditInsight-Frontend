@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { theme } from "@/styles/theme";
+import { isMtnRwandaNumber, momoPhoneError } from "@/components/payment/momoUtils";
 import { Phone, CreditCard, AlertCircle, Loader } from "lucide-react";
 
 export type PaymentMethod = "MOMO" | "CARD";
@@ -26,14 +27,16 @@ export default function PaymentMethodSelector({
 }: Props) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const phoneError = momoPhoneError(phoneNumber, phoneTouched);
+  const phoneValid = isMtnRwandaNumber(phoneNumber);
 
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
       if (selectedMethod === "MOMO") {
-        if (!phoneNumber.trim()) {
-          alert("Please enter a phone number");
-          setIsProcessing(false);
+        if (!phoneValid) {
+          setPhoneTouched(true);
           return;
         }
         await onPaymentStart("MOMO", phoneNumber);
@@ -46,7 +49,7 @@ export default function PaymentMethodSelector({
   };
 
   const isPaymentReady =
-    !loading && !isProcessing && (selectedMethod === "CARD" || (selectedMethod === "MOMO" && phoneNumber.trim()));
+    !loading && !isProcessing && (selectedMethod === "CARD" || (selectedMethod === "MOMO" && phoneValid));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.lg }}>
@@ -151,15 +154,17 @@ export default function PaymentMethodSelector({
             </label>
             <input
               type="tel"
-              placeholder="e.g., +250 788 123 456"
+              placeholder="e.g., 078 812 3456"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
+              onBlur={() => setPhoneTouched(true)}
+              aria-invalid={!!phoneError}
               disabled={loading || isProcessing}
               style={{
                 width: "100%",
                 padding: "10px 12px",
                 borderRadius: theme.radius.md,
-                border: `1px solid ${theme.colors.border}`,
+                border: `1px solid ${phoneError ? "#fca5a5" : theme.colors.border}`,
                 fontSize: theme.typography.sm,
                 color: theme.colors.textPrimary,
                 fontFamily: "inherit",
@@ -175,8 +180,13 @@ export default function PaymentMethodSelector({
                 marginTop: 6,
               }}
             >
-              Enter the phone number associated with your mobile money account
+              Enter your MTN Mobile Money number (078 or 079). Other networks are not supported yet.
             </div>
+            {phoneError && (
+              <div role="alert" style={{ fontSize: theme.typography.xs, color: "#dc2626", marginTop: 6, lineHeight: 1.4 }}>
+                {phoneError}
+              </div>
+            )}
           </div>
         )}
 
