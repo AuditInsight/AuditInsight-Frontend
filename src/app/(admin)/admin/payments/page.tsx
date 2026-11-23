@@ -6,6 +6,7 @@ import { Shield } from "lucide-react";
 import { usePermissions } from "@/security/access-control";
 import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
 import PaymentsTable from "@/components/admin/payments/PaymentsTable";
+import PaymentFilters, { EMPTY_FILTERS, PaymentFilterForm, toApiFilters } from "@/components/admin/payments/PaymentFilters";
 import { viewerTimeZone } from "@/components/admin/payments/paymentFormat";
 import { theme } from "@/styles/theme";
 import { getAdminPayments, AdminPaymentResponse, PageResult } from "@/api/admin";
@@ -17,6 +18,8 @@ export default function PaymentsPage() {
 
   const [result, setResult] = useState<PageResult<AdminPaymentResponse> | null>(null);
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<PaymentFilterForm>(EMPTY_FILTERS);
+  const [timeZone, setTimeZone] = useState("your local time");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +27,7 @@ export default function PaymentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await getAdminPayments({ page });
+      const { data } = await getAdminPayments({ ...toApiFilters(filters), page });
       setResult(data);
     } catch (err) {
       setError(
@@ -33,11 +36,16 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, filters]);
 
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
+
+  // Read in the browser only, so the server render and the first client render agree.
+  useEffect(() => {
+    setTimeZone(viewerTimeZone());
+  }, []);
 
   if (!canViewAdminPanel) {
     return (
@@ -57,11 +65,19 @@ export default function PaymentsPage() {
         <div>
           <h1 style={styles.title}>Payments</h1>
           <p style={styles.subtitle}>
-            Every payment on the platform, newest first — {result?.totalItems ?? 0} total. Times are in{" "}
-            {viewerTimeZone()}.
+            Every payment on the platform, newest first — {result?.totalItems ?? 0} matching. Times are in{" "}
+            {timeZone}.
           </p>
         </div>
       </div>
+
+      <PaymentFilters
+        value={filters}
+        onApply={(next) => {
+          setPage(1);
+          setFilters(next);
+        }}
+      />
 
       {error && <div style={styles.errorBanner}>{error}</div>}
 
