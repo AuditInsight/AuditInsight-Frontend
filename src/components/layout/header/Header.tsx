@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, ArrowLeftRight, FileCheck, ClipboardList,
   Settings, LogOut, Building2, UserCheck, Bell,
-  Menu, X, FileSignature,
+  Menu, X, FileSignature, Wallet,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { usePermissions } from "@/security/access-control";
@@ -35,6 +35,7 @@ const STANDARD_NAV = [
 
 const ADMIN_NAV = [
   { label: "Organizations",     icon: Building2, path: "/admin/organizations" },
+  { label: "Payments",          icon: Wallet,    path: "/admin/payments"      },
   { label: "Auditor Approvals", icon: UserCheck, path: "/admin/approvals"     },
   { label: "Settings",          icon: Settings,  path: "/admin/settings"      },
 ];

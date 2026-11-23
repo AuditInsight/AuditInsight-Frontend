@@ -79,15 +79,71 @@ export interface AdminSubscriptionSummary {
   createdAt: string;
 }
 
+/** One payment as the Super Admin sees it. Times are ISO strings with a time zone. */
 export interface AdminPaymentResponse {
   id: string;
+  organisationId: string;
+  organisationName: string | null;
   subscriptionType: AdminSubscriptionType;
   provider: AdminPaymentProvider;
   status: AdminPaymentStatus;
   expectedAmount: number;
+  /** What the provider confirmed was collected; null unless money arrived. */
   receivedAmount: number | null;
   currency: string;
+  payerUserId: number | null;
+  payerName: string | null;
+  payerEmail: string | null;
+  /** The Mobile Money number charged (MoMo only). */
+  payerPhone: string | null;
+  /** MoMo: the operator's transaction id. Card: our Flutterwave reference. */
+  providerReference: string | null;
+  failureReason: string | null;
+  subscriptionId: string | null;
   createdAt: string;
+  /** When the payment reached its final outcome; null while pending. */
+  resolvedAt: string | null;
+}
+
+export interface AdminPaymentFilters {
+  page?: number;
+  status?: AdminPaymentStatus;
+  provider?: AdminPaymentProvider;
+  organisationId?: string;
+  /** ISO date-time with offset, inclusive (payment start time). */
+  from?: string;
+  /** ISO date-time with offset, exclusive. */
+  to?: string;
+  search?: string;
+}
+
+export interface PaymentLedgerTotal {
+  status: AdminPaymentStatus;
+  currency: string;
+  payments: number;
+  received: number;
+}
+
+export type PaymentEnvironment = "LIVE" | "SANDBOX" | "UNKNOWN";
+
+export interface PaymentSetupStatus {
+  ready: boolean;
+  mobileMoney: {
+    environment: PaymentEnvironment;
+    baseUrl: string;
+    tokenSet: boolean;
+    provider: string;
+    callbackPath: string;
+  };
+  card: {
+    environment: PaymentEnvironment;
+    secretKeySet: boolean;
+    webhookHashSet: boolean;
+    redirectUrl: string;
+    webhookPath: string;
+  };
+  problems: string[];
+  warnings: string[];
 }
 
 export interface AdminOrganisationDetailResponse {
@@ -182,6 +238,15 @@ export const getAdminSubscriptions = (params: { page?: number; status?: AdminSub
 /* =========================
    ADMIN API — PLANS
 ========================= */
+/* ── Payments ledger ── */
+export const getAdminPayments = (filters: AdminPaymentFilters = {}) =>
+  apiClient.get<PageResult<AdminPaymentResponse>>("/admin/payments", { params: filters });
+
+export const getAdminPaymentTotals = (filters: Omit<AdminPaymentFilters, "page"> = {}) =>
+  apiClient.get<PaymentLedgerTotal[]>("/admin/payments/totals", { params: filters });
+
+export const getPaymentSetup = () => apiClient.get<PaymentSetupStatus>("/admin/payments/setup");
+
 export const getAdminPlans = () => apiClient.get<AdminPlanPriceResponse[]>("/admin/plans");
 
 export const updateAdminPlanPrice = (
