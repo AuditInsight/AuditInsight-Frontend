@@ -6,6 +6,7 @@ import { Shield } from "lucide-react";
 import { usePermissions } from "@/security/access-control";
 import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
 import PaymentsTable from "@/components/admin/payments/PaymentsTable";
+import PaymentSetupCard from "@/components/admin/payments/PaymentSetupCard";
 import PaymentTotals from "@/components/admin/payments/PaymentTotals";
 import PaymentFilters, { EMPTY_FILTERS, PaymentFilterForm, toApiFilters } from "@/components/admin/payments/PaymentFilters";
 import { viewerTimeZone } from "@/components/admin/payments/paymentFormat";
@@ -94,6 +95,8 @@ export default function PaymentsPage() {
           </p>
         </div>
       </div>
+
+      <PaymentSetupCard />
 
       <PaymentFilters
         value={filters}
