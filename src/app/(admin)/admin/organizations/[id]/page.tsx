@@ -9,6 +9,7 @@ import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import ChangeTierModal from "@/components/admin/ChangeTierModal";
 import OrganisationTrialCard from "@/components/admin/OrganisationTrialCard";
 import OrganisationAccessCard from "@/components/admin/OrganisationAccessCard";
+import PaymentsTable from "@/components/admin/payments/PaymentsTable";
 import {
   getAdminOrganisationDetail,
   AdminOrganisationDetailResponse,
@@ -184,28 +185,7 @@ export default function OrganisationDetailPage() {
             {detail.payments.length === 0 ? (
               <p style={styles.emptyInline}>No payments recorded yet.</p>
             ) : (
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.headRow}>
-                    <th style={styles.th}>Plan</th>
-                    <th style={styles.th}>Provider</th>
-                    <th style={styles.th}>Status</th>
-                    <th style={styles.th}>Amount</th>
-                    <th style={styles.th}>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detail.payments.map((p) => (
-                    <tr key={p.id} style={styles.row}>
-                      <td style={styles.td}>{p.subscriptionType}</td>
-                      <td style={styles.td}>{p.provider}</td>
-                      <td style={styles.td}>{p.status}</td>
-                      <td style={styles.td}>{p.currency} {p.receivedAmount ?? p.expectedAmount}</td>
-                      <td style={styles.td}>{formatDate(p.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <PaymentsTable payments={detail.payments} />
             )}
           </div>
 
