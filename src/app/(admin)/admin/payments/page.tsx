@@ -6,10 +6,17 @@ import { Shield } from "lucide-react";
 import { usePermissions } from "@/security/access-control";
 import { TransactionsPagination } from "@/components/mse/transactions/TransactionsPagination";
 import PaymentsTable from "@/components/admin/payments/PaymentsTable";
+import PaymentTotals from "@/components/admin/payments/PaymentTotals";
 import PaymentFilters, { EMPTY_FILTERS, PaymentFilterForm, toApiFilters } from "@/components/admin/payments/PaymentFilters";
 import { viewerTimeZone } from "@/components/admin/payments/paymentFormat";
 import { theme } from "@/styles/theme";
-import { getAdminPayments, AdminPaymentResponse, PageResult } from "@/api/admin";
+import {
+  getAdminPayments,
+  getAdminPaymentTotals,
+  AdminPaymentResponse,
+  PageResult,
+  PaymentLedgerTotal,
+} from "@/api/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +26,7 @@ export default function PaymentsPage() {
   const [result, setResult] = useState<PageResult<AdminPaymentResponse> | null>(null);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<PaymentFilterForm>(EMPTY_FILTERS);
+  const [totals, setTotals] = useState<PaymentLedgerTotal[] | null>(null);
   const [timeZone, setTimeZone] = useState("your local time");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +49,22 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
+
+  // Totals depend on the filters, not the page.
+  useEffect(() => {
+    let cancelled = false;
+    getAdminPaymentTotals(toApiFilters(filters))
+      .then(({ data }) => {
+        if (!cancelled) setTotals(data);
+      })
+      .catch(() => {
+        // Never show zero totals that merely failed to load.
+        if (!cancelled) setTotals(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filters]);
 
   // Read in the browser only, so the server render and the first client render agree.
   useEffect(() => {
@@ -78,6 +102,8 @@ export default function PaymentsPage() {
           setFilters(next);
         }}
       />
+
+      {totals && <PaymentTotals totals={totals} />}
 
       {error && <div style={styles.errorBanner}>{error}</div>}
 
