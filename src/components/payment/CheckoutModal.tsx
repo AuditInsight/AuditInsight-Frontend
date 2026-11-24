@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { SubscriptionType, getPlan, formatRwf } from "@/types/billing";
 import StripeCardInput, { CardData } from "./StripeCardInput";
 import MoMoInput from "./MoMoInput";
+import MomoPromptNotice from "./MomoPromptNotice";
 import { MoMoData } from "./momoUtils";
 import { CheckCircle2, XCircle, Lock, ChevronRight, CreditCard, Smartphone } from "lucide-react";
 import { startMomoCheckout, startCardCheckout, getMomoPaymentStatus, PaymentStatusResponse } from "@/utils/api";
@@ -282,13 +283,13 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
         )}
 
         {/* ── AWAITING CONFIRMATION SCREEN ── */}
-        {state === "awaiting-confirmation" && <AwaitingConfirmationScreen onClose={handleClose} />}
+        {state === "awaiting-confirmation" && <AwaitingConfirmationScreen amount={amount} onClose={handleClose} />}
 
         {/* ── 3D SECURE SCREEN ── */}
         {state === "3dsecure" && <ThreeDSecureScreen />}
 
         {/* ── PROCESSING SCREEN ── */}
-        {state === "processing" && <ProcessingScreen />}
+        {state === "processing" && <ProcessingScreen momoAmount={payMethod === "momo" ? amount : undefined} />}
 
         {/* ── MAIN CHECKOUT ── */}
         {(state === "idle") && (
@@ -442,13 +443,14 @@ export default function CheckoutModal({ open, plan, organisationId, onClose, onS
 
 // ── Sub-screens ────────────────────────────────────────────────────
 
-function ProcessingScreen() {
+function ProcessingScreen({ momoAmount }: { momoAmount?: number }) {
   return (
     <div style={centeredScreen}>
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       <div style={spinner} />
       <div style={screenTitle}>Processing payment…</div>
       <div style={screenSub}>Please do not close this window.</div>
+      {momoAmount !== undefined && <MomoPromptNotice amount={momoAmount} />}
     </div>
   );
 }
@@ -499,7 +501,7 @@ function SuccessScreen({ planName, amount, billed, receiptId, onClose }: {
   );
 }
 
-function AwaitingConfirmationScreen({ onClose }: { onClose: () => void }) {
+function AwaitingConfirmationScreen({ amount, onClose }: { amount: number; onClose: () => void }) {
   return (
     <div style={centeredScreen}>
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
@@ -508,6 +510,9 @@ function AwaitingConfirmationScreen({ onClose }: { onClose: () => void }) {
       <div style={screenSub}>
         This is taking longer than usual. We&apos;ll activate your plan automatically once it&apos;s
         confirmed — you don&apos;t need to keep this window open.
+      </div>
+      <div style={{ width: "100%", display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        <MomoPromptNotice amount={amount} />
       </div>
       <button
         style={{ ...payBtn, background: "#fff", color: "#374151", border: "1.5px solid #e2e8f0" }}
