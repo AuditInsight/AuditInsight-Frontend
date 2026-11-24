@@ -6,6 +6,7 @@ import { theme } from "@/styles/theme";
 import { useTransactions } from "@/hooks/useTransactions";
 import { UploadDocumentModal } from "@/components/signature/UploadDocumentModal";
 import { SignDocumentModal } from "@/components/signature/SignDocumentModal";
+import PendingSignatureRequests from "@/components/signature/PendingSignatureRequests";
 import { EvidencePagination } from "@/components/mse/evidence/EvidencePagination";
 import { Evidence } from "@/types/evidence.types";
 
@@ -57,6 +58,12 @@ export default function SignaturePage() {
           <Upload size={14} /> Upload &amp; Sign
         </button>
       </div>
+
+      <PendingSignatureRequests
+        documents={evidences}
+        onSign={(doc) => { setPlaceOnOpen(false); setSigning(doc); }}
+        refreshKey={signing}
+      />
 
       <div style={s.filterBar}>
         <div style={s.searchBox}>

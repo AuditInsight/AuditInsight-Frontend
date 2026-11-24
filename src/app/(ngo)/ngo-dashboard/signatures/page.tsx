@@ -6,6 +6,7 @@ import NGODashboardShell from "@/components/ngo/dashboard/NGODashboardShell";
 import { ProtectedRoute } from "@/components/Guards";
 import { UploadDocumentModal } from "@/components/signature/UploadDocumentModal";
 import { SignDocumentModal } from "@/components/signature/SignDocumentModal";
+import PendingSignatureRequests from "@/components/signature/PendingSignatureRequests";
 import { EvidencePagination } from "@/components/mse/evidence/EvidencePagination";
 import { theme } from "@/styles/theme";
 import { Evidence } from "@/types/evidence.types";
@@ -60,6 +61,12 @@ function SignatureContent() {
           <Upload size={14} /> Upload &amp; Sign
         </button>
       </div>
+
+      <PendingSignatureRequests
+        documents={documents}
+        onSign={(doc) => { setPlaceOnOpen(false); setSigning(doc); }}
+        refreshKey={signing}
+      />
 
       <div style={s.filterBar}>
         <div style={s.searchBox}>
