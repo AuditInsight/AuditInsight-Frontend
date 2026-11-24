@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState("");
 
-  // Step 1 — send OTP via resend-otp (the only "send code to email" endpoint available)
+  // Step 1 — email a password reset code (forgot-password; resend-otp only handles account verification)
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
     }
     setSubmitting(true);
     try {
-      await apiClient.post(`/auth/resend-otp?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+      await apiClient.post("/auth/forgot-password", { email: email.trim().toLowerCase() });
       setStep("reset");
     } catch (err: unknown) {
       if (isAxiosError<ApiErrorResponse>(err)) {
