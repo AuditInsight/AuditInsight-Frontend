@@ -19,6 +19,9 @@ import {
   PaymentLedgerTotal,
 } from "@/api/admin";
 
+// Hidden for now; flip to true to show the payment setup check on this page again.
+const SHOW_PAYMENT_SETUP_CARD = false;
+
 export const dynamic = "force-dynamic";
 
 export default function PaymentsPage() {
@@ -96,7 +99,7 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      <PaymentSetupCard />
+      {SHOW_PAYMENT_SETUP_CARD && <PaymentSetupCard />}
 
       <PaymentFilters
         value={filters}
