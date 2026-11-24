@@ -1,11 +1,11 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { AdminPaymentResponse } from "@/api/admin";
 import PaymentStatusBadge from "./PaymentStatusBadge";
-import PaymentDetails from "./PaymentDetails";
+import PaymentDetailsModal from "./PaymentDetailsModal";
 import {
   PLAN_LABEL,
   PROVIDER_LABEL,
@@ -21,7 +21,7 @@ interface Props {
 
 /** Every payment with who paid, for which organisation, how, how much, and when it started and settled. */
 export default function PaymentsTable({ payments }: Props) {
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<AdminPaymentResponse | null>(null);
 
   return (
     <div style={tableWrap}>
@@ -42,98 +42,87 @@ export default function PaymentsTable({ payments }: Props) {
         </thead>
         <tbody>
           {payments.map((p) => {
-            const open = openId === p.id;
+            const open = selected?.id === p.id;
             return (
-              <Fragment key={p.id}>
-                <tr
-                  style={{
-                    ...row,
-                    cursor: "pointer",
-                    background: open ? "#f8fafc" : undefined,
-                  }}
-                  onClick={() => setOpenId(open ? null : p.id)}
-                >
-                  <td style={td}>
-                    <button
-                      type="button"
-                      aria-expanded={open}
-                      aria-label={
-                        open ? "Hide payment details" : "Show payment details"
-                      }
-                      style={toggle}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenId(open ? null : p.id);
-                      }}
-                    >
-                      {open ? (
-                        <ChevronDown size={15} />
-                      ) : (
-                        <ChevronRight size={15} />
-                      )}
-                    </button>
-                  </td>
-                  <td style={{ ...td, whiteSpace: "nowrap" }}>
-                    {formatDateTime(p.createdAt)}
-                  </td>
-                  <td style={td}>
-                    <Link
-                      href={`/admin/organizations/${p.organisationId}`}
-                      style={link}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {p.organisationName ?? "Unknown organisation"}
-                    </Link>
-                  </td>
-                  <td style={td}>
-                    <div style={{ fontWeight: 600 }}>{p.payerName || "—"}</div>
-                    {p.payerEmail && <div style={muted}>{p.payerEmail}</div>}
-                  </td>
-                  <td style={td}>
-                    <div>{PROVIDER_LABEL[p.provider] ?? p.provider}</div>
-                    {p.provider === "MOMO" && (
-                      <div style={muted}>{formatPhone(p.payerPhone)}</div>
-                    )}
-                  </td>
-                  <td style={td}>
-                    {PLAN_LABEL[p.subscriptionType] ?? p.subscriptionType}
-                  </td>
-                  <td style={td}>
-                    <PaymentStatusBadge status={p.status} />
-                  </td>
-                  <td
-                    style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}
-                  >
-                    {formatMoney(p.expectedAmount, p.currency)}
-                  </td>
-                  <td
-                    style={{
-                      ...td,
-                      textAlign: "right",
-                      whiteSpace: "nowrap",
-                      fontWeight: 700,
+              <tr
+                key={p.id}
+                style={{
+                  ...row,
+                  cursor: "pointer",
+                  background: open ? "#f8fafc" : undefined,
+                }}
+                onClick={() => setSelected(p)}
+              >
+                <td style={td}>
+                  <button
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-label="Show payment details"
+                    style={toggle}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(p);
                     }}
                   >
-                    {receivedAmount(p)}
-                  </td>
-                  <td style={{ ...td, whiteSpace: "nowrap" }}>
-                    {formatDateTime(p.resolvedAt)}
-                  </td>
-                </tr>
-                {open && (
-                  <tr style={row}>
-                    <td colSpan={10} style={{ padding: 0 }}>
-                      <PaymentDetails payment={p} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
+                    <ChevronRight size={15} />
+                  </button>
+                </td>
+                <td style={{ ...td, whiteSpace: "nowrap" }}>
+                  {formatDateTime(p.createdAt)}
+                </td>
+                <td style={td}>
+                  <Link
+                    href={`/admin/organizations/${p.organisationId}`}
+                    style={link}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {p.organisationName ?? "Unknown organisation"}
+                  </Link>
+                </td>
+                <td style={td}>
+                  <div style={{ fontWeight: 600 }}>{p.payerName || "—"}</div>
+                  {p.payerEmail && <div style={muted}>{p.payerEmail}</div>}
+                </td>
+                <td style={td}>
+                  <div>{PROVIDER_LABEL[p.provider] ?? p.provider}</div>
+                  {p.provider === "MOMO" && (
+                    <div style={muted}>{formatPhone(p.payerPhone)}</div>
+                  )}
+                </td>
+                <td style={td}>
+                  {PLAN_LABEL[p.subscriptionType] ?? p.subscriptionType}
+                </td>
+                <td style={td}>
+                  <PaymentStatusBadge status={p.status} />
+                </td>
+                <td
+                  style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }}
+                >
+                  {formatMoney(p.expectedAmount, p.currency)}
+                </td>
+                <td
+                  style={{
+                    ...td,
+                    textAlign: "right",
+                    whiteSpace: "nowrap",
+                    fontWeight: 700,
+                  }}
+                >
+                  {receivedAmount(p)}
+                </td>
+                <td style={{ ...td, whiteSpace: "nowrap" }}>
+                  {formatDateTime(p.resolvedAt)}
+                </td>
+              </tr>
             );
           })}
         </tbody>
       </table>
       {payments.length === 0 && (
         <p style={emptyState}>No payments match these filters.</p>
+      )}
+      {selected && (
+        <PaymentDetailsModal payment={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );
