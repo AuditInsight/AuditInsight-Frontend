@@ -156,6 +156,29 @@ export const inputStyles = {
     color: Colors.textMuted,
   },
 
+  /* Room on the right for the show/hide password button. */
+  inputWithToggle: {
+    paddingRight: "42px",
+  },
+
+  passwordToggle: {
+    position: "absolute" as const,
+    right: "8px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "28px",
+    height: "28px",
+    padding: 0,
+    border: "none",
+    borderRadius: "6px",
+    background: "transparent",
+    color: Colors.textMuted,
+    cursor: "pointer",
+  },
+
   /* =========================
      SEARCH INPUT VARIANT (NEW)
   ========================= */
