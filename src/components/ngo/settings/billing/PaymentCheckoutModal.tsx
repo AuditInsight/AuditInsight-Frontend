@@ -8,6 +8,7 @@ import { X, Loader, CheckCircle2, AlertCircle } from "lucide-react";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
 import { usePaymentProcessor } from "@/hooks/usePaymentProcessor";
 import { usePlans } from "@/hooks/usePlans";
+import MomoPromptNotice from "@/components/payment/MomoPromptNotice";
 
 type PaymentState = "selecting" | "processing" | "success" | "awaiting" | "error";
 
@@ -340,6 +341,7 @@ export default function PaymentCheckoutModal({
                 ? "Please wait while we verify your payment"
                 : "You will be redirected to Flutterwave"}
             </div>
+            {paymentMethod === "MOMO" && <MomoPromptNotice amount={price} />}
           </div>
         )}
 
@@ -391,6 +393,7 @@ export default function PaymentCheckoutModal({
                 ? "Approve the prompt on your phone. Your plan activates automatically once Mobile Money confirms it, so you can close this window."
                 : successNote ?? `Your ${planInfo.name} is now active.`}
             </div>
+            {state === "awaiting" && <MomoPromptNotice amount={price} />}
           </div>
         )}
 

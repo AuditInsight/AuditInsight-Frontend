@@ -171,8 +171,8 @@ export default function MoMoInput({ onChange, disabled }: Props) {
         <div style={howTitle}>How Mobile Money payment works</div>
         <div style={howStep}><span style={stepNum}>1</span> Enter your MoMo number above</div>
         <div style={howStep}><span style={stepNum}>2</span> Click &quot;Pay with MoMo&quot;</div>
-        <div style={howStep}><span style={stepNum}>3</span> You will receive a USSD push on your phone</div>
-        <div style={howStep}><span style={stepNum}>4</span> Enter your MoMo PIN to confirm</div>
+        <div style={howStep}><span style={stepNum}>3</span> MTN sends a prompt saying &ldquo;Kwemeza kubikuza…&rdquo;: this is your AuditInsight payment</div>
+        <div style={howStep}><span style={stepNum}>4</span> Enter your MoMo PIN to approve it (no prompt? dial *182*7*1#)</div>
         <div style={howStep}><span style={stepNum}>5</span> Payment confirmed — your plan activates instantly</div>
       </div>
     </div>
